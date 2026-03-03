@@ -4,10 +4,11 @@ import {
     OnModuleDestroy,
     Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { PrismaClient } from '../generated/prisma/client';
 import { PrismaPg } from '@prisma/adapter-pg';
 import { Pool } from 'pg';
-import { databaseConfig, isDevelopment } from '../config';
+import { AppConfig, DatabaseConfig } from '../config';
 
 interface QueryEvent {
     timestamp: Date;
@@ -30,8 +31,12 @@ export class PrismaService
 {
     private readonly logger = new Logger(PrismaService.name);
 
-    constructor() {
-        const pool: Pool = new Pool({ connectionString: databaseConfig.url });
+    constructor(private readonly configService: ConfigService) {
+        const databaseUrl = configService.get<DatabaseConfig>('database')!.url;
+        const isDevelopment =
+            configService.get<AppConfig>('app')!.isDevelopment;
+
+        const pool: Pool = new Pool({ connectionString: databaseUrl });
         const adapter = new PrismaPg(pool);
 
         super({

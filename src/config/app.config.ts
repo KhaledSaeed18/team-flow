@@ -1,11 +1,5 @@
-import {
-    APP_NAME,
-    isDevelopment,
-    isProduction,
-    isTest,
-    NODE_ENV,
-    PORT,
-} from './env';
+import { registerAs } from '@nestjs/config';
+import { optionalEnv } from './env';
 
 export interface AppConfig {
     name: string;
@@ -16,11 +10,14 @@ export interface AppConfig {
     isTest: boolean;
 }
 
-export const appConfig: AppConfig = {
-    name: APP_NAME,
-    port: parseInt(PORT, 10),
-    env: NODE_ENV,
-    isProduction,
-    isDevelopment,
-    isTest,
-};
+export const appConfig = registerAs('app', (): AppConfig => {
+    const env = optionalEnv('NODE_ENV', 'development');
+    return {
+        name: optionalEnv('APP_NAME', 'team-flow'),
+        port: parseInt(optionalEnv('PORT', '3000'), 10),
+        env,
+        isProduction: env === 'production',
+        isDevelopment: env === 'development',
+        isTest: env === 'test',
+    };
+});
