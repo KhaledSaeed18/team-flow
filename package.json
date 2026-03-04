@@ -88,5 +88,10 @@
     ],
     "coverageDirectory": "../coverage",
     "testEnvironment": "node"
+  },
+  "pnpm": {
+    "overrides": {
+      "minimatch@<3.1.5": "3.1.5"
+    }
   }
 }
