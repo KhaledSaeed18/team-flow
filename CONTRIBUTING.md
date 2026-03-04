@@ -45,7 +45,8 @@ Always branch off `main`. Use the following naming convention:
 | `test/` | Adding or updating tests |
 
 **Examples**
-```
+
+```bash
 feat/task-dependency-api
 fix/refresh-token-expiry
 docs/update-contributing
@@ -57,7 +58,8 @@ chore/upgrade-prisma
 ## Commit Messages
 
 Follow the [Conventional Commits](https://www.conventionalcommits.org) standard.
-```
+
+```bash
 <type>(optional scope): short description
 
 feat(tasks): add subtask support
@@ -69,6 +71,7 @@ test(tasks): add unit tests for task number generation
 ```
 
 **Rules:**
+
 - Use lowercase
 - Present tense — "add feature" not "added feature"
 - Keep the subject line under 72 characters
@@ -83,6 +86,7 @@ test(tasks): add unit tests for task number generation
 - Fill in the PR description — what changed and why
 - Link the related issue if one exists: `Closes #42`
 - Make sure the project builds and lints before submitting
+
 ```bash
 pnpm lint
 pnpm build
