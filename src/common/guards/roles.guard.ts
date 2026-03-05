@@ -93,6 +93,19 @@ export class RolesGuard implements CanActivate {
             return project.organizationId;
         }
 
+        // Resolve org via task for routes like /tasks/:taskId/*
+        const taskId = request.params?.taskId as string | undefined;
+        if (taskId) {
+            const task = await this.prisma.task.findFirst({
+                where: { id: taskId, deletedAt: null },
+                select: { organizationId: true, projectId: true },
+            });
+            if (!task) throw new NotFoundException('Task not found');
+            request['taskOrgId'] = task.organizationId;
+            request['taskProjectId'] = task.projectId;
+            return task.organizationId;
+        }
+
         return undefined;
     }
 }

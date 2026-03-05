@@ -7,10 +7,12 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
+import { createRouteHandler } from 'uploadthing/express';
 import { AppModule } from './app.module';
 import { AppConfig } from './config';
 import { GlobalExceptionFilter } from './common/filters';
 import { TransformInterceptor } from './common/interceptors';
+import { uploadRouter } from './modules/attachments/upload.router';
 
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
@@ -45,6 +47,13 @@ async function bootstrap() {
 
     // Global exception filter
     app.useGlobalFilters(new GlobalExceptionFilter());
+
+    // UploadThing route handler (before Swagger, after global prefix)
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.use(
+        '/api/uploadthing',
+        createRouteHandler({ router: uploadRouter }),
+    );
 
     // Swagger — non-production only
     if (!appConfig.isProduction) {

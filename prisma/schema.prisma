@@ -432,6 +432,7 @@ model Attachment {
   mimeType     String
   size         Int // bytes
   url          String
+  fileKey      String? // UploadThing file key — used for CDN deletion
   source       AttachmentSource @default(UPLOAD)
   taskId       String
   uploadedById String?

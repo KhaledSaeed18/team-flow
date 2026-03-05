@@ -23,6 +23,9 @@ import { InvitationsModule } from './modules/invitations/invitations.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { SprintsModule } from './modules/sprints/sprints.module';
 import { TasksModule } from './modules/tasks/tasks.module';
+import { CommentsModule } from './modules/comments/comments.module';
+import { AttachmentsModule } from './modules/attachments/attachments.module';
+import { LabelsModule } from './modules/labels/labels.module';
 
 @Module({
     imports: [
@@ -66,6 +69,9 @@ import { TasksModule } from './modules/tasks/tasks.module';
         ProjectsModule,
         SprintsModule,
         TasksModule,
+        CommentsModule,
+        AttachmentsModule,
+        LabelsModule,
     ],
     controllers: [AppController],
     providers: [
