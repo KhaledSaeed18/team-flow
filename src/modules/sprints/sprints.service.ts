@@ -6,10 +6,14 @@ import {
 import { PrismaService } from '../../database/prisma.service';
 import { CreateSprintDto, UpdateSprintDto } from './dto';
 import { SprintEntity } from './entities';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class SprintsService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly notificationsService: NotificationsService,
+    ) {}
 
     async create(projectId: string, dto: CreateSprintDto) {
         await this.ensureProjectActive(projectId);
@@ -103,6 +107,14 @@ export class SprintsService {
             },
         });
 
+        // Notify project org members about sprint start (fire-and-forget)
+        this.notifyProjectMembers(projectId, {
+            type: 'SPRINT_STARTED' as const,
+            title: `Sprint "${sprint.name}" has started`,
+            resourceType: 'Sprint',
+            resourceId: sprintId,
+        }).catch(() => {});
+
         return new SprintEntity(updated);
     }
 
@@ -137,6 +149,14 @@ export class SprintsService {
                 data: { sprintId: null },
             }),
         ]);
+
+        // Notify project org members about sprint completion (fire-and-forget)
+        this.notifyProjectMembers(projectId, {
+            type: 'SPRINT_COMPLETED' as const,
+            title: `Sprint "${sprint.name}" has been completed`,
+            resourceType: 'Sprint',
+            resourceId: sprintId,
+        }).catch(() => {});
 
         return new SprintEntity(updatedSprint);
     }
@@ -192,5 +212,31 @@ export class SprintsService {
         }
 
         return project;
+    }
+
+    private async notifyProjectMembers(
+        projectId: string,
+        dto: {
+            type: 'SPRINT_STARTED' | 'SPRINT_COMPLETED';
+            title: string;
+            resourceType: string;
+            resourceId: string;
+        },
+    ) {
+        const project = await this.prisma.project.findUnique({
+            where: { id: projectId },
+            select: { organizationId: true },
+        });
+        if (!project) return;
+
+        const members = await this.prisma.membership.findMany({
+            where: { organizationId: project.organizationId },
+            select: { userId: true },
+        });
+
+        await this.notificationsService.createAndEmitMany(
+            members.map((m) => m.userId),
+            dto,
+        );
     }
 }

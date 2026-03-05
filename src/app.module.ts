@@ -27,6 +27,7 @@ import { CommentsModule } from './modules/comments/comments.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { LabelsModule } from './modules/labels/labels.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
     imports: [
@@ -74,6 +75,7 @@ import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
         AttachmentsModule,
         LabelsModule,
         AuditLogsModule,
+        NotificationsModule,
     ],
     controllers: [AppController],
     providers: [

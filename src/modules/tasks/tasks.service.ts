@@ -18,6 +18,7 @@ import {
     TaskDependencyEntity,
     TaskActivityEntity,
 } from './entities';
+import { NotificationsService } from '../notifications/notifications.service';
 
 // Shared select for user relations
 const userSelect = {
@@ -29,7 +30,10 @@ const userSelect = {
 
 @Injectable()
 export class TasksService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly notificationsService: NotificationsService,
+    ) {}
 
     // ── CRUD ────────────────────────────────────────────────────────────
 
@@ -303,6 +307,27 @@ export class TasksService {
             return updated;
         });
 
+        // Notify watchers on status change (fire-and-forget)
+        if (dto.status && dto.status !== existing.status) {
+            const watchers = await this.prisma.taskWatcher.findMany({
+                where: { taskId },
+                select: { userId: true },
+            });
+            const watcherIds = watchers
+                .map((w) => w.userId)
+                .filter((id) => id !== userId);
+
+            this.notificationsService
+                .createAndEmitMany(watcherIds, {
+                    type: 'TASK_STATUS_CHANGED' as const,
+                    title: `Task #${existing.number} status changed to ${dto.status}`,
+                    body: `"${existing.title}" was moved to ${dto.status}`,
+                    resourceType: 'Task',
+                    resourceId: taskId,
+                })
+                .catch(() => {});
+        }
+
         return new TaskEntity(task);
     }
 
@@ -414,6 +439,19 @@ export class TasksService {
 
             return updated;
         });
+
+        // Notify assignee (fire-and-forget)
+        if (dto.assignedToId && dto.assignedToId !== userId) {
+            this.notificationsService
+                .createAndEmit(dto.assignedToId, {
+                    type: 'TASK_ASSIGNED' as const,
+                    title: `You were assigned to task #${existing.number}`,
+                    body: `"${existing.title}" was assigned to you`,
+                    resourceType: 'Task',
+                    resourceId: taskId,
+                })
+                .catch(() => {});
+        }
 
         return new TaskEntity(task);
     }

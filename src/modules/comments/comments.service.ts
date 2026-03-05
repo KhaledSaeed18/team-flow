@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../../database/prisma.service';
 import { CreateCommentDto, UpdateCommentDto } from './dto';
 import { CommentEntity } from './entities';
+import { NotificationsService } from '../notifications/notifications.service';
 
 const authorSelect = {
     id: true,
@@ -17,7 +18,10 @@ const authorSelect = {
 
 @Injectable()
 export class CommentsService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly notificationsService: NotificationsService,
+    ) {}
 
     async findAll(taskId: string) {
         await this.ensureTaskExists(taskId);
@@ -64,6 +68,31 @@ export class CommentsService {
                 author: { select: authorSelect },
             },
         });
+
+        // Notify task watchers about the new comment (fire-and-forget)
+        const watchers = await this.prisma.taskWatcher.findMany({
+            where: { taskId },
+            select: { userId: true },
+        });
+        const watcherIds = watchers
+            .map((w) => w.userId)
+            .filter((id) => id !== userId);
+
+        if (watcherIds.length > 0) {
+            const task = await this.prisma.task.findUnique({
+                where: { id: taskId },
+                select: { number: true, title: true },
+            });
+            this.notificationsService
+                .createAndEmitMany(watcherIds, {
+                    type: 'TASK_COMMENTED' as const,
+                    title: `New comment on task #${task?.number ?? ''}`,
+                    body: `${dto.body.substring(0, 100)}`,
+                    resourceType: 'Task',
+                    resourceId: taskId,
+                })
+                .catch(() => {});
+        }
 
         return new CommentEntity(comment);
     }

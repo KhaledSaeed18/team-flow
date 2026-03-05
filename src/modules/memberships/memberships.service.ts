@@ -8,10 +8,14 @@ import { PrismaService } from '../../database/prisma.service';
 import { UpdateMemberRoleDto } from './dto';
 import { MembershipEntity } from './entities';
 import { MembershipRole } from '../../generated/prisma/enums';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class MembershipsService {
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly notificationsService: NotificationsService,
+    ) {}
 
     async findAll(orgId: string) {
         const memberships = await this.prisma.membership.findMany({
@@ -101,6 +105,16 @@ export class MembershipsService {
         await this.prisma.membership.delete({
             where: { id: membership.id },
         });
+
+        // Notify removed user (fire-and-forget)
+        this.notificationsService
+            .createAndEmit(targetUserId, {
+                type: 'MEMBER_REMOVED' as const,
+                title: 'You were removed from an organization',
+                resourceType: 'Organization',
+                resourceId: orgId,
+            })
+            .catch(() => {});
     }
 
     async leaveOrganization(orgId: string, userId: string) {

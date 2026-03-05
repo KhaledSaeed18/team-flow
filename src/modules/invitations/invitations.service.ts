@@ -8,12 +8,16 @@ import {
 import { PrismaService } from '../../database/prisma.service';
 import { CreateInvitationDto } from './dto';
 import { InvitationEntity } from './entities';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @Injectable()
 export class InvitationsService {
     private readonly logger = new Logger(InvitationsService.name);
 
-    constructor(private readonly prisma: PrismaService) {}
+    constructor(
+        private readonly prisma: PrismaService,
+        private readonly notificationsService: NotificationsService,
+    ) {}
 
     /**
      * Send an invitation — creates a PENDING invitation with 7-day expiry.
@@ -221,6 +225,26 @@ export class InvitationsService {
         this.logger.log(
             `Invitation accepted: user ${userId} joined org ${invitation.organization.name}`,
         );
+
+        // Notify org members about the new member (fire-and-forget)
+        const members = await this.prisma.membership.findMany({
+            where: {
+                organizationId: invitation.organizationId,
+                userId: { not: userId },
+            },
+            select: { userId: true },
+        });
+        this.notificationsService
+            .createAndEmitMany(
+                members.map((m) => m.userId),
+                {
+                    type: 'MEMBER_JOINED' as const,
+                    title: `A new member joined ${invitation.organization.name}`,
+                    resourceType: 'Organization',
+                    resourceId: invitation.organizationId,
+                },
+            )
+            .catch(() => {});
 
         return new InvitationEntity(updatedInvitation);
     }
