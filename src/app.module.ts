@@ -1,19 +1,65 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { APP_GUARD } from '@nestjs/core';
+import { JwtModule } from '@nestjs/jwt';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { appConfig } from './config/app.config';
-import { databaseConfig } from './config/database.config';
+import {
+    appConfig,
+    databaseConfig,
+    jwtConfig,
+    throttlerConfig,
+    JwtConfig,
+    ThrottlerConfig,
+} from './config';
+import { PrismaModule } from './database/prisma.module';
+import { JwtAuthGuard } from './common/guards';
+import { AuthModule } from './modules/auth/auth.module';
+import { UsersModule } from './modules/users/users.module';
 
 @Module({
     imports: [
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: '.env',
-            load: [appConfig, databaseConfig],
+            load: [appConfig, databaseConfig, jwtConfig, throttlerConfig],
         }),
+        JwtModule.registerAsync({
+            global: true,
+            inject: [ConfigService],
+            useFactory: (config: ConfigService) => {
+                const jwt = config.get<JwtConfig>('jwt')!;
+                return {
+                    secret: jwt.secret,
+                    signOptions: {
+                        expiresIn:
+                            jwt.accessExpiresIn as `${number}${'s' | 'm' | 'h' | 'd'}`,
+                    },
+                };
+            },
+        }),
+        ThrottlerModule.forRootAsync({
+            inject: [ConfigService],
+            useFactory: (config: ConfigService) => {
+                const throttler = config.get<ThrottlerConfig>('throttler')!;
+                return [
+                    {
+                        ttl: throttler.ttl * 1000,
+                        limit: throttler.limit,
+                    },
+                ];
+            },
+        }),
+        PrismaModule,
+        AuthModule,
+        UsersModule,
     ],
     controllers: [AppController],
-    providers: [AppService],
+    providers: [
+        AppService,
+        { provide: APP_GUARD, useClass: JwtAuthGuard },
+        { provide: APP_GUARD, useClass: ThrottlerGuard },
+    ],
 })
 export class AppModule {}
