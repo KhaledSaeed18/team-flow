@@ -22,6 +22,7 @@ import { MembershipsModule } from './modules/memberships/memberships.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
 import { ProjectsModule } from './modules/projects/projects.module';
 import { SprintsModule } from './modules/sprints/sprints.module';
+import { TasksModule } from './modules/tasks/tasks.module';
 
 @Module({
     imports: [
@@ -64,6 +65,7 @@ import { SprintsModule } from './modules/sprints/sprints.module';
         InvitationsModule,
         ProjectsModule,
         SprintsModule,
+        TasksModule,
     ],
     controllers: [AppController],
     providers: [
