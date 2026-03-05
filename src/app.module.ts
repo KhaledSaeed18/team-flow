@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
 import { JwtModule } from '@nestjs/jwt';
+import { ScheduleModule } from '@nestjs/schedule';
 import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -28,6 +29,8 @@ import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { LabelsModule } from './modules/labels/labels.module';
 import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 import { NotificationsModule } from './modules/notifications/notifications.module';
+import { EmailModule } from './modules/email/email.module';
+import { CronModule } from './modules/cron/cron.module';
 
 @Module({
     imports: [
@@ -62,7 +65,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
                 ];
             },
         }),
+        ScheduleModule.forRoot(),
         PrismaModule,
+        EmailModule,
         AuthModule,
         UsersModule,
         OrganizationsModule,
@@ -76,6 +81,7 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
         LabelsModule,
         AuditLogsModule,
         NotificationsModule,
+        CronModule,
     ],
     controllers: [AppController],
     providers: [
