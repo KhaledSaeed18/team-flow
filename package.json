@@ -25,7 +25,8 @@
     "prisma:db:pull": "npx prisma db pull",
     "prisma:db:push": "npx prisma db push",
     "prisma:db:seed": "npx prisma db seed",
-    "prisma:validate": "npx prisma validate"
+    "prisma:validate": "npx prisma validate",
+    "test:resend": "ts-node scripts/test-resend.ts"
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -44,6 +45,7 @@
     "helmet": "^8.1.0",
     "pg": "^8.19.0",
     "reflect-metadata": "^0.2.2",
+    "resend": "^6.9.3",
     "rxjs": "^7.8.1",
     "uploadthing": "^7.7.4"
   },

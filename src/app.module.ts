@@ -10,6 +10,7 @@ import {
     appConfig,
     databaseConfig,
     jwtConfig,
+    resendConfig,
     throttlerConfig,
     JwtConfig,
     ThrottlerConfig,
@@ -37,7 +38,13 @@ import { CronModule } from './modules/cron/cron.module';
         ConfigModule.forRoot({
             isGlobal: true,
             envFilePath: '.env',
-            load: [appConfig, databaseConfig, jwtConfig, throttlerConfig],
+            load: [
+                appConfig,
+                databaseConfig,
+                jwtConfig,
+                resendConfig,
+                throttlerConfig,
+            ],
         }),
         JwtModule.registerAsync({
             global: true,
