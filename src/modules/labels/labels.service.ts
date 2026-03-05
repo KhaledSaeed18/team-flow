@@ -2,6 +2,7 @@ import {
     Injectable,
     NotFoundException,
     ConflictException,
+    BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import { CreateLabelDto, UpdateLabelDto } from './dto';
@@ -127,8 +128,15 @@ export class LabelsService {
     // ── TASK LABELING ───────────────────────────────────────────────────
 
     async tagTask(taskId: string, labelId: string) {
-        await this.ensureTaskExists(taskId);
-        await this.findLabelOrFail(labelId);
+        const task = await this.ensureTaskExists(taskId);
+        const label = await this.findLabelOrFail(labelId);
+
+        // Ensure the label belongs to the same organization as the task
+        if (label.organizationId !== task.organizationId) {
+            throw new BadRequestException(
+                'Label does not belong to the same organization as the task',
+            );
+        }
 
         const existing = await this.prisma.taskLabel.findUnique({
             where: { taskId_labelId: { taskId, labelId } },
@@ -190,6 +198,7 @@ export class LabelsService {
     private async ensureTaskExists(taskId: string) {
         const task = await this.prisma.task.findFirst({
             where: { id: taskId, deletedAt: null },
+            select: { id: true, organizationId: true },
         });
         if (!task) throw new NotFoundException('Task not found');
         return task;

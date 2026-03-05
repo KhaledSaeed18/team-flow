@@ -46,8 +46,7 @@ export class OrgMemberGuard implements CanActivate {
     }
 
     private async resolveOrgId(request: any): Promise<string | undefined> {
-        const orgId =
-            (request.params?.orgId as string) || (request.params?.id as string);
+        const orgId = request.params?.orgId as string | undefined;
         if (orgId) return orgId;
 
         // Resolve org via project for routes like /projects/:projectId/*
@@ -58,6 +57,11 @@ export class OrgMemberGuard implements CanActivate {
                 select: { organizationId: true },
             });
             if (!project) throw new NotFoundException('Project not found');
+            const org = await this.prisma.organization.findFirst({
+                where: { id: project.organizationId, deletedAt: null },
+                select: { id: true },
+            });
+            if (!org) throw new NotFoundException('Organization not found');
             request['projectOrgId'] = project.organizationId;
             return project.organizationId;
         }
@@ -70,9 +74,33 @@ export class OrgMemberGuard implements CanActivate {
                 select: { organizationId: true, projectId: true },
             });
             if (!task) throw new NotFoundException('Task not found');
+            const org = await this.prisma.organization.findFirst({
+                where: { id: task.organizationId, deletedAt: null },
+                select: { id: true },
+            });
+            if (!org) throw new NotFoundException('Organization not found');
             request['taskOrgId'] = task.organizationId;
             request['taskProjectId'] = task.projectId;
             return task.organizationId;
+        }
+
+        // Generic :id param — could be an org ID or a label ID
+        const id = request.params?.id as string | undefined;
+        if (id) {
+            const org = await this.prisma.organization.findFirst({
+                where: { id, deletedAt: null },
+                select: { id: true },
+            });
+            if (org) return id;
+
+            const label = await this.prisma.label.findUnique({
+                where: { id },
+                select: { organizationId: true },
+            });
+            if (label) {
+                request['labelOrgId'] = label.organizationId;
+                return label.organizationId;
+            }
         }
 
         return undefined;

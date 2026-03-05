@@ -150,10 +150,16 @@ export class SprintsService {
             );
         }
 
-        // Tasks in this sprint get sprintId = null (SetNull in schema)
-        await this.prisma.sprint.delete({
-            where: { id: sprintId },
-        });
+        // Explicitly move tasks to backlog before deletion
+        await this.prisma.$transaction([
+            this.prisma.task.updateMany({
+                where: { sprintId, deletedAt: null },
+                data: { sprintId: null },
+            }),
+            this.prisma.sprint.delete({
+                where: { id: sprintId },
+            }),
+        ]);
     }
 
     // ── Helpers ─────────────────────────────────────────────────────────

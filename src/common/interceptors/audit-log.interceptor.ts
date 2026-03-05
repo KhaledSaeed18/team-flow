@@ -149,6 +149,21 @@ export class AuditLogInterceptor implements NestInterceptor {
         return request.ip ?? null;
     }
 
+    private static readonly SENSITIVE_FIELDS = new Set([
+        'password',
+        'token',
+        'refreshToken',
+    ]);
+
+    private stripSensitiveFields(data: any): any {
+        if (!data || typeof data !== 'object') return data;
+        const cleaned = { ...data };
+        for (const key of AuditLogInterceptor.SENSITIVE_FIELDS) {
+            if (key in cleaned) cleaned[key] = '[REDACTED]';
+        }
+        return cleaned;
+    }
+
     private async fetchBefore(entity: string, entityId: string): Promise<any> {
         try {
             const modelName = entity.charAt(0).toLowerCase() + entity.slice(1);
@@ -158,7 +173,7 @@ export class AuditLogInterceptor implements NestInterceptor {
             const record = await delegate.findUnique({
                 where: { id: entityId },
             });
-            return record ?? undefined;
+            return record ? this.stripSensitiveFields(record) : undefined;
         } catch {
             return undefined;
         }
@@ -168,8 +183,9 @@ export class AuditLogInterceptor implements NestInterceptor {
         if (!responseData) return undefined;
         // If response is wrapped by TransformInterceptor: { data, meta }
         // At this point the response is still raw (before TransformInterceptor wraps it)
-        if (responseData?.id) return responseData;
-        if (responseData?.data?.id) return responseData.data;
+        if (responseData?.id) return this.stripSensitiveFields(responseData);
+        if (responseData?.data?.id)
+            return this.stripSensitiveFields(responseData.data);
         return undefined;
     }
 

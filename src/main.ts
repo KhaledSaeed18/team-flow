@@ -71,7 +71,9 @@ async function bootstrap() {
         SwaggerModule.setup('api/docs', app, document, {
             swaggerOptions: { persistAuthorization: true },
         });
-        logger.log('Swagger docs available at /api/docs');
+        logger.log(`==================================`);
+        logger.log(`Swagger docs: http://localhost:${appConfig.port}/api/docs`);
+        logger.log(`==================================`);
     }
 
     await app.listen(appConfig.port);

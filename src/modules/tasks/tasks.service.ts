@@ -54,15 +54,15 @@ export class TasksService {
             );
         }
 
-        // Auto-increment task number within the project
-        const lastTask = await this.prisma.task.findFirst({
-            where: { projectId },
-            orderBy: { number: 'desc' },
-            select: { number: true },
-        });
-        const nextNumber = (lastTask?.number ?? 0) + 1;
-
         const task = await this.prisma.$transaction(async (tx) => {
+            // Auto-increment task number within the project (inside tx to reduce race window)
+            const lastTask = await tx.task.findFirst({
+                where: { projectId },
+                orderBy: { number: 'desc' },
+                select: { number: true },
+            });
+            const nextNumber = (lastTask?.number ?? 0) + 1;
+
             const created = await tx.task.create({
                 data: {
                     number: nextNumber,
@@ -692,10 +692,17 @@ export class TasksService {
         dependentTaskId: string,
         dependencyTaskId: string,
     ) {
+        const maxDepth = 50;
         const visited = new Set<string>();
         const queue = [dependencyTaskId];
 
         while (queue.length > 0) {
+            if (visited.size >= maxDepth) {
+                throw new BadRequestException(
+                    'Dependency chain is too deep to validate',
+                );
+            }
+
             const current = queue.shift()!;
             if (current === dependentTaskId) {
                 throw new BadRequestException(
