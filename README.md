@@ -1,5 +1,7 @@
 <p align="center">
-  <img src="assets/images/team-flow.png" height="120" alt="TeamFlow Logo" />
+  <img src="assets/images/teamflow-logo-icon.png" height="120" alt="TeamFlow Logo Icon" />
+  &nbsp;&nbsp;&nbsp;&nbsp;
+  <img src="assets/images/teamflow-logo.png" height="120" alt="TeamFlow Logo" />
 </p>
 
 # TeamFlow
