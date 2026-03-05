@@ -20,6 +20,8 @@ import { UsersModule } from './modules/users/users.module';
 import { OrganizationsModule } from './modules/organizations/organizations.module';
 import { MembershipsModule } from './modules/memberships/memberships.module';
 import { InvitationsModule } from './modules/invitations/invitations.module';
+import { ProjectsModule } from './modules/projects/projects.module';
+import { SprintsModule } from './modules/sprints/sprints.module';
 
 @Module({
     imports: [
@@ -60,6 +62,8 @@ import { InvitationsModule } from './modules/invitations/invitations.module';
         OrganizationsModule,
         MembershipsModule,
         InvitationsModule,
+        ProjectsModule,
+        SprintsModule,
     ],
     controllers: [AppController],
     providers: [

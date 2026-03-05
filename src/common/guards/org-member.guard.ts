@@ -3,6 +3,7 @@ import {
     CanActivate,
     ExecutionContext,
     ForbiddenException,
+    NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service';
 import type { JwtPayload } from '../interfaces/jwt-payload.interface';
@@ -19,8 +20,7 @@ export class OrgMemberGuard implements CanActivate {
         // SUPER_ADMIN bypasses membership check
         if (user.globalRole === 'SUPER_ADMIN') return true;
 
-        const orgId =
-            (request.params?.orgId as string) || (request.params?.id as string);
+        const orgId = await this.resolveOrgId(request);
         if (!orgId) {
             throw new ForbiddenException('Organization context required');
         }
@@ -43,5 +43,25 @@ export class OrgMemberGuard implements CanActivate {
         request['membership'] = membership;
 
         return true;
+    }
+
+    private async resolveOrgId(request: any): Promise<string | undefined> {
+        const orgId =
+            (request.params?.orgId as string) || (request.params?.id as string);
+        if (orgId) return orgId;
+
+        // Resolve org via project for routes like /projects/:projectId/*
+        const projectId = request.params?.projectId as string | undefined;
+        if (projectId) {
+            const project = await this.prisma.project.findFirst({
+                where: { id: projectId, deletedAt: null },
+                select: { organizationId: true },
+            });
+            if (!project) throw new NotFoundException('Project not found');
+            request['projectOrgId'] = project.organizationId;
+            return project.organizationId;
+        }
+
+        return undefined;
     }
 }
