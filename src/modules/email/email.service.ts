@@ -46,38 +46,70 @@ export class EmailService {
         );
     }
 
+    private readonly logoUrl =
+        'https://0dmx1q3s0v.ufs.sh/f/FhSkiVUnN75kwe9Bf1c3QUqFZpGr2Xd9WySPfb4NCtVKmcJv';
+
+    private wrapInLayout(body: string): string {
+        return `
+            <div style="font-family: 'Segoe UI', Arial, sans-serif; max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; border: 1px solid #e5e7eb;">
+                <div style="background: linear-gradient(135deg, #4F46E5 0%, #6366F1 100%); padding: 32px 24px; text-align: center;">
+                    <img src="${this.logoUrl}" alt="TeamFlow" width="48" height="48" style="border-radius: 10px; margin-bottom: 12px;" />
+                    <h1 style="color: #ffffff; margin: 0; font-size: 22px; font-weight: 600;">TeamFlow</h1>
+                </div>
+                <div style="padding: 32px 24px;">
+                    ${body}
+                </div>
+                <div style="padding: 16px 24px; background: #f9fafb; text-align: center; border-top: 1px solid #e5e7eb;">
+                    <p style="color: #9ca3af; font-size: 12px; margin: 0;">&copy; ${new Date().getFullYear()} TeamFlow. All rights reserved.</p>
+                </div>
+            </div>`;
+    }
+
     private buildEmail<T extends EmailTemplate>(
         template: T,
         payload: EmailPayloadMap[T],
     ): { subject: string; html: string } {
+        let result: { subject: string; html: string };
+
         switch (template) {
             case EmailTemplate.INVITATION:
-                return this.buildInvitationEmail(
+                result = this.buildInvitationEmail(
                     payload as EmailPayloadMap[EmailTemplate.INVITATION],
                 );
+                break;
             case EmailTemplate.WELCOME:
-                return this.buildWelcomeEmail(
+                result = this.buildWelcomeEmail(
                     payload as EmailPayloadMap[EmailTemplate.WELCOME],
                 );
+                break;
             case EmailTemplate.PASSWORD_RESET:
-                return this.buildPasswordResetEmail(
+                result = this.buildPasswordResetEmail(
                     payload as EmailPayloadMap[EmailTemplate.PASSWORD_RESET],
                 );
+                break;
             case EmailTemplate.TASK_ASSIGNED:
-                return this.buildTaskAssignedEmail(
+                result = this.buildTaskAssignedEmail(
                     payload as EmailPayloadMap[EmailTemplate.TASK_ASSIGNED],
                 );
+                break;
             case EmailTemplate.TASK_DUE_SOON:
-                return this.buildTaskDueSoonEmail(
+                result = this.buildTaskDueSoonEmail(
                     payload as EmailPayloadMap[EmailTemplate.TASK_DUE_SOON],
                 );
+                break;
             case EmailTemplate.TASK_OVERDUE:
-                return this.buildTaskOverdueEmail(
+                result = this.buildTaskOverdueEmail(
                     payload as EmailPayloadMap[EmailTemplate.TASK_OVERDUE],
                 );
+                break;
             default:
                 throw new Error(`Unknown email template: ${String(template)}`);
         }
+
+        return {
+            subject: result.subject,
+            html: this.wrapInLayout(result.html),
+        };
     }
 
     private buildInvitationEmail(
