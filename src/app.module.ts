@@ -17,6 +17,9 @@ import { PrismaModule } from './database/prisma.module';
 import { JwtAuthGuard } from './common/guards';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
+import { OrganizationsModule } from './modules/organizations/organizations.module';
+import { MembershipsModule } from './modules/memberships/memberships.module';
+import { InvitationsModule } from './modules/invitations/invitations.module';
 
 @Module({
     imports: [
@@ -54,6 +57,9 @@ import { UsersModule } from './modules/users/users.module';
         PrismaModule,
         AuthModule,
         UsersModule,
+        OrganizationsModule,
+        MembershipsModule,
+        InvitationsModule,
     ],
     controllers: [AppController],
     providers: [
