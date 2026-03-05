@@ -25,7 +25,7 @@ import {
 import { MembershipsService } from './memberships.service';
 import { UpdateMemberRoleDto } from './dto';
 import { MembershipEntity } from './entities';
-import { CurrentUser, Roles } from '../../common/decorators';
+import { CurrentUser, Roles, AuditLog } from '../../common/decorators';
 import { RolesGuard, OrgMemberGuard } from '../../common/guards';
 import type { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 
@@ -52,6 +52,7 @@ export class MembershipsController {
     @Patch(':userId')
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Membership', idParam: 'userId' })
     @ApiOperation({ summary: "Change a member's role" })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
     @ApiParam({ name: 'userId', description: 'Target user UUID' })
@@ -82,6 +83,7 @@ export class MembershipsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Membership', idParam: 'userId', action: 'DELETE' })
     @ApiOperation({ summary: 'Remove a member from the organization' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
     @ApiParam({ name: 'userId', description: 'Target user UUID' })
@@ -100,6 +102,7 @@ export class MembershipsController {
     @Delete('me')
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(OrgMemberGuard)
+    @AuditLog({ entity: 'Membership', action: 'LEAVE' })
     @ApiOperation({ summary: 'Leave the organization' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
     @ApiNoContentResponse({ description: 'Left the organization' })

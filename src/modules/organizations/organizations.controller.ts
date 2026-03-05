@@ -31,7 +31,7 @@ import {
     TransferOwnershipDto,
 } from './dto';
 import { OrganizationEntity } from './entities';
-import { CurrentUser, Roles } from '../../common/decorators';
+import { CurrentUser, Roles, AuditLog } from '../../common/decorators';
 import { RolesGuard, OrgMemberGuard } from '../../common/guards';
 import type { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 
@@ -42,6 +42,7 @@ export class OrganizationsController {
     constructor(private readonly organizationsService: OrganizationsService) {}
 
     @Post()
+    @AuditLog({ entity: 'Organization' })
     @ApiOperation({ summary: 'Create a new organization' })
     @ApiBody({ type: CreateOrganizationDto })
     @ApiCreatedResponse({
@@ -87,6 +88,7 @@ export class OrganizationsController {
     @Patch(':id')
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Organization' })
     @ApiOperation({ summary: 'Update organization' })
     @ApiParam({ name: 'id', description: 'Organization UUID' })
     @ApiBody({ type: UpdateOrganizationDto })
@@ -106,6 +108,7 @@ export class OrganizationsController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(RolesGuard)
     @Roles('OWNER' as any)
+    @AuditLog({ entity: 'Organization', action: 'DELETE' })
     @ApiOperation({ summary: 'Soft delete organization (owner only)' })
     @ApiParam({ name: 'id', description: 'Organization UUID' })
     @ApiOkResponse({
@@ -122,6 +125,7 @@ export class OrganizationsController {
     @Patch(':id/transfer')
     @UseGuards(RolesGuard)
     @Roles('OWNER' as any)
+    @AuditLog({ entity: 'Organization', action: 'UPDATE' })
     @ApiOperation({ summary: 'Transfer organization ownership' })
     @ApiParam({ name: 'id', description: 'Organization UUID' })
     @ApiBody({ type: TransferOwnershipDto })

@@ -28,7 +28,7 @@ import {
 import { LabelsService } from './labels.service';
 import { CreateLabelDto, UpdateLabelDto } from './dto';
 import { LabelEntity } from './entities';
-import { CurrentUser, Roles } from '../../common/decorators';
+import { CurrentUser, Roles, AuditLog } from '../../common/decorators';
 import { RolesGuard, OrgMemberGuard } from '../../common/guards';
 import type { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 
@@ -54,6 +54,7 @@ export class OrgLabelsController {
     @Post()
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Label' })
     @ApiOperation({ summary: 'Create an org-wide label (Admin+)' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
     @ApiBody({ type: CreateLabelDto })
@@ -94,6 +95,7 @@ export class ProjectLabelsController {
     @Post()
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Label' })
     @ApiOperation({ summary: 'Create a project-scoped label (Admin+)' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiBody({ type: CreateLabelDto })
@@ -123,6 +125,7 @@ export class LabelsController {
     @Patch(':id')
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Label' })
     @ApiOperation({ summary: 'Update a label (Admin+)' })
     @ApiParam({ name: 'id', description: 'Label UUID' })
     @ApiBody({ type: UpdateLabelDto })
@@ -140,6 +143,7 @@ export class LabelsController {
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
     @HttpCode(HttpStatus.NO_CONTENT)
+    @AuditLog({ entity: 'Label', action: 'DELETE' })
     @ApiOperation({ summary: 'Delete a label (Admin+)' })
     @ApiParam({ name: 'id', description: 'Label UUID' })
     @ApiNoContentResponse({ description: 'Label deleted' })

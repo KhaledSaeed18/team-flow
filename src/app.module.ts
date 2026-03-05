@@ -26,6 +26,7 @@ import { TasksModule } from './modules/tasks/tasks.module';
 import { CommentsModule } from './modules/comments/comments.module';
 import { AttachmentsModule } from './modules/attachments/attachments.module';
 import { LabelsModule } from './modules/labels/labels.module';
+import { AuditLogsModule } from './modules/audit-logs/audit-logs.module';
 
 @Module({
     imports: [
@@ -72,6 +73,7 @@ import { LabelsModule } from './modules/labels/labels.module';
         CommentsModule,
         AttachmentsModule,
         LabelsModule,
+        AuditLogsModule,
     ],
     controllers: [AppController],
     providers: [

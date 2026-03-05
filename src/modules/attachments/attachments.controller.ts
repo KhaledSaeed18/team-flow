@@ -26,7 +26,7 @@ import {
 import { AttachmentsService } from './attachments.service';
 import { SaveAttachmentDto } from './dto';
 import { AttachmentEntity } from './entities';
-import { CurrentUser } from '../../common/decorators';
+import { CurrentUser, AuditLog } from '../../common/decorators';
 import { OrgMemberGuard } from '../../common/guards';
 import type { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 
@@ -50,6 +50,7 @@ export class AttachmentsController {
 
     @Post()
     @UseGuards(OrgMemberGuard)
+    @AuditLog({ entity: 'Attachment' })
     @ApiOperation({
         summary: 'Save attachment metadata after UploadThing upload',
     })
@@ -73,6 +74,7 @@ export class AttachmentsController {
     @Delete(':id')
     @UseGuards(OrgMemberGuard)
     @HttpCode(HttpStatus.NO_CONTENT)
+    @AuditLog({ entity: 'Attachment', action: 'DELETE' })
     @ApiOperation({ summary: 'Remove an attachment (uploader or ADMIN+)' })
     @ApiParam({ name: 'taskId', description: 'Task UUID' })
     @ApiParam({ name: 'id', description: 'Attachment UUID' })

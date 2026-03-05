@@ -40,7 +40,7 @@ import {
     TaskDependencyEntity,
     TaskActivityEntity,
 } from './entities';
-import { CurrentUser, Roles } from '../../common/decorators';
+import { CurrentUser, Roles, AuditLog } from '../../common/decorators';
 import { RolesGuard, OrgMemberGuard } from '../../common/guards';
 import type { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 
@@ -54,6 +54,7 @@ export class TasksController {
 
     @Post()
     @UseGuards(OrgMemberGuard)
+    @AuditLog({ entity: 'Task' })
     @ApiOperation({ summary: 'Create a new task' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiBody({ type: CreateTaskDto })
@@ -115,6 +116,7 @@ export class TasksController {
 
     @Patch(':taskId')
     @UseGuards(OrgMemberGuard)
+    @AuditLog({ entity: 'Task', idParam: 'taskId' })
     @ApiOperation({ summary: 'Update a task' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiParam({ name: 'taskId', description: 'Task UUID' })
@@ -136,6 +138,7 @@ export class TasksController {
     @Delete(':taskId')
     @UseGuards(OrgMemberGuard)
     @HttpCode(HttpStatus.NO_CONTENT)
+    @AuditLog({ entity: 'Task', idParam: 'taskId', action: 'DELETE' })
     @ApiOperation({ summary: 'Soft-delete a task' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiParam({ name: 'taskId', description: 'Task UUID' })
@@ -154,6 +157,7 @@ export class TasksController {
     @Patch(':taskId/restore')
     @UseGuards(RolesGuard)
     @Roles('ADMIN')
+    @AuditLog({ entity: 'Task', idParam: 'taskId', action: 'RESTORE' })
     @ApiOperation({ summary: 'Restore a soft-deleted task (Admin+)' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiParam({ name: 'taskId', description: 'Task UUID' })
@@ -174,6 +178,7 @@ export class TasksController {
 
     @Patch(':taskId/assign')
     @UseGuards(OrgMemberGuard)
+    @AuditLog({ entity: 'Task', idParam: 'taskId', action: 'ASSIGN' })
     @ApiOperation({ summary: 'Assign or unassign a task' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiParam({ name: 'taskId', description: 'Task UUID' })
@@ -196,6 +201,7 @@ export class TasksController {
 
     @Patch(':taskId/move')
     @UseGuards(OrgMemberGuard)
+    @AuditLog({ entity: 'Task', idParam: 'taskId', action: 'UPDATE' })
     @ApiOperation({ summary: 'Move task to sprint or backlog' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiParam({ name: 'taskId', description: 'Task UUID' })

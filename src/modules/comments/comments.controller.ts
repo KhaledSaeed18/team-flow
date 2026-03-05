@@ -28,7 +28,7 @@ import {
 import { CommentsService } from './comments.service';
 import { CreateCommentDto, UpdateCommentDto } from './dto';
 import { CommentEntity } from './entities';
-import { CurrentUser } from '../../common/decorators';
+import { CurrentUser, AuditLog } from '../../common/decorators';
 import { OrgMemberGuard } from '../../common/guards';
 import type { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 
@@ -52,6 +52,7 @@ export class CommentsController {
 
     @Post()
     @UseGuards(OrgMemberGuard)
+    @AuditLog({ entity: 'Comment' })
     @ApiOperation({ summary: 'Add a comment to a task' })
     @ApiParam({ name: 'taskId', description: 'Task UUID' })
     @ApiBody({ type: CreateCommentDto })
@@ -72,6 +73,7 @@ export class CommentsController {
 
     @Patch(':id')
     @UseGuards(OrgMemberGuard)
+    @AuditLog({ entity: 'Comment' })
     @ApiOperation({ summary: 'Edit a comment (author only)' })
     @ApiParam({ name: 'taskId', description: 'Task UUID' })
     @ApiParam({ name: 'id', description: 'Comment UUID' })
@@ -93,6 +95,7 @@ export class CommentsController {
     @Delete(':id')
     @UseGuards(OrgMemberGuard)
     @HttpCode(HttpStatus.NO_CONTENT)
+    @AuditLog({ entity: 'Comment', action: 'DELETE' })
     @ApiOperation({ summary: 'Soft-delete a comment (author or ADMIN+)' })
     @ApiParam({ name: 'taskId', description: 'Task UUID' })
     @ApiParam({ name: 'id', description: 'Comment UUID' })

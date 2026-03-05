@@ -26,7 +26,7 @@ import {
 import { InvitationsService } from './invitations.service';
 import { CreateInvitationDto } from './dto';
 import { InvitationEntity } from './entities';
-import { CurrentUser, Public, Roles } from '../../common/decorators';
+import { CurrentUser, Public, Roles, AuditLog } from '../../common/decorators';
 import { RolesGuard } from '../../common/guards';
 import type { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 
@@ -40,6 +40,7 @@ export class InvitationsController {
     @Post('organizations/:orgId/invitations')
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Invitation', action: 'INVITE' })
     @ApiBearerAuth('access-token')
     @ApiOperation({ summary: 'Send an invitation to join the organization' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
@@ -84,6 +85,7 @@ export class InvitationsController {
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
     @HttpCode(HttpStatus.OK)
+    @AuditLog({ entity: 'Invitation', action: 'DELETE' })
     @ApiBearerAuth('access-token')
     @ApiOperation({ summary: 'Revoke a pending invitation' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
@@ -120,6 +122,7 @@ export class InvitationsController {
     }
 
     @Post('invitations/:token/accept')
+    @AuditLog({ entity: 'Invitation', action: 'JOIN', idParam: 'token' })
     @ApiBearerAuth('access-token')
     @ApiOperation({
         summary: 'Accept an invitation',

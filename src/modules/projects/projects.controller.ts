@@ -27,7 +27,7 @@ import {
 import { ProjectsService } from './projects.service';
 import { CreateProjectDto, UpdateProjectDto } from './dto';
 import { ProjectEntity } from './entities';
-import { CurrentUser, Roles } from '../../common/decorators';
+import { CurrentUser, Roles, AuditLog } from '../../common/decorators';
 import { RolesGuard, OrgMemberGuard } from '../../common/guards';
 import type { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 
@@ -54,6 +54,7 @@ export class ProjectsController {
     @Post()
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Project' })
     @ApiOperation({ summary: 'Create a new project' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
     @ApiBody({ type: CreateProjectDto })
@@ -94,6 +95,7 @@ export class ProjectsController {
     @Patch(':id')
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Project' })
     @ApiOperation({ summary: 'Update project' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
     @ApiParam({ name: 'id', description: 'Project UUID' })
@@ -118,6 +120,7 @@ export class ProjectsController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Project', action: 'ARCHIVE' })
     @ApiOperation({ summary: 'Archive project (makes it read-only)' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
     @ApiParam({ name: 'id', description: 'Project UUID' })
@@ -137,6 +140,7 @@ export class ProjectsController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Project', action: 'DELETE' })
     @ApiOperation({ summary: 'Soft delete project' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
     @ApiParam({ name: 'id', description: 'Project UUID' })
@@ -155,6 +159,7 @@ export class ProjectsController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Project', action: 'RESTORE' })
     @ApiOperation({ summary: 'Restore a soft-deleted project' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
     @ApiParam({ name: 'id', description: 'Project UUID' })

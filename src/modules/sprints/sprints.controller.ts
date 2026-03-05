@@ -27,7 +27,7 @@ import {
 import { SprintsService } from './sprints.service';
 import { CreateSprintDto, UpdateSprintDto } from './dto';
 import { SprintEntity } from './entities';
-import { Roles } from '../../common/decorators';
+import { Roles, AuditLog } from '../../common/decorators';
 import { RolesGuard, OrgMemberGuard } from '../../common/guards';
 
 @ApiTags('Sprints')
@@ -54,6 +54,7 @@ export class SprintsController {
     @Post()
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Sprint' })
     @ApiOperation({ summary: 'Create a new sprint' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiBody({ type: CreateSprintDto })
@@ -96,6 +97,7 @@ export class SprintsController {
     @Patch(':id')
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Sprint' })
     @ApiOperation({ summary: 'Update sprint details' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
     @ApiParam({ name: 'id', description: 'Sprint UUID' })
@@ -120,6 +122,7 @@ export class SprintsController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Sprint', action: 'UPDATE' })
     @ApiOperation({
         summary: 'Start a sprint (PLANNED → ACTIVE)',
         description:
@@ -149,6 +152,7 @@ export class SprintsController {
     @HttpCode(HttpStatus.OK)
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Sprint', action: 'UPDATE' })
     @ApiOperation({
         summary: 'Complete a sprint (ACTIVE → COMPLETED)',
         description:
@@ -177,6 +181,7 @@ export class SprintsController {
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(RolesGuard)
     @Roles('ADMIN' as any)
+    @AuditLog({ entity: 'Sprint', action: 'DELETE' })
     @ApiOperation({
         summary: 'Delete a sprint',
         description:
