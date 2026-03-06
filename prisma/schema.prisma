@@ -95,16 +95,23 @@ enum CommentType {
   SYSTEM
 }
 
+// OTP PURPOSE
+enum OtpPurpose {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+}
+
 // USER
 model User {
-  id         String     @id @default(uuid())
-  email      String     @unique
-  password   String
-  name       String
-  avatarUrl  String?
-  globalRole GlobalRole @default(USER)
-  isActive   Boolean    @default(true)
-  lastSeenAt DateTime?
+  id            String     @id @default(uuid())
+  email         String     @unique
+  password      String
+  name          String
+  avatarUrl     String?
+  globalRole    GlobalRole @default(USER)
+  isActive      Boolean    @default(true)
+  emailVerified Boolean    @default(false)
+  lastSeenAt    DateTime?
 
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
@@ -125,11 +132,30 @@ model User {
   createdLabels      Label[]        @relation("LabelCreator")
   attachments        Attachment[]
   refreshTokens      RefreshToken[]
+  otpCodes           OtpCode[]
 
   @@index([createdAt])
   @@index([isActive])
   @@index([globalRole])
   @@map("users")
+}
+
+// OTP CODE (For email verification and password reset)
+model OtpCode {
+  id        String     @id @default(uuid())
+  userId    String
+  codeHash  String // bcrypt-hashed OTP
+  purpose   OtpPurpose
+  expiresAt DateTime
+  usedAt    DateTime? // null = not yet used
+  attempts  Int        @default(0) // track failed verification attempts
+  createdAt DateTime   @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, purpose])
+  @@index([expiresAt])
+  @@map("otp_codes")
 }
 
 // REFRESH TOKEN (For stateless JWT authentication with refresh tokens)

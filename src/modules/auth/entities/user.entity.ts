@@ -24,6 +24,12 @@ export class UserEntity {
     @ApiProperty({ example: true })
     isActive: boolean;
 
+    @ApiProperty({
+        example: false,
+        description: 'Whether the user email has been verified',
+    })
+    emailVerified: boolean;
+
     @ApiProperty({ example: '2026-03-05T12:00:00.000Z', nullable: true })
     lastSeenAt: Date | null;
 

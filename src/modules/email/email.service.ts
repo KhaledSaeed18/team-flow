@@ -102,6 +102,16 @@ export class EmailService {
                     payload as EmailPayloadMap[EmailTemplate.TASK_OVERDUE],
                 );
                 break;
+            case EmailTemplate.EMAIL_VERIFICATION:
+                result = this.buildEmailVerificationEmail(
+                    payload as EmailPayloadMap[EmailTemplate.EMAIL_VERIFICATION],
+                );
+                break;
+            case EmailTemplate.PASSWORD_RESET_OTP:
+                result = this.buildPasswordResetOtpEmail(
+                    payload as EmailPayloadMap[EmailTemplate.PASSWORD_RESET_OTP],
+                );
+                break;
             default:
                 throw new Error(`Unknown email template: ${String(template)}`);
         }
@@ -191,6 +201,40 @@ export class EmailService {
                 <p>Hi ${payload.name},</p>
                 <p>Your task <strong>${payload.projectKey}-${payload.taskNumber} ${payload.taskTitle}</strong> was due on <strong>${payload.dueDate}</strong> and is now overdue.</p>
                 <p>Please complete it as soon as possible.</p>
+            `,
+        };
+    }
+
+    private buildEmailVerificationEmail(
+        payload: EmailPayloadMap[EmailTemplate.EMAIL_VERIFICATION],
+    ) {
+        return {
+            subject: 'Verify your email address',
+            html: `
+                <h2>Email Verification</h2>
+                <p>Hi ${payload.name},</p>
+                <p>Thank you for signing up for TeamFlow. Use the following code to verify your email address:</p>
+                <div style="text-align: center; margin: 24px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; background: #f4f4f5; padding: 16px 32px; border-radius: 8px; display: inline-block; font-family: monospace;">${payload.code}</span>
+                </div>
+                <p style="color: #6b7280; font-size: 14px;">This code expires in ${payload.expiresInMinutes} minutes. If you didn't create an account, you can safely ignore this email.</p>
+            `,
+        };
+    }
+
+    private buildPasswordResetOtpEmail(
+        payload: EmailPayloadMap[EmailTemplate.PASSWORD_RESET_OTP],
+    ) {
+        return {
+            subject: 'Reset your password',
+            html: `
+                <h2>Password Reset</h2>
+                <p>Hi ${payload.name},</p>
+                <p>We received a request to reset your password. Use the following code to proceed:</p>
+                <div style="text-align: center; margin: 24px 0;">
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; background: #f4f4f5; padding: 16px 32px; border-radius: 8px; display: inline-block; font-family: monospace;">${payload.code}</span>
+                </div>
+                <p style="color: #6b7280; font-size: 14px;">This code expires in ${payload.expiresInMinutes} minutes. If you didn't request a password reset, you can safely ignore this email.</p>
             `,
         };
     }

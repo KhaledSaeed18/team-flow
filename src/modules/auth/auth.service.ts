@@ -3,6 +3,7 @@ import {
     ConflictException,
     UnauthorizedException,
     ForbiddenException,
+    BadRequestException,
     Logger,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -10,14 +11,28 @@ import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import * as crypto from 'crypto';
 import { PrismaService } from '../../database/prisma.service';
+import { EmailService } from '../email/email.service';
+import { EmailTemplate } from '../email/email.types';
 import { JwtPayload } from '../../common/interfaces/jwt-payload.interface';
 import { JwtConfig } from '../../config';
+import {
+    generateSecureOtp,
+    hashOtp,
+    verifyOtp,
+    getOtpExpiryDate,
+    OTP_EXPIRY_MINUTES,
+    OTP_MAX_ATTEMPTS,
+} from '../../common/utils/otp.util';
 import {
     RegisterDto,
     LoginDto,
     RefreshTokenDto,
     UpdateProfileDto,
     ChangePasswordDto,
+    VerifyEmailDto,
+    ResendOtpDto,
+    ForgotPasswordDto,
+    ResetPasswordDto,
 } from './dto';
 import { UserEntity } from './entities';
 
@@ -30,6 +45,7 @@ export class AuthService {
         private readonly prisma: PrismaService,
         private readonly jwtService: JwtService,
         private readonly configService: ConfigService,
+        private readonly emailService: EmailService,
     ) {
         this.jwtConfig = this.configService.get<JwtConfig>('jwt')!;
     }
@@ -52,18 +68,19 @@ export class AuthService {
             },
         });
 
-        const tokens = await this.generateTokens(
+        // Generate and send email verification OTP
+        await this.createAndSendOtp(
             user.id,
             user.email,
-            user.globalRole,
+            user.name,
+            'EMAIL_VERIFICATION',
         );
-        await this.storeRefreshToken(user.id, tokens.refreshToken);
 
         this.logger.log(`User registered: ${user.email}`);
 
         return {
-            accessToken: tokens.accessToken,
-            refreshToken: tokens.refreshToken,
+            message:
+                'Registration successful. Please check your email for the verification code.',
             user: new UserEntity(user),
         };
     }
@@ -80,6 +97,11 @@ export class AuthService {
         }
         if (user.deletedAt) {
             throw new UnauthorizedException('Invalid credentials');
+        }
+        if (!user.emailVerified) {
+            throw new ForbiddenException(
+                'Email not verified. Please verify your email before logging in.',
+            );
         }
 
         const passwordValid = await bcrypt.compare(dto.password, user.password);
@@ -209,6 +231,125 @@ export class AuthService {
         });
     }
 
+    // ─── Email Verification ────────────────────────────────────────────
+
+    async verifyEmail(dto: VerifyEmailDto) {
+        const user = await this.prisma.user.findUnique({
+            where: { email: dto.email },
+        });
+        if (!user) {
+            throw new BadRequestException('Invalid email or code');
+        }
+        if (user.emailVerified) {
+            throw new BadRequestException('Email is already verified');
+        }
+
+        await this.verifyOtpCode(user.id, dto.code, 'EMAIL_VERIFICATION');
+
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { emailVerified: true },
+        });
+
+        // Generate tokens so user is logged in after verification
+        const tokens = await this.generateTokens(
+            user.id,
+            user.email,
+            user.globalRole,
+        );
+        await this.storeRefreshToken(user.id, tokens.refreshToken);
+
+        this.logger.log(`Email verified for user: ${user.email}`);
+
+        return {
+            accessToken: tokens.accessToken,
+            refreshToken: tokens.refreshToken,
+            user: new UserEntity({ ...user, emailVerified: true }),
+        };
+    }
+
+    async resendVerificationOtp(dto: ResendOtpDto) {
+        const user = await this.prisma.user.findUnique({
+            where: { email: dto.email },
+        });
+
+        // Always return success to prevent email enumeration
+        if (!user || user.emailVerified) {
+            return {
+                message:
+                    'If your email is registered and not yet verified, you will receive a verification code.',
+            };
+        }
+
+        await this.createAndSendOtp(
+            user.id,
+            user.email,
+            user.name,
+            'EMAIL_VERIFICATION',
+        );
+
+        return {
+            message:
+                'If your email is registered and not yet verified, you will receive a verification code.',
+        };
+    }
+
+    // ─── Forgot / Reset Password ──────────────────────────────────────
+
+    async forgotPassword(dto: ForgotPasswordDto) {
+        const user = await this.prisma.user.findUnique({
+            where: { email: dto.email },
+        });
+
+        // Always return success to prevent email enumeration
+        if (!user || user.deletedAt || !user.isActive) {
+            return {
+                message:
+                    'If your email is registered, you will receive a password reset code.',
+            };
+        }
+
+        await this.createAndSendOtp(
+            user.id,
+            user.email,
+            user.name,
+            'PASSWORD_RESET',
+        );
+
+        return {
+            message:
+                'If your email is registered, you will receive a password reset code.',
+        };
+    }
+
+    async resetPassword(dto: ResetPasswordDto) {
+        const user = await this.prisma.user.findUnique({
+            where: { email: dto.email },
+        });
+        if (!user) {
+            throw new BadRequestException('Invalid email or code');
+        }
+
+        await this.verifyOtpCode(user.id, dto.code, 'PASSWORD_RESET');
+
+        const hashedPassword = await bcrypt.hash(dto.newPassword, 12);
+
+        await this.prisma.user.update({
+            where: { id: user.id },
+            data: { password: hashedPassword },
+        });
+
+        // Revoke all refresh tokens on password reset
+        await this.prisma.refreshToken.updateMany({
+            where: { userId: user.id, revokedAt: null },
+            data: { revokedAt: new Date() },
+        });
+
+        this.logger.log(`Password reset for user: ${user.email}`);
+
+        return { message: 'Password has been reset successfully.' };
+    }
+
     // ─── Private Helpers ───────────────────────────────────────────────
 
     private async generateTokens(
@@ -266,5 +407,95 @@ export class AuthService {
         };
 
         return value * (multipliers[unit] ?? 24 * 60 * 60 * 1000);
+    }
+
+    // ─── OTP Helpers ───────────────────────────────────────────────────
+
+    private async createAndSendOtp(
+        userId: string,
+        email: string,
+        name: string,
+        purpose: 'EMAIL_VERIFICATION' | 'PASSWORD_RESET',
+    ): Promise<void> {
+        // Invalidate any existing unused OTPs for this user + purpose
+        await this.prisma.otpCode.updateMany({
+            where: { userId, purpose, usedAt: null },
+            data: { usedAt: new Date() },
+        });
+
+        const otp = generateSecureOtp();
+        const codeHash = await hashOtp(otp);
+
+        await this.prisma.otpCode.create({
+            data: {
+                userId,
+                codeHash,
+                purpose,
+                expiresAt: getOtpExpiryDate(),
+            },
+        });
+
+        const template =
+            purpose === 'EMAIL_VERIFICATION'
+                ? EmailTemplate.EMAIL_VERIFICATION
+                : EmailTemplate.PASSWORD_RESET_OTP;
+
+        await this.emailService.send(template, {
+            to: email,
+            name,
+            code: otp,
+            expiresInMinutes: OTP_EXPIRY_MINUTES,
+        });
+    }
+
+    private async verifyOtpCode(
+        userId: string,
+        code: string,
+        purpose: 'EMAIL_VERIFICATION' | 'PASSWORD_RESET',
+    ): Promise<void> {
+        // Get the latest unused, non-expired OTP for this user + purpose
+        const otpRecord = await this.prisma.otpCode.findFirst({
+            where: {
+                userId,
+                purpose,
+                usedAt: null,
+                expiresAt: { gt: new Date() },
+            },
+            orderBy: { createdAt: 'desc' },
+        });
+
+        if (!otpRecord) {
+            throw new BadRequestException(
+                'Invalid or expired code. Please request a new one.',
+            );
+        }
+
+        if (otpRecord.attempts >= OTP_MAX_ATTEMPTS) {
+            // Mark as used to prevent further attempts
+            await this.prisma.otpCode.update({
+                where: { id: otpRecord.id },
+                data: { usedAt: new Date() },
+            });
+            throw new BadRequestException(
+                'Too many failed attempts. Please request a new code.',
+            );
+        }
+
+        const isValid = await verifyOtp(code, otpRecord.codeHash);
+
+        if (!isValid) {
+            // Increment attempt counter
+            await this.prisma.otpCode.update({
+                where: { id: otpRecord.id },
+                data: { attempts: { increment: 1 } },
+            });
+            throw new BadRequestException('Invalid or expired code.');
+        }
+
+        // Mark OTP as used
+        await this.prisma.otpCode.update({
+            where: { id: otpRecord.id },
+            data: { usedAt: new Date() },
+        });
     }
 }
