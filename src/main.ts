@@ -60,24 +60,22 @@ async function bootstrap() {
         createRouteHandler({ router: uploadRouter }),
     );
 
-    // Swagger — non-production only
-    if (!appConfig.isProduction) {
-        const config = new DocumentBuilder()
-            .setTitle('TeamFlow API')
-            .setDescription('Multi-tenant project management platform API')
-            .setVersion('1.0')
-            .addBearerAuth(
-                { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
-                'access-token',
-            )
-            .build();
+    // Swagger
+    const swaggerConfig = new DocumentBuilder()
+        .setTitle('TeamFlow API')
+        .setDescription('Multi-tenant project management platform API')
+        .setVersion('1.0')
+        .addBearerAuth(
+            { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+            'access-token',
+        )
+        .build();
 
-        const document = SwaggerModule.createDocument(app, config);
-        SwaggerModule.setup('api/docs', app, document, {
-            swaggerOptions: { persistAuthorization: true },
-        });
-        logger.log(`Swagger docs: http://localhost:${appConfig.port}/api/docs`);
-    }
+    const document = SwaggerModule.createDocument(app, swaggerConfig);
+    SwaggerModule.setup('api/docs', app, document, {
+        swaggerOptions: { persistAuthorization: true },
+    });
+    logger.log(`Swagger docs available at /api/docs`);
 
     await app.listen(appConfig.port);
     logger.log(
