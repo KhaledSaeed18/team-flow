@@ -6,6 +6,7 @@ import {
     IsInt,
     IsEnum,
     IsUrl,
+    MaxLength,
 } from 'class-validator';
 
 export class SaveAttachmentDto {
@@ -35,6 +36,7 @@ export class SaveAttachmentDto {
     })
     @IsOptional()
     @IsString()
+    @MaxLength(512)
     fileKey?: string;
 
     @ApiPropertyOptional({

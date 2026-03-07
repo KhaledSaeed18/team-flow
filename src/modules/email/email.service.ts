@@ -4,6 +4,7 @@ import type { Resend } from 'resend';
 import { EmailTemplate } from './email.types';
 import type { EmailPayloadMap } from './email.types';
 import type { ResendConfig } from '../../config';
+import { escapeHtml } from '../../common/utils/otp.util';
 
 @Injectable()
 export class EmailService {
@@ -24,8 +25,9 @@ export class EmailService {
     ): Promise<void> {
         const to = (payload as Record<string, unknown>).to as string;
         const { subject, html } = this.buildEmail(template, payload);
+        const masked = to.replace(/^(..)[^@]*/, '$1***');
 
-        this.logger.log(`Sending "${template}" email to "${to}"`);
+        this.logger.log(`Sending "${template}" email to "${masked}"`);
 
         const { data, error } = await this.resend.emails.send({
             from: this.from,
@@ -36,13 +38,13 @@ export class EmailService {
 
         if (error) {
             this.logger.error(
-                `Failed to send "${template}" email to "${to}": ${error.message}`,
+                `Failed to send "${template}" email to "${masked}": ${error.message}`,
             );
             throw new Error(`Email send failed: ${error.message}`);
         }
 
         this.logger.log(
-            `Email "${template}" sent to "${to}" (id: ${data?.id})`,
+            `Email "${template}" sent to "${masked}" (id: ${data?.id})`,
         );
     }
 
@@ -125,24 +127,29 @@ export class EmailService {
     private buildInvitationEmail(
         payload: EmailPayloadMap[EmailTemplate.INVITATION],
     ) {
+        const orgName = escapeHtml(payload.orgName);
+        const inviterName = escapeHtml(payload.inviterName);
+        const token = escapeHtml(payload.token);
         return {
             subject: `You've been invited to join ${payload.orgName}`,
             html: `
                 <h2>You're invited!</h2>
-                <p><strong>${payload.inviterName}</strong> has invited you to join <strong>${payload.orgName}</strong> on TeamFlow.</p>
+                <p><strong>${inviterName}</strong> has invited you to join <strong>${orgName}</strong> on TeamFlow.</p>
                 <p>Use the following token to accept your invitation:</p>
-                <p style="font-size:18px; font-weight:bold; background:#f4f4f4; padding:12px; border-radius:6px; display:inline-block;">${payload.token}</p>
+                <p style="font-size:18px; font-weight:bold; background:#f4f4f4; padding:12px; border-radius:6px; display:inline-block;">${token}</p>
                 <br/><p>If you didn't expect this invitation, you can safely ignore this email.</p>
             `,
         };
     }
 
     private buildWelcomeEmail(payload: EmailPayloadMap[EmailTemplate.WELCOME]) {
+        const name = escapeHtml(payload.name);
+        const orgName = escapeHtml(payload.orgName);
         return {
             subject: `Welcome to ${payload.orgName}!`,
             html: `
-                <h2>Welcome, ${payload.name}!</h2>
-                <p>You've successfully joined <strong>${payload.orgName}</strong> on TeamFlow.</p>
+                <h2>Welcome, ${name}!</h2>
+                <p>You've successfully joined <strong>${orgName}</strong> on TeamFlow.</p>
                 <p>You can now collaborate with your team, manage projects, and track tasks.</p>
             `,
         };
@@ -151,13 +158,15 @@ export class EmailService {
     private buildPasswordResetEmail(
         payload: EmailPayloadMap[EmailTemplate.PASSWORD_RESET],
     ) {
+        const name = escapeHtml(payload.name);
+        const resetUrl = escapeHtml(payload.resetUrl);
         return {
             subject: 'Reset your password',
             html: `
                 <h2>Password Reset Request</h2>
-                <p>Hi ${payload.name},</p>
+                <p>Hi ${name},</p>
                 <p>We received a request to reset your password. Click the link below to set a new password:</p>
-                <p><a href="${payload.resetUrl}" style="background:#4F46E5; color:#fff; padding:10px 20px; text-decoration:none; border-radius:6px; display:inline-block;">Reset Password</a></p>
+                <p><a href="${resetUrl}" style="background:#4F46E5; color:#fff; padding:10px 20px; text-decoration:none; border-radius:6px; display:inline-block;">Reset Password</a></p>
                 <p>If you didn't request this, you can safely ignore this email.</p>
             `,
         };
@@ -166,13 +175,16 @@ export class EmailService {
     private buildTaskAssignedEmail(
         payload: EmailPayloadMap[EmailTemplate.TASK_ASSIGNED],
     ) {
+        const name = escapeHtml(payload.name);
+        const taskTitle = escapeHtml(payload.taskTitle);
+        const taskUrl = escapeHtml(payload.taskUrl);
         return {
             subject: `Task assigned: ${payload.taskTitle}`,
             html: `
                 <h2>New Task Assigned</h2>
-                <p>Hi ${payload.name},</p>
-                <p>You've been assigned a new task: <strong>${payload.taskTitle}</strong></p>
-                <p><a href="${payload.taskUrl}" style="background:#4F46E5; color:#fff; padding:10px 20px; text-decoration:none; border-radius:6px; display:inline-block;">View Task</a></p>
+                <p>Hi ${name},</p>
+                <p>You've been assigned a new task: <strong>${taskTitle}</strong></p>
+                <p><a href="${taskUrl}" style="background:#4F46E5; color:#fff; padding:10px 20px; text-decoration:none; border-radius:6px; display:inline-block;">View Task</a></p>
             `,
         };
     }
@@ -180,12 +192,16 @@ export class EmailService {
     private buildTaskDueSoonEmail(
         payload: EmailPayloadMap[EmailTemplate.TASK_DUE_SOON],
     ) {
+        const name = escapeHtml(payload.name);
+        const taskTitle = escapeHtml(payload.taskTitle);
+        const projectKey = escapeHtml(payload.projectKey);
+        const dueDate = escapeHtml(payload.dueDate);
         return {
             subject: `Task due soon: ${payload.taskTitle}`,
             html: `
                 <h2>Task Due Soon</h2>
-                <p>Hi ${payload.name},</p>
-                <p>Your task <strong>${payload.projectKey}-${payload.taskNumber} ${payload.taskTitle}</strong> is due on <strong>${payload.dueDate}</strong>.</p>
+                <p>Hi ${name},</p>
+                <p>Your task <strong>${projectKey}-${payload.taskNumber} ${taskTitle}</strong> is due on <strong>${dueDate}</strong>.</p>
                 <p>Please make sure to complete it before the deadline.</p>
             `,
         };
@@ -194,12 +210,16 @@ export class EmailService {
     private buildTaskOverdueEmail(
         payload: EmailPayloadMap[EmailTemplate.TASK_OVERDUE],
     ) {
+        const name = escapeHtml(payload.name);
+        const taskTitle = escapeHtml(payload.taskTitle);
+        const projectKey = escapeHtml(payload.projectKey);
+        const dueDate = escapeHtml(payload.dueDate);
         return {
             subject: `Task overdue: ${payload.taskTitle}`,
             html: `
                 <h2>Task Overdue</h2>
-                <p>Hi ${payload.name},</p>
-                <p>Your task <strong>${payload.projectKey}-${payload.taskNumber} ${payload.taskTitle}</strong> was due on <strong>${payload.dueDate}</strong> and is now overdue.</p>
+                <p>Hi ${name},</p>
+                <p>Your task <strong>${projectKey}-${payload.taskNumber} ${taskTitle}</strong> was due on <strong>${dueDate}</strong> and is now overdue.</p>
                 <p>Please complete it as soon as possible.</p>
             `,
         };
@@ -208,14 +228,16 @@ export class EmailService {
     private buildEmailVerificationEmail(
         payload: EmailPayloadMap[EmailTemplate.EMAIL_VERIFICATION],
     ) {
+        const name = escapeHtml(payload.name);
+        const code = escapeHtml(payload.code);
         return {
             subject: 'Verify your email address',
             html: `
                 <h2>Email Verification</h2>
-                <p>Hi ${payload.name},</p>
+                <p>Hi ${name},</p>
                 <p>Thank you for signing up for TeamFlow. Use the following code to verify your email address:</p>
                 <div style="text-align: center; margin: 24px 0;">
-                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; background: #f4f4f5; padding: 16px 32px; border-radius: 8px; display: inline-block; font-family: monospace;">${payload.code}</span>
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; background: #f4f4f5; padding: 16px 32px; border-radius: 8px; display: inline-block; font-family: monospace;">${code}</span>
                 </div>
                 <p style="color: #6b7280; font-size: 14px;">This code expires in ${payload.expiresInMinutes} minutes. If you didn't create an account, you can safely ignore this email.</p>
             `,
@@ -225,14 +247,16 @@ export class EmailService {
     private buildPasswordResetOtpEmail(
         payload: EmailPayloadMap[EmailTemplate.PASSWORD_RESET_OTP],
     ) {
+        const name = escapeHtml(payload.name);
+        const code = escapeHtml(payload.code);
         return {
             subject: 'Reset your password',
             html: `
                 <h2>Password Reset</h2>
-                <p>Hi ${payload.name},</p>
+                <p>Hi ${name},</p>
                 <p>We received a request to reset your password. Use the following code to proceed:</p>
                 <div style="text-align: center; margin: 24px 0;">
-                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; background: #f4f4f5; padding: 16px 32px; border-radius: 8px; display: inline-block; font-family: monospace;">${payload.code}</span>
+                    <span style="font-size: 32px; font-weight: bold; letter-spacing: 8px; background: #f4f4f5; padding: 16px 32px; border-radius: 8px; display: inline-block; font-family: monospace;">${code}</span>
                 </div>
                 <p style="color: #6b7280; font-size: 14px;">This code expires in ${payload.expiresInMinutes} minutes. If you didn't request a password reset, you can safely ignore this email.</p>
             `,

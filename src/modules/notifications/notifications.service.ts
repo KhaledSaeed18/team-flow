@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Subject, Observable } from 'rxjs';
+import { Subject, Observable, finalize } from 'rxjs';
 import { PrismaService } from '../../database/prisma.service';
 import type { CreateNotificationDto } from './dto';
 import { QueryNotificationsDto } from './dto';
@@ -49,29 +49,22 @@ export class NotificationsService {
     ): Promise<void> {
         if (userIds.length === 0) return;
 
-        // Bulk insert
-        await this.prisma.notification.createMany({
-            data: userIds.map((userId) => ({
-                userId,
-                type: dto.type,
-                title: dto.title,
-                body: dto.body ?? null,
-                resourceType: dto.resourceType ?? null,
-                resourceId: dto.resourceId ?? null,
-                meta: dto.meta ?? {},
-            })),
-        });
-
-        // Fetch created notifications for SSE emit (with proper IDs)
-        const notifications = await this.prisma.notification.findMany({
-            where: {
-                userId: { in: userIds },
-                type: dto.type,
-                title: dto.title,
-            },
-            orderBy: { createdAt: 'desc' },
-            take: userIds.length,
-        });
+        // Create individually so we get IDs back for SSE emit
+        const notifications = await Promise.all(
+            userIds.map((userId) =>
+                this.prisma.notification.create({
+                    data: {
+                        userId,
+                        type: dto.type,
+                        title: dto.title,
+                        body: dto.body ?? null,
+                        resourceType: dto.resourceType ?? null,
+                        resourceId: dto.resourceId ?? null,
+                        meta: dto.meta ?? {},
+                    },
+                }),
+            ),
+        );
 
         for (const notification of notifications) {
             this.emit(
@@ -167,7 +160,17 @@ export class NotificationsService {
         if (!this.streams.has(userId)) {
             this.streams.set(userId, new Subject<MessageEvent>());
         }
-        return this.streams.get(userId)!.asObservable();
+        return this.streams
+            .get(userId)!
+            .asObservable()
+            .pipe(
+                finalize(() => {
+                    const subject = this.streams.get(userId);
+                    if (subject && !subject.observed) {
+                        this.streams.delete(userId);
+                    }
+                }),
+            );
     }
 
     private emit(userId: string, notification: NotificationEntity): void {

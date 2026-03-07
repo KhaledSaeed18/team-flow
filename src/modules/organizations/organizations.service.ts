@@ -54,15 +54,16 @@ export class OrganizationsService {
 
     async findAllForUser(userId: string) {
         const memberships = await this.prisma.membership.findMany({
-            where: { userId },
+            where: {
+                userId,
+                organization: { deletedAt: null },
+            },
             include: {
                 organization: true,
             },
         });
 
-        return memberships
-            .filter((m) => !m.organization.deletedAt)
-            .map((m) => new OrganizationEntity(m.organization));
+        return memberships.map((m) => new OrganizationEntity(m.organization));
     }
 
     async findOne(orgId: string) {

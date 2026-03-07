@@ -58,6 +58,7 @@ export class SprintsService {
     }
 
     async update(projectId: string, sprintId: string, dto: UpdateSprintDto) {
+        await this.ensureProjectActive(projectId);
         await this.ensureSprintExists(projectId, sprintId);
 
         const sprint = await this.prisma.sprint.update({
@@ -80,37 +81,42 @@ export class SprintsService {
      */
     async start(projectId: string, sprintId: string) {
         await this.ensureProjectActive(projectId);
-        const sprint = await this.ensureSprintExists(projectId, sprintId);
 
-        if (sprint.status !== 'PLANNED') {
-            throw new BadRequestException(
-                `Cannot start sprint with status: ${sprint.status}. Only PLANNED sprints can be started.`,
-            );
-        }
+        const updated = await this.prisma.$transaction(async (tx) => {
+            const sprint = await tx.sprint.findFirst({
+                where: { id: sprintId, projectId },
+            });
+            if (!sprint) throw new NotFoundException('Sprint not found');
 
-        // Ensure no other ACTIVE sprint in this project
-        const activeSprint = await this.prisma.sprint.findFirst({
-            where: { projectId, status: 'ACTIVE' },
-        });
+            if (sprint.status !== 'PLANNED') {
+                throw new BadRequestException(
+                    `Cannot start sprint with status: ${sprint.status}. Only PLANNED sprints can be started.`,
+                );
+            }
 
-        if (activeSprint) {
-            throw new BadRequestException(
-                `Project already has an active sprint: "${activeSprint.name}". Complete it before starting a new one.`,
-            );
-        }
+            const activeSprint = await tx.sprint.findFirst({
+                where: { projectId, status: 'ACTIVE' },
+            });
 
-        const updated = await this.prisma.sprint.update({
-            where: { id: sprintId },
-            data: {
-                status: 'ACTIVE',
-                startDate: sprint.startDate ?? new Date(),
-            },
+            if (activeSprint) {
+                throw new BadRequestException(
+                    `Project already has an active sprint: "${activeSprint.name}". Complete it before starting a new one.`,
+                );
+            }
+
+            return tx.sprint.update({
+                where: { id: sprintId },
+                data: {
+                    status: 'ACTIVE',
+                    startDate: sprint.startDate ?? new Date(),
+                },
+            });
         });
 
         // Notify project org members about sprint start (fire-and-forget)
         this.notifyProjectMembers(projectId, {
             type: 'SPRINT_STARTED' as const,
-            title: `Sprint "${sprint.name}" has started`,
+            title: `Sprint "${updated.name}" has started`,
             resourceType: 'Sprint',
             resourceId: sprintId,
         }).catch(() => {});
@@ -123,6 +129,7 @@ export class SprintsService {
      * Tasks still in this sprint with status != DONE get their sprintId set to null (back to backlog).
      */
     async complete(projectId: string, sprintId: string) {
+        await this.ensureProjectActive(projectId);
         const sprint = await this.ensureSprintExists(projectId, sprintId);
 
         if (sprint.status !== 'ACTIVE') {
@@ -162,6 +169,7 @@ export class SprintsService {
     }
 
     async remove(projectId: string, sprintId: string) {
+        await this.ensureProjectActive(projectId);
         const sprint = await this.ensureSprintExists(projectId, sprintId);
 
         if (sprint.status === 'ACTIVE') {

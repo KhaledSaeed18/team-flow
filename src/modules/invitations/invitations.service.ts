@@ -9,6 +9,8 @@ import { PrismaService } from '../../database/prisma.service';
 import { CreateInvitationDto } from './dto';
 import { InvitationEntity } from './entities';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
+import { EmailTemplate } from '../email/email.types';
 
 @Injectable()
 export class InvitationsService {
@@ -17,6 +19,7 @@ export class InvitationsService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly notificationsService: NotificationsService,
+        private readonly emailService: EmailService,
     ) {}
 
     /**
@@ -82,10 +85,23 @@ export class InvitationsService {
             },
         });
 
-        // Email placeholder — would call EmailService.send() here
-        this.logger.log(
-            `Invitation sent to ${dto.email} for org ${org.name} (token: ${invitation.token})`,
-        );
+        // Send invitation email
+        const sender = await this.prisma.user.findUnique({
+            where: { id: senderId },
+            select: { name: true },
+        });
+        this.emailService
+            .send(EmailTemplate.INVITATION, {
+                to: dto.email,
+                orgName: org.name,
+                token: invitation.token,
+                inviterName: sender?.name ?? 'A team member',
+            })
+            .catch((err) => {
+                this.logger.warn(
+                    `Failed to send invitation email for org ${org.name}: ${err.message}`,
+                );
+            });
 
         return new InvitationEntity(invitation);
     }
@@ -221,10 +237,24 @@ export class InvitationsService {
             }),
         ]);
 
-        // Email placeholder — would send WELCOME email here
-        this.logger.log(
-            `Invitation accepted: user ${userId} joined org ${invitation.organization.name}`,
-        );
+        // Send welcome email
+        const acceptedUser = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { name: true, email: true },
+        });
+        if (acceptedUser) {
+            this.emailService
+                .send(EmailTemplate.WELCOME, {
+                    to: acceptedUser.email,
+                    name: acceptedUser.name,
+                    orgName: invitation.organization.name,
+                })
+                .catch((err) => {
+                    this.logger.warn(
+                        `Failed to send welcome email: ${err.message}`,
+                    );
+                });
+        }
 
         // Notify org members about the new member (fire-and-forget)
         const members = await this.prisma.membership.findMany({

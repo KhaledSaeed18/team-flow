@@ -1,6 +1,20 @@
 import * as crypto from 'crypto';
 import * as bcrypt from 'bcrypt';
 
+// ── HTML Escaping (prevents XSS in email templates) ─────────────────────
+const htmlEscapeMap: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;',
+};
+
+export function escapeHtml(str: string): string {
+    return str.replace(/[&<>"']/g, (ch) => htmlEscapeMap[ch]);
+}
+
+// ── OTP ─────────────────────────────────────────────────────────────────
 const OTP_LENGTH = 6;
 const OTP_HASH_ROUNDS = 10;
 const OTP_EXPIRY_MINUTES = 15;

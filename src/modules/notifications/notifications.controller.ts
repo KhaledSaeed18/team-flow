@@ -100,18 +100,6 @@ export class NotificationsController {
         return this.notificationsService.getStream(user.sub);
     }
 
-    @Patch(':id/read')
-    @ApiOperation({ summary: 'Mark a single notification as read' })
-    @ApiParam({ name: 'id', description: 'Notification UUID' })
-    @ApiOkResponse({
-        description: 'Notification marked as read',
-        type: NotificationEntity,
-    })
-    @ApiNotFoundResponse({ description: 'Notification not found' })
-    markAsRead(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
-        return this.notificationsService.markAsRead(user.sub, id);
-    }
-
     @Patch('read-all')
     @ApiOperation({ summary: 'Mark all notifications as read' })
     @ApiOkResponse({
@@ -122,6 +110,18 @@ export class NotificationsController {
     })
     markAllAsRead(@CurrentUser() user: JwtPayload) {
         return this.notificationsService.markAllAsRead(user.sub);
+    }
+
+    @Patch(':id/read')
+    @ApiOperation({ summary: 'Mark a single notification as read' })
+    @ApiParam({ name: 'id', description: 'Notification UUID' })
+    @ApiOkResponse({
+        description: 'Notification marked as read',
+        type: NotificationEntity,
+    })
+    @ApiNotFoundResponse({ description: 'Notification not found' })
+    markAsRead(@CurrentUser() user: JwtPayload, @Param('id') id: string) {
+        return this.notificationsService.markAsRead(user.sub, id);
     }
 
     @Delete(':id')

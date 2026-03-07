@@ -8,10 +8,12 @@ export interface AppConfig {
     isProduction: boolean;
     isDevelopment: boolean;
     isTest: boolean;
+    corsOrigins: string[];
 }
 
 export const appConfig = registerAs('app', (): AppConfig => {
     const env = optionalEnv('NODE_ENV', 'development');
+    const rawOrigins = optionalEnv('CORS_ORIGINS', '');
     return {
         name: optionalEnv('APP_NAME', 'team-flow'),
         port: parseInt(optionalEnv('PORT', '3000'), 10),
@@ -19,5 +21,8 @@ export const appConfig = registerAs('app', (): AppConfig => {
         isProduction: env === 'production',
         isDevelopment: env === 'development',
         isTest: env === 'test',
+        corsOrigins: rawOrigins
+            ? rawOrigins.split(',').map((o) => o.trim())
+            : [],
     };
 });

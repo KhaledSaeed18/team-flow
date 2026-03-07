@@ -22,25 +22,20 @@ export class TokenCleanupService {
         this.logger.log('Starting expired token cleanup...');
 
         try {
-            // Delete tokens that are either expired or revoked
-            const { count: expiredCount } =
-                await this.prisma.refreshToken.deleteMany({
-                    where: {
-                        expiresAt: { lt: new Date() },
-                    },
-                });
-
-            const { count: revokedCount } =
-                await this.prisma.refreshToken.deleteMany({
-                    where: {
-                        revokedAt: { not: null },
-                    },
-                });
+            // Delete tokens that are either expired or revoked in a single query
+            const { count } = await this.prisma.refreshToken.deleteMany({
+                where: {
+                    OR: [
+                        { expiresAt: { lt: new Date() } },
+                        { revokedAt: { not: null } },
+                    ],
+                },
+            });
 
             const duration = Date.now() - jobStart;
             this.logger.log(
                 `Token cleanup completed in ${duration}ms — ` +
-                    `expired: ${expiredCount}, revoked: ${revokedCount}`,
+                    `removed: ${count}`,
             );
         } catch (error) {
             const duration = Date.now() - jobStart;
