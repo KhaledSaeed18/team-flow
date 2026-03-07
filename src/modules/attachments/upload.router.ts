@@ -1,6 +1,7 @@
 import { createUploadthing } from 'uploadthing/express';
 import type { FileRouter } from 'uploadthing/express';
 import * as jwt from '@nestjs/jwt';
+import { requireEnv } from '../../config/env';
 
 const f = createUploadthing();
 
@@ -18,7 +19,7 @@ export const uploadRouter: FileRouter = {
 
             const token = authHeader.split(' ')[1];
             const jwtService = new jwt.JwtService({
-                secret: process.env.JWT_SECRET,
+                secret: requireEnv('JWT_SECRET'),
             });
 
             const payload = await jwtService.verifyAsync(token);
