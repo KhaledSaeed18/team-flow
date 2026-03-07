@@ -1,4 +1,11 @@
-import { Controller, Get, HttpCode, HttpStatus } from '@nestjs/common';
+import {
+    Controller,
+    Get,
+    Head,
+    HttpCode,
+    HttpStatus,
+    Res,
+} from '@nestjs/common';
 import {
     ApiTags,
     ApiOperation,
@@ -6,6 +13,8 @@ import {
     ApiServiceUnavailableResponse,
     ApiProperty,
 } from '@nestjs/swagger';
+import { SkipThrottle } from '@nestjs/throttler';
+import type { Response } from 'express';
 import { AppService, HealthStatus } from './app.service';
 import { Public } from './common/decorators';
 
@@ -102,6 +111,7 @@ class HealthResponseDto {
 }
 
 @ApiTags('Health')
+@SkipThrottle()
 @Controller()
 export class AppController {
     constructor(private readonly appService: AppService) {}
@@ -123,5 +133,12 @@ export class AppController {
     })
     async getHealth(): Promise<HealthStatus> {
         return this.appService.getHealth();
+    }
+
+    @Head()
+    @Public()
+    @HttpCode(HttpStatus.OK)
+    headHealth(@Res() res: Response): void {
+        res.end();
     }
 }
