@@ -76,7 +76,7 @@ export class AuthService {
             'EMAIL_VERIFICATION',
         );
 
-        this.logger.log(`User registered: ${user.email}`);
+        this.logger.log(`User registered: ${this.maskEmail(user.email)}`);
 
         return {
             message:
@@ -122,7 +122,7 @@ export class AuthService {
             data: { lastSeenAt: new Date() },
         });
 
-        this.logger.log(`User logged in: ${user.email}`);
+        this.logger.log(`User logged in: ${this.maskEmail(user.email)}`);
 
         return {
             accessToken: tokens.accessToken,
@@ -259,7 +259,9 @@ export class AuthService {
         );
         await this.storeRefreshToken(user.id, tokens.refreshToken);
 
-        this.logger.log(`Email verified for user: ${user.email}`);
+        this.logger.log(
+            `Email verified for user: ${this.maskEmail(user.email)}`,
+        );
 
         return {
             accessToken: tokens.accessToken,
@@ -345,7 +347,9 @@ export class AuthService {
             data: { revokedAt: new Date() },
         });
 
-        this.logger.log(`Password reset for user: ${user.email}`);
+        this.logger.log(
+            `Password reset for user: ${this.maskEmail(user.email)}`,
+        );
 
         return { message: 'Password has been reset successfully.' };
     }
@@ -380,6 +384,10 @@ export class AuthService {
                 expiresAt,
             },
         });
+    }
+
+    private maskEmail(email: string): string {
+        return email.replace(/^(..)[^@]*/, '$1***');
     }
 
     private hashToken(token: string): string {
