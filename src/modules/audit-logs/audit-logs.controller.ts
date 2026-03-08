@@ -7,9 +7,12 @@ import {
     ApiOkResponse,
     ApiUnauthorizedResponse,
     ApiForbiddenResponse,
+    ApiExtraModels,
+    getSchemaPath,
 } from '@nestjs/swagger';
 import { AuditLogsService } from './audit-logs.service';
 import { QueryAuditLogsDto } from './dto';
+import { AuditLogEntity } from './entities';
 import { Roles } from '../../common/decorators';
 import { OrgMemberGuard, RolesGuard } from '../../common/guards';
 
@@ -17,6 +20,7 @@ import { OrgMemberGuard, RolesGuard } from '../../common/guards';
 @ApiBearerAuth('access-token')
 @Controller('organizations/:orgId/audit-logs')
 @UseGuards(OrgMemberGuard, RolesGuard)
+@ApiExtraModels(AuditLogEntity)
 export class AuditLogsController {
     constructor(private readonly auditLogsService: AuditLogsService) {}
 
@@ -34,7 +38,7 @@ export class AuditLogsController {
             properties: {
                 items: {
                     type: 'array',
-                    items: { $ref: '#/components/schemas/AuditLogEntity' },
+                    items: { $ref: getSchemaPath(AuditLogEntity) },
                 },
                 total: { type: 'number', example: 150 },
                 page: { type: 'number', example: 1 },
