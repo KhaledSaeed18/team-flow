@@ -58,6 +58,7 @@
 - [Development and Deployment Workflow](#development-and-deployment-workflow)
   - [Git Branching Strategy](#git-branching-strategy)
   - [Pre-Commit Hooks](#pre-commit-hooks)
+  - [Dependabot](#dependabot)
   - [CI Pipeline](#ci-pipeline)
   - [Deployment Pipeline](#deployment-pipeline)
 - [Getting Started](#getting-started)
@@ -804,6 +805,30 @@ graph LR
     FMT -->|fail| BLOCK
     LINT -->|fail| BLOCK
 ```
+
+### Dependabot
+
+Dependabot keeps dependencies and GitHub Actions versions current with scheduled update PRs and security alerts.
+
+Current configuration in `.github/dependabot.yml`:
+
+| Ecosystem | Scope | Schedule | Notes |
+|---|---|---|---|
+| `npm` | Root workspace (`/`) | Weekly (Monday, 04:00 UTC) | Target branch: `dev`; auto-rebase; labels (`dependencies`, `security`); commit prefix `chore(deps)` with scope; grouped updates for `@nestjs/*`, `prisma`, `@prisma/*` |
+| `github-actions` | Repository workflows | Monthly (Monday, 05:00 UTC) | Target branch: `dev`; auto-rebase; labels (`dependencies`, `github-actions`); commit prefix `chore(ci)` with scope |
+
+**Branch strategy:**
+- Dependabot PRs target `dev` first.
+- Changes are promoted to `main` through normal `dev -> main` release PR flow.
+
+**PR conventions:**
+- Dependabot rebases update PRs automatically when needed.
+- Commit messages follow conventional prefixes for cleaner history and release notes.
+
+**How TeamFlow handles transitive security advisories:**
+- If Dependabot cannot auto-open a fix PR for a transitive package, we pin a patched transitive version using `pnpm.overrides` in `package.json`.
+- After updating overrides, regenerate and commit `pnpm-lock.yaml` so GitHub dependency scanning can resolve the fixed version.
+- Remove temporary overrides once upstream packages adopt patched versions.
 
 ### CI Pipeline
 
