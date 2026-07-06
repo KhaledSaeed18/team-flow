@@ -51,7 +51,7 @@ export class MembershipsController {
 
     @Patch(':userId')
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Membership', idParam: 'userId' })
     @ApiOperation({ summary: "Change a member's role" })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
@@ -82,7 +82,7 @@ export class MembershipsController {
     @Delete(':userId')
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Membership', idParam: 'userId', action: 'DELETE' })
     @ApiOperation({ summary: 'Remove a member from the organization' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })

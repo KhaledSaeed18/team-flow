@@ -7,14 +7,11 @@ export interface ResendConfig {
     fromName: string;
 }
 
-export const resendConfig = registerAs(
-    'resend',
-    (): ResendConfig => ({
-        apiKey: requireEnv('RESEND_API_KEY'),
-        fromEmail: optionalEnv(
-            'RESEND_FROM_EMAIL',
-            'noreply@mail.khaledsaeed.tech',
-        ),
-        fromName: optionalEnv('RESEND_FROM_NAME', 'TeamFlow'),
-    }),
-);
+export const resendConfig = registerAs('resend', (): ResendConfig => ({
+    apiKey: requireEnv('RESEND_API_KEY'),
+    fromEmail: optionalEnv(
+        'RESEND_FROM_EMAIL',
+        'noreply@mail.khaledsaeed.tech',
+    ),
+    fromName: optionalEnv('RESEND_FROM_NAME', 'TeamFlow'),
+}));

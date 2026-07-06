@@ -1,24 +1,29 @@
 <p align="center">
-  <img src="assets/images/teamflow-logo-icon.png" height="120" alt="TeamFlow Logo Icon" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/images/teamflow-logo.png" height="120" alt="TeamFlow Logo" />
+  <img src="assets/images/teamflow-banner.png" alt="TeamFlow" width="100%" />
 </p>
-
-<h1 align="center">TeamFlow</h1>
 
 <p align="center">
   A production-ready, multi-tenant Agile Workspace backend for managing organizations, projects, sprints, and tasks. built with NestJS, Prisma, and PostgreSQL.
 </p>
 
 <p align="center">
-  <a href="https://github.com/KhaledSaeed18/team-flow/actions/workflows/ci.yml"><img src="https://github.com/KhaledSaeed18/team-flow/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" /></a>
-  <img src="https://img.shields.io/badge/NestJS-E0234E?logo=nestjs&logoColor=white" alt="NestJS" />
-  <img src="https://img.shields.io/badge/Prisma-2D3748?logo=prisma&logoColor=white" alt="Prisma" />
-  <img src="https://img.shields.io/badge/PostgreSQL-4169E1?logo=postgresql&logoColor=white" alt="PostgreSQL" />
-  <img src="https://img.shields.io/badge/TypeScript-3178C6?logo=typescript&logoColor=white" alt="TypeScript" />
-  <img src="https://img.shields.io/badge/Docker-ready-2496ED?logo=docker&logoColor=white" alt="Docker" />
-  <a href="https://team-flow-tmtz.onrender.com/api/docs"><img src="https://img.shields.io/badge/API%20Docs-Swagger-85EA2D?logo=swagger&logoColor=black" alt="API Docs" /></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
+  <a href="https://github.com/KhaledSaeed18/team-flow/actions/workflows/ci.yml"><img src="https://shieldcn.dev/github/ci/KhaledSaeed18/team-flow.svg?logo=githubactions" alt="CI Status" /></a>
+  <a href="https://github.com/KhaledSaeed18/team-flow/stargazers"><img src="https://shieldcn.dev/github/stars/KhaledSaeed18/team-flow.svg?logo=github" alt="GitHub Stars" /></a>
+  <a href="https://github.com/KhaledSaeed18/team-flow/network/members"><img src="https://shieldcn.dev/github/forks/KhaledSaeed18/team-flow.svg?logo=github" alt="GitHub Forks" /></a>
+  <a href="https://github.com/KhaledSaeed18/team-flow/issues"><img src="https://shieldcn.dev/github/issues/KhaledSaeed18/team-flow.svg?logo=github" alt="Open Issues" /></a>
+  <a href="https://github.com/KhaledSaeed18/team-flow/pulls"><img src="https://shieldcn.dev/github/prs/KhaledSaeed18/team-flow.svg?logo=github" alt="Open Pull Requests" /></a>
+  <img src="https://shieldcn.dev/github/last-commit/KhaledSaeed18/team-flow.svg?logo=git" alt="Last Commit" />
+  <a href="LICENSE"><img src="https://shieldcn.dev/github/license/KhaledSaeed18/team-flow.svg" alt="License: MIT" /></a>
+</p>
+
+<p align="center">
+  <img src="https://shieldcn.dev/badge/NestJS-11-E0234E.svg?logo=nestjs&logoColor=white" alt="NestJS 11" />
+  <img src="https://shieldcn.dev/badge/Prisma-7.8-2D3748.svg?logo=prisma&logoColor=white" alt="Prisma 7.8" />
+  <img src="https://shieldcn.dev/badge/PostgreSQL-16-4169E1.svg?logo=postgresql&logoColor=white" alt="PostgreSQL 16" />
+  <img src="https://shieldcn.dev/badge/TypeScript-6.0-3178C6.svg?logo=typescript&logoColor=white" alt="TypeScript 6.0" />
+  <img src="https://shieldcn.dev/badge/Node.js-22-5FA04E.svg?logo=nodedotjs&logoColor=white" alt="Node.js 22" />
+  <img src="https://shieldcn.dev/badge/Docker-ready-2496ED.svg?logo=docker&logoColor=white" alt="Docker ready" />
+  <a href="https://team-flow-tmtz.onrender.com/api/docs"><img src="https://shieldcn.dev/badge/API_Docs-Swagger-85EA2D.svg?logo=swagger&logoColor=white" alt="API Docs" /></a>
 </p>
 
 ---

@@ -6,10 +6,7 @@ export interface ThrottlerConfig {
     limit: number;
 }
 
-export const throttlerConfig = registerAs(
-    'throttler',
-    (): ThrottlerConfig => ({
-        ttl: parseInt(optionalEnv('THROTTLE_TTL', '60'), 10),
-        limit: parseInt(optionalEnv('THROTTLE_LIMIT', '10'), 10),
-    }),
-);
+export const throttlerConfig = registerAs('throttler', (): ThrottlerConfig => ({
+    ttl: parseInt(optionalEnv('THROTTLE_TTL', '60'), 10),
+    limit: parseInt(optionalEnv('THROTTLE_LIMIT', '10'), 10),
+}));

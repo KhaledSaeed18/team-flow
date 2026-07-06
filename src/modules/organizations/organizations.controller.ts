@@ -87,7 +87,7 @@ export class OrganizationsController {
 
     @Patch(':id')
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Organization' })
     @ApiOperation({ summary: 'Update organization' })
     @ApiParam({ name: 'id', description: 'Organization UUID' })
@@ -107,7 +107,7 @@ export class OrganizationsController {
     @Delete(':id')
     @HttpCode(HttpStatus.OK)
     @UseGuards(RolesGuard)
-    @Roles('OWNER' as any)
+    @Roles('OWNER')
     @AuditLog({ entity: 'Organization', action: 'DELETE' })
     @ApiOperation({ summary: 'Soft delete organization (owner only)' })
     @ApiParam({ name: 'id', description: 'Organization UUID' })
@@ -124,7 +124,7 @@ export class OrganizationsController {
 
     @Patch(':id/transfer')
     @UseGuards(RolesGuard)
-    @Roles('OWNER' as any)
+    @Roles('OWNER')
     @AuditLog({ entity: 'Organization', action: 'UPDATE' })
     @ApiOperation({ summary: 'Transfer organization ownership' })
     @ApiParam({ name: 'id', description: 'Organization UUID' })
