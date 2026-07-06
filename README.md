@@ -1,10 +1,6 @@
 <p align="center">
-  <img src="assets/images/teamflow-logo-icon.png" height="120" alt="TeamFlow Logo Icon" />
-  &nbsp;&nbsp;&nbsp;&nbsp;
-  <img src="assets/images/teamflow-logo.png" height="120" alt="TeamFlow Logo" />
+  <img src="assets/images/teamflow-banner.png" alt="TeamFlow" width="100%" />
 </p>
-
-<h1 align="center">TeamFlow</h1>
 
 <p align="center">
   A production-ready, multi-tenant Agile Workspace backend for managing organizations, projects, sprints, and tasks. built with NestJS, Prisma, and PostgreSQL.
