@@ -53,7 +53,7 @@ export class OrgLabelsController {
 
     @Post()
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Label' })
     @ApiOperation({ summary: 'Create an org-wide label (Admin+)' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
@@ -94,7 +94,7 @@ export class ProjectLabelsController {
 
     @Post()
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Label' })
     @ApiOperation({ summary: 'Create a project-scoped label (Admin+)' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
@@ -124,7 +124,7 @@ export class LabelsController {
 
     @Patch(':id')
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Label' })
     @ApiOperation({ summary: 'Update a label (Admin+)' })
     @ApiParam({ name: 'id', description: 'Label UUID' })
@@ -141,7 +141,7 @@ export class LabelsController {
 
     @Delete(':id')
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @HttpCode(HttpStatus.NO_CONTENT)
     @AuditLog({ entity: 'Label', action: 'DELETE' })
     @ApiOperation({ summary: 'Delete a label (Admin+)' })

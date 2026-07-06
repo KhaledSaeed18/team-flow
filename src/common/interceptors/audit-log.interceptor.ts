@@ -46,8 +46,7 @@ export class AuditLogInterceptor implements NestInterceptor {
         const request = context.switchToHttp().getRequest<Request>();
         const method = request.method.toUpperCase();
         const user = request['user'] as
-            | { sub: string; email: string }
-            | undefined;
+            { sub: string; email: string } | undefined;
 
         const action = options.action
             ? (options.action as AuditAction)

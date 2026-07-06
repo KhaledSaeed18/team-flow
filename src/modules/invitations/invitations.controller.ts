@@ -39,7 +39,7 @@ export class InvitationsController {
 
     @Post('organizations/:orgId/invitations')
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Invitation', action: 'INVITE' })
     @ApiBearerAuth('access-token')
     @ApiOperation({ summary: 'Send an invitation to join the organization' })
@@ -67,7 +67,7 @@ export class InvitationsController {
 
     @Get('organizations/:orgId/invitations')
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @ApiBearerAuth('access-token')
     @ApiOperation({ summary: 'List all invitations for an organization' })
     @ApiParam({ name: 'orgId', description: 'Organization UUID' })
@@ -83,7 +83,7 @@ export class InvitationsController {
 
     @Delete('organizations/:orgId/invitations/:id')
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @HttpCode(HttpStatus.OK)
     @AuditLog({ entity: 'Invitation', action: 'DELETE' })
     @ApiBearerAuth('access-token')

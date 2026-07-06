@@ -53,7 +53,7 @@ export class SprintsController {
 
     @Post()
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Sprint' })
     @ApiOperation({ summary: 'Create a new sprint' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
@@ -96,7 +96,7 @@ export class SprintsController {
 
     @Patch(':id')
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Sprint' })
     @ApiOperation({ summary: 'Update sprint details' })
     @ApiParam({ name: 'projectId', description: 'Project UUID' })
@@ -121,7 +121,7 @@ export class SprintsController {
     @Post(':id/start')
     @HttpCode(HttpStatus.OK)
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Sprint', action: 'UPDATE' })
     @ApiOperation({
         summary: 'Start a sprint (PLANNED → ACTIVE)',
@@ -151,7 +151,7 @@ export class SprintsController {
     @Post(':id/complete')
     @HttpCode(HttpStatus.OK)
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Sprint', action: 'UPDATE' })
     @ApiOperation({
         summary: 'Complete a sprint (ACTIVE → COMPLETED)',
@@ -180,7 +180,7 @@ export class SprintsController {
     @Delete(':id')
     @HttpCode(HttpStatus.NO_CONTENT)
     @UseGuards(RolesGuard)
-    @Roles('ADMIN' as any)
+    @Roles('ADMIN')
     @AuditLog({ entity: 'Sprint', action: 'DELETE' })
     @ApiOperation({
         summary: 'Delete a sprint',
