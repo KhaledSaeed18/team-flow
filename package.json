@@ -2,6 +2,7 @@
   "name": "team-flow",
   "version": "0.0.1",
   "author": "KhaledSaeed18",
+  "packageManager": "pnpm@11.11.0",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\"",
