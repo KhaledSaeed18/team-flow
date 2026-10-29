@@ -3,6 +3,7 @@ import { newId } from '../ids.ts';
 import { members, organizations, users } from '../schema/auth.ts';
 import { createScope, type Scope } from '../scope.ts';
 import { createTestDatabase, type TestDatabase } from '../testing.ts';
+import { createComment, deleteComment } from './collaboration.ts';
 import { createProject } from './projects.ts';
 import { prefixQuery, searchTasks } from './search.ts';
 import { createTask } from './tasks.ts';
@@ -66,6 +67,37 @@ describe('task search', () => {
   test('never returns another organization’s tasks', async () => {
     expect(await titles('calibrate')).toHaveLength(1);
     expect((await searchTasks(other, 'battery')).length).toBe(0);
+  });
+
+  test('finds a task by what was said in its comments, with an excerpt, but not deleted ones', async () => {
+    const [encoders] = await searchTasks(scope, 'calibrate');
+    const now = new Date();
+    await createComment(
+      scope,
+      {
+        taskId: encoders?.id ?? '',
+        body: 'Reproduced on the gravel ramp; drift doubles in the cold.',
+        mentions: [],
+      },
+      now,
+    );
+    const [hit, ...rest] = await searchTasks(scope, 'gravel ramp');
+    expect(rest).toEqual([]);
+    expect(hit).toMatchObject({
+      title: 'Calibrate wheel encoders',
+      comment_excerpt: 'Reproduced on the gravel ramp; drift doubles in the cold.',
+    });
+    // A title match carries no excerpt.
+    expect((await searchTasks(scope, 'watchdog'))[0]?.comment_excerpt).toBeNull();
+
+    const gone = await createComment(
+      scope,
+      { taskId: encoders?.id ?? '', body: 'Ignore this: sandstorm test', mentions: [] },
+      now,
+    );
+    await deleteComment(scope, gone?.id ?? '', now);
+    expect(await titles('sandstorm')).toEqual([]);
+    expect(await titles('gravel', other)).toEqual([]);
   });
 
   test('builds safe prefix queries', () => {
