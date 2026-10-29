@@ -75,6 +75,7 @@ function ProjectLayout() {
             [
               ['/p/$key', 'Board'],
               ['/p/$key/list', 'List'],
+              ['/p/$key/calendar', 'Calendar'],
               ['/p/$key/backlog', 'Planning'],
               ['/p/$key/settings', 'Settings'],
             ] as const
