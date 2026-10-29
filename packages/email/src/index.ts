@@ -1,7 +1,7 @@
 import { render } from '@react-email/render';
 import { createElement } from 'react';
 import type { EmailMessage } from './messages.ts';
-import { CodeEmail, InvitationEmail } from './templates.tsx';
+import { CodeEmail, DigestEmail, InvitationEmail } from './templates.tsx';
 
 export * from './messages.ts';
 
@@ -61,6 +61,24 @@ export async function renderEmail(
             url: `${webUrl}/invitations/${message.invitationId}`,
           }),
         ] as const;
+      case 'digest': {
+        const total = message.items.length + message.more;
+        return [
+          `${total} unread in ${message.organizationName}`,
+          createElement(DigestEmail, {
+            name: message.name,
+            organizationName: message.organizationName,
+            frequency: message.frequency,
+            more: message.more,
+            items: message.items.map((item) => ({
+              ...item,
+              url: `${webUrl}/p/${item.identifier.split('-')[0]}?task=${item.identifier}`,
+            })),
+            inboxUrl: `${webUrl}/inbox`,
+            settingsUrl: `${webUrl}/settings/account`,
+          }),
+        ] as const;
+      }
     }
   })();
 

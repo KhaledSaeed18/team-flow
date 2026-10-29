@@ -32,4 +32,35 @@ describe('renderEmail', () => {
     expect(email.html).toContain('https://app.teamflow.test/invitations/inv-1');
     expect(email.text).toContain('as an admin');
   });
+
+  test('a digest lists items with links to each task and counts the rest', async () => {
+    const email = await renderEmail(
+      {
+        kind: 'digest',
+        to: 'ada@example.com',
+        name: 'Ada Lovelace',
+        organizationName: 'Acme',
+        frequency: 'daily',
+        items: [
+          {
+            kind: 'mentioned',
+            actorName: 'Linus',
+            identifier: 'RF-12',
+            title: 'Lidar driver timeouts',
+            excerpt: 'Can you look at the retry?',
+          },
+          { kind: 'assigned', actorName: null, identifier: 'FC-3', title: 'Fleet map' },
+        ],
+        more: 3,
+      },
+      options,
+    );
+    expect(email.subject).toBe('5 unread in Acme');
+    expect(email.html).toContain('https://app.teamflow.test/p/RF?task=RF-12');
+    expect(email.text).toContain('Linus mentioned you on');
+    expect(email.text).toContain('Someone assigned you');
+    expect(email.text).toContain('Can you look at the retry?');
+    expect(email.text).toContain('And 3 more.');
+    expect(email.text).toContain('https://app.teamflow.test/settings/account');
+  });
 });
