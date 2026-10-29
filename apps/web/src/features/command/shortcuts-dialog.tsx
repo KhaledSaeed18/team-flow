@@ -6,6 +6,7 @@ export const SHORTCUTS: { combo: string; label: string }[] = [
   { combo: '/', label: 'Search' },
   { combo: 'c', label: 'Create a task' },
   { combo: 'g b', label: 'Go to the board' },
+  { combo: 'g l', label: 'Go to the list' },
   { combo: 'g p', label: 'Go to planning' },
   { combo: 'g i', label: 'Go to the inbox' },
   { combo: '?', label: 'Show keyboard shortcuts' },

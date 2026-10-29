@@ -74,6 +74,7 @@ function ProjectLayout() {
           {(
             [
               ['/p/$key', 'Board'],
+              ['/p/$key/list', 'List'],
               ['/p/$key/backlog', 'Planning'],
             ] as const
           ).map(([to, label]) => (
