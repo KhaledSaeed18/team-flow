@@ -21,6 +21,11 @@ test('rename yourself, sign out another device, and change your password', async
   const phone = await signIn(browser);
   const { page } = laptop;
 
+  // Sofia is a guest: no audit log for her.
+  await expect(
+    page.getByRole('navigation', { name: 'Workspace' }).getByRole('link', { name: 'Audit log' }),
+  ).toHaveCount(0);
+
   await page.goto('/settings/account');
   const name = page.getByRole('textbox', { name: 'Name' });
   await name.fill('Sofia R.');
