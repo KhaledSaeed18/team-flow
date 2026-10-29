@@ -12,6 +12,7 @@ import {
   type TaskPatch,
   type TaskWithLabels,
   taskHistory,
+  uniqueViolation,
   updateTask,
 } from '@teamflow/db';
 import { parseTaskIdentifier, taskIdentifier } from '@teamflow/domain';
@@ -66,7 +67,18 @@ export const tasksService = {
   async create(actor: Actor, input: CreateTaskInput, now: Date) {
     const project = await writableProject(actor, input.projectId);
     authorize(actor, { task: ['create'] });
-    const task = await createTask(actor.scope, input, now);
+    // Clients may choose the id, so an optimistic create can be retried safely: the same id in the same project
+    // returns the task already made. Any other clash is a conflict, never a server error.
+    if (input.id) {
+      const existing = await findTask(actor.scope, input.id);
+      if (existing?.projectId === input.projectId) return toWire(existing, project.key);
+    }
+    const task = await createTask(actor.scope, input, now).catch((error: unknown) => {
+      if (uniqueViolation(error)) {
+        throw new AppError('CONFLICT', 'That task id is already taken. Create the task again.');
+      }
+      throw error;
+    });
     if (!task) throw notFound('Project not found.');
     return toWire(task, project.key);
   },

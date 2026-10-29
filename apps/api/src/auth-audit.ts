@@ -46,7 +46,9 @@ export function auditedAuthHandler(deps: Deps) {
         .json()
         .catch(() => ({}))) ?? {}) as Body;
       const organizationId =
-        plan.organizationId ?? text((result.invitation as Body | undefined)?.organizationId);
+        plan.organizationId ??
+        text((result.invitation as Body | undefined)?.organizationId) ??
+        text(result.organizationId);
       if (!organizationId) return response;
       const membership = await findMembership(deps.db, organizationId, session.user.id);
       const entry = plan.describe(result);
@@ -85,8 +87,10 @@ const PLANNERS: Record<string, Planner> = {
     }),
   }),
 
-  '/organization/cancel-invitation': async (_deps, _body, _user, active) => ({
-    organizationId: active,
+  // The invitation may belong to a workspace other than the active one; its own organization comes back in the
+  // response.
+  '/organization/cancel-invitation': async () => ({
+    organizationId: null,
     describe: (result) => ({
       kind: 'invitation.canceled',
       changes: [{ field: 'email', from: text(result.email), to: null }],

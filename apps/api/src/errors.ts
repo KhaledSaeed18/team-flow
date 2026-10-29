@@ -1,5 +1,6 @@
 import { ORPCError } from '@orpc/server';
 import {
+  checkViolation,
   foreignKeyViolation,
   InvalidReferenceError,
   InvalidWorkflowError,
@@ -68,6 +69,13 @@ export function toTransportError(error: unknown): unknown {
     return new ORPCError('INVALID_REFERENCE', {
       status: 422,
       message: 'Something this refers to does not exist in this organization.',
+    });
+  }
+  // Input the schema let through but the database refuses (a CHECK constraint) is still the caller's mistake.
+  if (checkViolation(error)) {
+    return new ORPCError('BAD_REQUEST', {
+      status: 400,
+      message: 'Those values do not fit together. Check them and try again.',
     });
   }
   if (error instanceof AppError) {

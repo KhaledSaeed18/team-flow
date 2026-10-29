@@ -127,6 +127,12 @@ export function updateProject(
       .limit(1);
     if (!current) return null;
     if (current.version !== expectedVersion) throw new StaleWriteError(current.version);
+    // Saving what is already there is not a change: bumping the version would make everyone else's next write
+    // a conflict for nothing.
+    const same = (Object.keys(patch) as (keyof ProjectPatch)[]).every(
+      (key) => JSON.stringify(patch[key]) === JSON.stringify(current[key]),
+    );
+    if (same) return current;
 
     const [updated] = await tx.db
       .update(projects)

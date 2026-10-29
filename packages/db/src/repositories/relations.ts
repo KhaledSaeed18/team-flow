@@ -66,14 +66,15 @@ export async function listRelations(scope: Scope, taskId: string): Promise<Relat
   }));
 }
 
-async function liveTask(tx: Scope, id: string) {
-  const [row] = await tx.db
+async function liveTask(tx: Scope, id: string, { lock = false } = {}) {
+  const query = tx.db
     .select({ id: tasks.id, projectId: tasks.projectId })
     .from(tasks)
     .where(
       and(eq(tasks.organizationId, tx.organizationId), eq(tasks.id, id), isNull(tasks.deletedAt)),
     )
     .limit(1);
+  const [row] = await (lock ? query.for('no key update') : query);
   return row ?? null;
 }
 
@@ -90,10 +91,14 @@ export function addRelation(
     if (input.sourceTaskId === input.targetTaskId) {
       throw new InvalidReferenceError('A task cannot be related to itself.');
     }
-    const [source, target] = await Promise.all([
-      liveTask(tx, input.sourceTaskId),
-      liveTask(tx, input.targetTaskId),
-    ]);
+    // Lock both tasks, always in id order so two requests cannot deadlock. Concurrent adds for the same pair then
+    // run one after the other: a repeat finds the first, and "A blocks B" against "B blocks A" sees the cycle.
+    const [first, second] = [input.sourceTaskId, input.targetTaskId].sort();
+    const locked = new Map<string, Awaited<ReturnType<typeof liveTask>>>();
+    for (const id of [first, second])
+      if (id) locked.set(id, await liveTask(tx, id, { lock: true }));
+    const source = locked.get(input.sourceTaskId);
+    const target = locked.get(input.targetTaskId);
     if (!source || !target) return null;
 
     const symmetric = input.type !== 'blocks';

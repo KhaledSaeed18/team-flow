@@ -25,12 +25,17 @@ export function listSprints(scope: Scope, projectId: string) {
     .orderBy(asc(sprints.startsAt));
 }
 
-export async function findSprint(scope: Scope, id: string): Promise<SprintRow | null> {
-  const [row] = await scope.db
+export async function findSprint(
+  scope: Scope,
+  id: string,
+  { lock = false } = {},
+): Promise<SprintRow | null> {
+  const query = scope.db
     .select()
     .from(sprints)
     .where(and(inOrg(scope), eq(sprints.id, id)))
     .limit(1);
+  const [row] = await (lock ? query.for('update') : query);
   return row ?? null;
 }
 
@@ -93,6 +98,10 @@ export function updateSprint(
     if (!current) return null;
     if (current.status === 'completed')
       throw new SprintStateError('A completed sprint cannot be edited.');
+    // The create schema checks the order of the dates; a patch may move only one of them.
+    const startsAt = patch.startsAt ?? current.startsAt;
+    const endsAt = patch.endsAt ?? current.endsAt;
+    if (endsAt <= startsAt) throw new SprintStateError('A sprint has to end after it starts.');
     return save(tx, current, patch, 'sprint.updated');
   });
 }
@@ -196,7 +205,8 @@ export function completeSprint(
     if (current.status !== 'active')
       throw new SprintStateError('Only the active sprint can be completed.');
     if (carryOverTo) {
-      const target = await findSprint(tx, carryOverTo);
+      // Locked, so it cannot be started or completed while unfinished work is moved into it.
+      const target = await findSprint(tx, carryOverTo, { lock: true });
       if (!target || target.projectId !== current.projectId || target.status !== 'planned') {
         throw new InvalidReferenceError(
           'Unfinished work can only move to a planned sprint of this project.',

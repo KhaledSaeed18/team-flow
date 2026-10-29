@@ -19,3 +19,10 @@ export function foreignKeyViolation(error: unknown): string | null {
   const pg = cause as { code?: string; constraint_name?: string };
   return pg?.code === '23503' ? (pg.constraint_name ?? 'unknown') : null;
 }
+
+/** A Postgres check-constraint violation, with the constraint that fired. */
+export function checkViolation(error: unknown): string | null {
+  const cause = (error as { cause?: unknown })?.cause ?? error;
+  const pg = cause as { code?: string; constraint_name?: string };
+  return pg?.code === '23514' ? (pg.constraint_name ?? 'unknown') : null;
+}

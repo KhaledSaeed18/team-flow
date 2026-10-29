@@ -1,10 +1,11 @@
 import {
   canRemoveStatus,
   rankBetween,
+  ranksBetween,
   type StatusCategory,
   validateWorkflow,
 } from '@teamflow/domain';
-import { and, asc, eq, isNull, sql } from 'drizzle-orm';
+import { and, asc, desc, eq, isNull, sql } from 'drizzle-orm';
 import { projects, workflowStatuses } from '../schema/projects.ts';
 import { activity, tasks } from '../schema/tasks.ts';
 import { inTransaction, type Scope } from '../scope.ts';
@@ -106,9 +107,12 @@ export function updateStatus(
   },
 ) {
   return inTransaction(scope, async (tx) => {
-    const current = await findStatus(tx, id);
+    const found = await findStatus(tx, id);
+    if (!found) return null;
+    const statuses = (await lockedStatuses(tx, found.projectId)) ?? [];
+    // Re-read under the project lock, so the checks below never run against a stale copy.
+    const current = statuses.find((s) => s.id === id);
     if (!current) return null;
-    const statuses = (await lockedStatuses(tx, current.projectId)) ?? [];
     const { afterId, ...fields } = patch;
 
     if (fields.category && fields.category !== current.category) {
@@ -168,9 +172,11 @@ export function updateStatus(
  */
 export function deleteStatus(scope: Scope, id: string, moveTasksTo: string, now: Date) {
   return inTransaction(scope, async (tx) => {
-    const current = await findStatus(tx, id);
+    const found = await findStatus(tx, id);
+    if (!found) return null;
+    const statuses = (await lockedStatuses(tx, found.projectId)) ?? [];
+    const current = statuses.find((s) => s.id === id);
     if (!current) return null;
-    const statuses = (await lockedStatuses(tx, current.projectId)) ?? [];
     const target = statuses.find((s) => s.id === moveTasksTo);
     if (!target || target.id === id) {
       throw new InvalidReferenceError('Pick another status of this workflow for its tasks.');
@@ -204,10 +210,30 @@ export function deleteStatus(scope: Scope, id: string, moveTasksTo: string, now:
         .from(tasks)
         .where(and(eq(tasks.organizationId, tx.organizationId), eq(tasks.statusId, id))),
     );
-    await tx.db
-      .update(tasks)
-      .set({ statusId: target.id, version: sql`${tasks.version} + 1` })
-      .where(and(eq(tasks.organizationId, tx.organizationId), eq(tasks.statusId, id)));
+    // The moved tasks keep their order but go below the target column's cards, with fresh ranks: their old ranks
+    // were only meaningful in the old column and could collide with the new one's.
+    const [last] = await tx.db
+      .select({ rank: tasks.rank })
+      .from(tasks)
+      .where(and(eq(tasks.organizationId, tx.organizationId), eq(tasks.statusId, target.id)))
+      .orderBy(desc(tasks.rank))
+      .limit(1);
+    const moving = await tx.db
+      .select({ id: tasks.id })
+      .from(tasks)
+      .where(and(eq(tasks.organizationId, tx.organizationId), eq(tasks.statusId, id)))
+      .orderBy(asc(tasks.rank));
+    const ranks = ranksBetween(last?.rank ?? null, null, moving.length);
+    for (const [i, task] of moving.entries()) {
+      await tx.db
+        .update(tasks)
+        .set({
+          statusId: target.id,
+          rank: ranks[i] ?? rankBetween(null, null),
+          version: sql`${tasks.version} + 1`,
+        })
+        .where(and(eq(tasks.organizationId, tx.organizationId), eq(tasks.id, task.id)));
+    }
     await tx.db
       .delete(workflowStatuses)
       .where(

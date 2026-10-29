@@ -7,6 +7,8 @@ import type { Deps } from './context.ts';
 import { toTransportError } from './errors.ts';
 import { attachmentsService } from './services/attachments.ts';
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 const reply = (c: Context, status: number, code: string, message: string) =>
   c.json({ code, message }, status as 400);
 
@@ -18,6 +20,9 @@ const reply = (c: Context, status: number, code: string, message: string) =>
 export function uploadAttachment(deps: Deps) {
   const service = attachmentsService(deps.storage);
   return async (c: Context) => {
+    const taskId = c.req.param('taskId') ?? '';
+    // Not a task id at all: the same answer as a task that does not exist.
+    if (!UUID.test(taskId)) return reply(c, 404, 'NOT_FOUND', 'Task not found.');
     const session = await deps.auth.api.getSession({ headers: c.req.raw.headers });
     if (!session) return reply(c, 401, 'UNAUTHORIZED', 'Sign in first.');
     const organizationId = session.session.activeOrganizationId;
@@ -41,7 +46,7 @@ export function uploadAttachment(deps: Deps) {
       const created = await service.upload(
         actor,
         {
-          taskId: c.req.param('taskId') ?? '',
+          taskId,
           fileName: c.req.query('name') ?? 'file',
           contentType: c.req.header('content-type') || 'application/octet-stream',
           body,
