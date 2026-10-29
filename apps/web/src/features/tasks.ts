@@ -62,7 +62,7 @@ export function useMoveTask(projectId: string) {
 
   return useMutation({
     mutationKey: ['tasks', 'move'],
-    scope: { id: `project-${projectId}-moves` },
+    scope: { id: `project-${projectId}-writes` },
     mutationFn: ({ id, place }: { id: string; place: Placement }) => {
       const task = current(id);
       if (!task) throw new Error('task not in cache');
@@ -143,6 +143,61 @@ export function useCreateTask(project: Project) {
         description: 'Check your connection and try again.',
         tone: 'danger',
       });
+    },
+  });
+}
+
+export type TaskPatch = Partial<
+  Pick<
+    Task,
+    | 'title'
+    | 'description'
+    | 'statusId'
+    | 'priority'
+    | 'estimate'
+    | 'assigneeMemberId'
+    | 'dueDate'
+    | 'labelIds'
+  >
+>;
+
+/**
+ * Patch a task optimistically. Shares the move queue, so an edit and a drag of the same task never race each
+ * other's version.
+ */
+export function useUpdateTask(projectId: string) {
+  const queryClient = useQueryClient();
+  const queryKey = tasksQuery(projectId).queryKey;
+  const current = (id: string) => queryClient.getQueryData(queryKey)?.find((t) => t.id === id);
+
+  return useMutation({
+    mutationKey: ['tasks', 'update'],
+    scope: { id: `project-${projectId}-writes` },
+    mutationFn: ({ id, patch }: { id: string; patch: TaskPatch }) => {
+      const task = current(id);
+      if (!task) throw new Error('task not in cache');
+      return client.tasks.update({ id, version: task.version, ...patch });
+    },
+    onMutate: async ({ id, patch }) => {
+      await queryClient.cancelQueries({ queryKey });
+      const previous = queryClient.getQueryData(queryKey);
+      queryClient.setQueryData(queryKey, (tasks) =>
+        tasks?.map((t) => (t.id === id ? { ...t, ...patch } : t)),
+      );
+      return { previous };
+    },
+    onSuccess: (task) => {
+      queryClient.setQueryData(queryKey, (tasks) =>
+        tasks?.map((t) => (t.id === task.id ? task : t)),
+      );
+      void queryClient.invalidateQueries({
+        queryKey: orpc.tasks.history.key({ input: { id: task.id } }),
+      });
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+      toast({ title: 'Change not saved', description: describe(error), tone: 'danger' });
+      void queryClient.invalidateQueries({ queryKey });
     },
   });
 }

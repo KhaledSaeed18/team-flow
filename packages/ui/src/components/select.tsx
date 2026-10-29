@@ -24,7 +24,7 @@ export function Select<T extends object>({ label, items, children, ...props }: S
     <AriaSelect {...props} className="flex flex-col gap-1.5">
       {label && <Label className="font-medium text-sm">{label}</Label>}
       <Button className="focus-ring flex h-9 items-center justify-between gap-2 rounded-control border border-line bg-surface px-2.5 text-left text-sm data-[hovered]:border-line-strong">
-        <SelectValue className="truncate data-[placeholder]:text-ink-faint" />
+        <SelectValue className="flex min-w-0 items-center gap-2 truncate data-[placeholder]:text-ink-faint" />
         <CaretDown aria-hidden className="text-ink-muted" />
       </Button>
       <Popover className={`${popover} w-(--trigger-width)`}>

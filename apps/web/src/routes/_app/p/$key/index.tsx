@@ -1,4 +1,4 @@
-import { createFileRoute, getRouteApi } from '@tanstack/react-router';
+import { createFileRoute, getRouteApi, useNavigate } from '@tanstack/react-router';
 import { Board } from '../../../../features/board/board.tsx';
 import { tasksQuery } from '../../../../features/tasks.ts';
 
@@ -15,5 +15,13 @@ export const Route = createFileRoute('/_app/p/$key/')({
 
 function BoardView() {
   const data = project.useLoaderData();
-  return <Board project={data} onOpenTask={() => {}} />;
+  const navigate = useNavigate();
+  return (
+    <Board
+      project={data}
+      onOpenTask={(task) =>
+        navigate({ to: '.', search: (prev) => ({ ...prev, task: task.identifier }) })
+      }
+    />
+  );
 }
