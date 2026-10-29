@@ -97,6 +97,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@teamflow/db": "workspace:*",
+        "@teamflow/domain": "workspace:*",
         "@teamflow/email": "workspace:*",
         "@teamflow/realtime": "workspace:*",
         "nodemailer": "^10.3.1",

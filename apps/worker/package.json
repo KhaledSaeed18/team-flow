@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@teamflow/db": "workspace:*",
+    "@teamflow/domain": "workspace:*",
     "@teamflow/realtime": "workspace:*",
     "nodemailer": "^10.3.1",
     "pg-boss": "^12.38.0",
