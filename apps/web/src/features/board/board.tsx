@@ -1,5 +1,6 @@
 import { Plus } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
+import type { PresenceMember } from '@teamflow/realtime';
 import { Button } from '@teamflow/ui';
 import { useMemo, useState } from 'react';
 import { DropIndicator, GridList, Input, TextField, useDragAndDrop } from 'react-aria-components';
@@ -21,9 +22,11 @@ type Status = Project['statuses'][number];
 
 export function Board({
   project,
+  viewersByTask,
   onOpenTask,
 }: {
   project: Project;
+  viewersByTask: Map<string, PresenceMember[]>;
   onOpenTask: (task: Task) => void;
 }) {
   const tasks = useQuery(tasksQuery(project.id));
@@ -55,6 +58,7 @@ export function Board({
           project={project}
           tasks={columns.get(status.id) ?? []}
           lookups={lookups}
+          viewersByTask={viewersByTask}
           onMove={(id, place) => move.mutate({ id, place })}
           onOpenTask={onOpenTask}
         />
@@ -68,11 +72,20 @@ interface ColumnProps {
   project: Project;
   tasks: Task[];
   lookups: CardLookups;
+  viewersByTask: Map<string, PresenceMember[]>;
   onMove: (id: string, place: Placement) => void;
   onOpenTask: (task: Task) => void;
 }
 
-function Column({ status, project, tasks, lookups, onMove, onOpenTask }: ColumnProps) {
+function Column({
+  status,
+  project,
+  tasks,
+  lookups,
+  viewersByTask,
+  onMove,
+  onOpenTask,
+}: ColumnProps) {
   const byId = (id: unknown) => tasks.find((t) => t.id === id);
 
   const place = (id: string, target: { key: unknown; dropPosition: 'before' | 'after' | 'on' }) => {
@@ -130,6 +143,7 @@ function Column({ status, project, tasks, lookups, onMove, onOpenTask }: ColumnP
       <GridList
         aria-label={`${status.name} tasks`}
         items={tasks}
+        dependencies={[viewersByTask, lookups]}
         dragAndDropHooks={dragAndDropHooks}
         onAction={(key) => {
           const task = byId(key);
@@ -150,7 +164,9 @@ function Column({ status, project, tasks, lookups, onMove, onOpenTask }: ColumnP
           }`
         }
       >
-        {(task) => <TaskCard task={task} lookups={lookups} />}
+        {(task) => (
+          <TaskCard task={task} lookups={lookups} viewers={viewersByTask.get(task.id) ?? []} />
+        )}
       </GridList>
       <QuickAdd project={project} statusId={status.id} />
     </section>
