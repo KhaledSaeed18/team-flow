@@ -246,6 +246,44 @@ describe('realtime gateway', () => {
     socket.close();
   });
 
+  test('personal events reach only their recipient, on the me channel', async () => {
+    const ada = await h.owner('Ada6', 'ada6-org');
+    const linus = await h.join(ada, 'Linus6', 'member');
+    const project = await ada.client.projects.create({ key: 'ME', name: 'Personal' });
+    const linusMember =
+      (await ada.client.members.list()).find((m) => m.name === 'Linus6')?.id ?? '';
+
+    const forLinus = await connect(url, linus.cookie());
+    const forAda = await connect(url, ada.cookie());
+    for (const socket of [forLinus, forAda]) {
+      await socket.next('ready');
+      socket.send({ type: 'subscribe', channel: 'me' });
+      await socket.next('subscribed');
+    }
+    forAda.send({ type: 'presence', channel: 'me', state: { taskId: null } });
+    expect(await forAda.next('error')).toMatchObject({ code: 'FORBIDDEN', channel: 'me' });
+
+    await ada.client.tasks.create({
+      projectId: project.id,
+      title: 'For Linus',
+      assigneeMemberId: linusMember,
+    });
+    while ((await relayOutbox(h.db, { channel: PG_EVENTS_CHANNEL })) > 0) {
+      // drain
+    }
+    const event = await forLinus.next('event', (m) => m.event.topic === 'notifications.created');
+    expect(event.channel).toBe('me');
+    expect(event.event.payload).toMatchObject({
+      kind: 'assigned',
+      recipientMemberIds: [linusMember],
+    });
+    expect(
+      (await forAda.drain('event')).filter((m) => m.type === 'event' && m.channel === 'me'),
+    ).toEqual([]);
+    forLinus.close();
+    forAda.close();
+  });
+
   test('presence from another node shows up, and expires if that node goes quiet', async () => {
     let clock = 1_000_000;
     const isolated = createGateway({
