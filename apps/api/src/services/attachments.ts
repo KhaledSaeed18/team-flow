@@ -50,7 +50,7 @@ export function attachmentsService(storage: Storage) {
       const fileName = cleanFileName(input.fileName);
       // Keys are opaque and namespaced by organization; the file name never reaches the key.
       const storageKey = `${actor.scope.organizationId}/${task.id}/${newId()}`;
-      await storage.put(storageKey, input.body, input.contentType);
+      await storage.put(storageKey, input.body, { contentType: input.contentType, fileName });
       try {
         const row = await createAttachment(
           actor.scope,
