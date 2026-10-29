@@ -56,7 +56,16 @@ const storage = await createS3Storage({
 });
 
 const app = createApp(
-  { db: database.db, auth, clock: systemClock, logger, storage },
+  {
+    db: database.db,
+    auth,
+    clock: systemClock,
+    logger,
+    storage,
+    // Defined below; only called once requests arrive.
+    onDescriptionReplaced: (organizationId, taskId, text) =>
+      collab.replaceDescription(organizationId, taskId, text),
+  },
   {
     apiUrl: env.API_URL,
     webUrl: env.WEB_URL,
@@ -106,6 +115,7 @@ const heartbeat = setInterval(() => gateway.heartbeat(), 15_000);
 // Membership and sessions can also change on another api node, or expire: re-check open sockets regularly.
 async function revalidateSockets() {
   await gateway.revalidate();
+  await collab.revalidate();
 }
 const revalidation = setInterval(() => void revalidateSockets(), 30_000);
 logger.info({ url: server.url.href }, 'api listening');
