@@ -41,6 +41,13 @@ test('sprint report', async ({ page }) => {
   await page.screenshot({ path: out('report'), fullPage: true });
 });
 
+test('planning', async ({ page }) => {
+  await page.goto('/p/RF/backlog');
+  await expect(page.getByRole('link', { name: 'Report' }).first()).toBeVisible();
+  await settle(page);
+  await page.screenshot({ path: out('planning') });
+});
+
 test('command palette', async ({ page }) => {
   await page.goto('/p/RF');
   await page.getByRole('grid').first().waitFor();
