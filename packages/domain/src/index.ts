@@ -1,3 +1,4 @@
+export * from './calendar.ts';
 export * from './clock.ts';
 export * from './digest.ts';
 export * from './filter.ts';

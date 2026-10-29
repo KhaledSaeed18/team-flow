@@ -26,6 +26,7 @@ import { Route as AppSettingsAuditRouteImport } from './routes/_app/settings/aud
 import { Route as AppSettingsMembersRouteImport } from './routes/_app/settings/members'
 import { Route as AppPKeyIndexRouteImport } from './routes/_app/p/$key/index'
 import { Route as AppPKeyBacklogRouteImport } from './routes/_app/p/$key/backlog'
+import { Route as AppPKeyCalendarRouteImport } from './routes/_app/p/$key/calendar'
 import { Route as AppPKeyListRouteImport } from './routes/_app/p/$key/list'
 import { Route as AppPKeySettingsRouteImport } from './routes/_app/p/$key/settings'
 import { Route as AppPKeySprintsSprintIdRouteImport } from './routes/_app/p/$key/sprints/$sprintId'
@@ -113,6 +114,11 @@ const AppPKeyBacklogRoute = AppPKeyBacklogRouteImport.update({
   path: '/backlog',
   getParentRoute: () => AppPKeyRouteRoute,
 } as any)
+const AppPKeyCalendarRoute = AppPKeyCalendarRouteImport.update({
+  id: '/calendar',
+  path: '/calendar',
+  getParentRoute: () => AppPKeyRouteRoute,
+} as any)
 const AppPKeyListRoute = AppPKeyListRouteImport.update({
   id: '/list',
   path: '/list',
@@ -144,6 +150,7 @@ export interface FileRoutesByFullPath {
   '/settings/audit': typeof AppSettingsAuditRoute
   '/settings/members': typeof AppSettingsMembersRoute
   '/p/$key/backlog': typeof AppPKeyBacklogRoute
+  '/p/$key/calendar': typeof AppPKeyCalendarRoute
   '/p/$key/list': typeof AppPKeyListRoute
   '/p/$key/settings': typeof AppPKeySettingsRoute
   '/p/$key/': typeof AppPKeyIndexRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/settings/audit': typeof AppSettingsAuditRoute
   '/settings/members': typeof AppSettingsMembersRoute
   '/p/$key/backlog': typeof AppPKeyBacklogRoute
+  '/p/$key/calendar': typeof AppPKeyCalendarRoute
   '/p/$key/list': typeof AppPKeyListRoute
   '/p/$key/settings': typeof AppPKeySettingsRoute
   '/p/$key': typeof AppPKeyIndexRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/_app/settings/audit': typeof AppSettingsAuditRoute
   '/_app/settings/members': typeof AppSettingsMembersRoute
   '/_app/p/$key/backlog': typeof AppPKeyBacklogRoute
+  '/_app/p/$key/calendar': typeof AppPKeyCalendarRoute
   '/_app/p/$key/list': typeof AppPKeyListRoute
   '/_app/p/$key/settings': typeof AppPKeySettingsRoute
   '/_app/p/$key/': typeof AppPKeyIndexRoute
@@ -208,6 +217,7 @@ export interface FileRouteTypes {
     | '/settings/audit'
     | '/settings/members'
     | '/p/$key/backlog'
+    | '/p/$key/calendar'
     | '/p/$key/list'
     | '/p/$key/settings'
     | '/p/$key/'
@@ -227,6 +237,7 @@ export interface FileRouteTypes {
     | '/settings/audit'
     | '/settings/members'
     | '/p/$key/backlog'
+    | '/p/$key/calendar'
     | '/p/$key/list'
     | '/p/$key/settings'
     | '/p/$key'
@@ -249,6 +260,7 @@ export interface FileRouteTypes {
     | '/_app/settings/audit'
     | '/_app/settings/members'
     | '/_app/p/$key/backlog'
+    | '/_app/p/$key/calendar'
     | '/_app/p/$key/list'
     | '/_app/p/$key/settings'
     | '/_app/p/$key/'
@@ -383,6 +395,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPKeyBacklogRouteImport
       parentRoute: typeof AppPKeyRouteRoute
     }
+    '/_app/p/$key/calendar': {
+      id: '/_app/p/$key/calendar'
+      path: '/calendar'
+      fullPath: '/p/$key/calendar'
+      preLoaderRoute: typeof AppPKeyCalendarRouteImport
+      parentRoute: typeof AppPKeyRouteRoute
+    }
     '/_app/p/$key/list': {
       id: '/_app/p/$key/list'
       path: '/list'
@@ -409,6 +428,7 @@ declare module '@tanstack/react-router' {
 
 interface AppPKeyRouteRouteChildren {
   AppPKeyBacklogRoute: typeof AppPKeyBacklogRoute
+  AppPKeyCalendarRoute: typeof AppPKeyCalendarRoute
   AppPKeyListRoute: typeof AppPKeyListRoute
   AppPKeySettingsRoute: typeof AppPKeySettingsRoute
   AppPKeyIndexRoute: typeof AppPKeyIndexRoute
@@ -417,6 +437,7 @@ interface AppPKeyRouteRouteChildren {
 
 const AppPKeyRouteRouteChildren: AppPKeyRouteRouteChildren = {
   AppPKeyBacklogRoute: AppPKeyBacklogRoute,
+  AppPKeyCalendarRoute: AppPKeyCalendarRoute,
   AppPKeyListRoute: AppPKeyListRoute,
   AppPKeySettingsRoute: AppPKeySettingsRoute,
   AppPKeyIndexRoute: AppPKeyIndexRoute,
