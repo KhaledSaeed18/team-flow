@@ -85,22 +85,20 @@ export function Backlog({
             onDrop={(taskId) => moveTo(taskId, sprint.id)}
             onOpenTask={onOpenTask}
             actions={
-              <>
-                {sprint.status === 'planned' ? (
-                  <Button
-                    size="sm"
-                    variant="secondary"
-                    isPending={actions.start.isPending}
-                    onPress={() => actions.start.mutate({ id: sprint.id, version: sprint.version })}
-                  >
-                    Start sprint
-                  </Button>
-                ) : (
-                  <Button size="sm" variant="primary" onPress={() => setCompleting(sprint)}>
-                    Complete sprint
-                  </Button>
-                )}
-              </>
+              sprint.status === 'planned' ? (
+                <Button
+                  size="sm"
+                  variant="secondary"
+                  isPending={actions.start.isPending}
+                  onPress={() => actions.start.mutate({ id: sprint.id, version: sprint.version })}
+                >
+                  Start sprint
+                </Button>
+              ) : (
+                <Button size="sm" variant="primary" onPress={() => setCompleting(sprint)}>
+                  Complete sprint
+                </Button>
+              )
             }
           />
         );
