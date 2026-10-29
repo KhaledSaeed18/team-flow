@@ -22,7 +22,7 @@ function SignIn() {
     });
     if (error?.code === 'EMAIL_NOT_VERIFIED') {
       await authClient.emailOtp.sendVerificationOtp({ email, type: 'email-verification' });
-      await navigate({ to: '/verify', search: { email } });
+      await navigate({ to: '/verify', search: { email, redirect } });
       return;
     }
     if (error)

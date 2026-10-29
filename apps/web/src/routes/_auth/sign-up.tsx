@@ -1,14 +1,19 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Button, Notice, TextField, TextLink } from '@teamflow/ui';
 import { Form } from 'react-aria-components';
+import { z } from 'zod';
 import { AuthLayout } from '../../components/auth-layout.tsx';
 import { authClient } from '../../lib/auth.ts';
 import { field, useSubmit } from '../../lib/use-submit.ts';
 
-export const Route = createFileRoute('/_auth/sign-up')({ component: SignUp });
+export const Route = createFileRoute('/_auth/sign-up')({
+  validateSearch: z.object({ redirect: z.string().startsWith('/').optional() }),
+  component: SignUp,
+});
 
 function SignUp() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const { onSubmit, pending, error } = useSubmit(async (data) => {
     const email = field(data, 'email');
     const { error } = await authClient.signUp.email({
@@ -17,7 +22,7 @@ function SignUp() {
       password: String(data.get('password')),
     });
     if (error) return error.message;
-    await navigate({ to: '/verify', search: { email } });
+    await navigate({ to: '/verify', search: { email, redirect } });
   });
 
   return (
@@ -42,7 +47,12 @@ function SignUp() {
           Create account
         </Button>
         <p className="text-ink-muted text-sm">
-          Already have an account? <TextLink href="/sign-in">Sign in</TextLink>
+          Already have an account?{' '}
+          <TextLink
+            href={redirect ? `/sign-in?redirect=${encodeURIComponent(redirect)}` : '/sign-in'}
+          >
+            Sign in
+          </TextLink>
         </p>
       </Form>
     </AuthLayout>
