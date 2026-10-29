@@ -1,10 +1,12 @@
 import { Desktop } from '@phosphor-icons/react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
-import { Avatar, Button, Notice, Switch, TextField, toast } from '@teamflow/ui';
+import type { DigestFrequency } from '@teamflow/domain';
+import { Avatar, Button, Notice, Select, SelectItem, Switch, TextField, toast } from '@teamflow/ui';
 import { useRef, useState } from 'react';
 import { Form } from 'react-aria-components';
 import { ApiTokens } from '../../../features/settings/api-tokens.tsx';
+import { orpc } from '../../../lib/api.ts';
 import { authClient } from '../../../lib/auth.ts';
 import { describeDevice } from '../../../lib/device.ts';
 import { meQuery } from '../../../lib/session.ts';
@@ -23,6 +25,7 @@ function Account() {
       </div>
       <Profile />
       <Password />
+      <Email />
       <Sessions />
       <Tokens />
     </main>
@@ -45,6 +48,53 @@ function Section({
       </h2>
       {children}
     </section>
+  );
+}
+
+const FREQUENCY_LABEL: Record<DigestFrequency, string> = {
+  daily: 'Daily',
+  weekly: 'Weekly',
+  off: 'Never',
+};
+
+function Email() {
+  const { me } = Route.useRouteContext();
+  const queryClient = useQueryClient();
+  const workspace = me.organizations.find((o) => o.id === me.activeOrganizationId)?.name;
+  const digest = useQuery(orpc.notifications.digest.queryOptions());
+  const save = useMutation(
+    orpc.notifications.setDigest.mutationOptions({
+      onSuccess: (data) => {
+        queryClient.setQueryData(orpc.notifications.digest.queryKey(), data);
+        toast({ title: 'Email preference saved' });
+      },
+      onError: (error) => toast({ title: 'Not saved', description: error.message, tone: 'danger' }),
+    }),
+  );
+  if (!workspace) return null;
+  return (
+    <Section id="email" title="Email">
+      <div className="flex items-end justify-between gap-4 rounded-card border border-line bg-surface p-4">
+        <p className="text-ink-muted text-sm">
+          A summary of what is unread in <strong className="text-ink">{workspace}</strong>:
+          mentions, assignments and comments on your work. Sent only when there is something new.
+        </p>
+        <div className="w-36 shrink-0">
+          <Select
+            label="Summary emails"
+            selectedKey={digest.data?.frequency ?? null}
+            isDisabled={!digest.data}
+            onSelectionChange={(key) => save.mutate({ frequency: key as DigestFrequency })}
+          >
+            {(Object.keys(FREQUENCY_LABEL) as DigestFrequency[]).map((f) => (
+              <SelectItem key={f} id={f}>
+                {FREQUENCY_LABEL[f]}
+              </SelectItem>
+            ))}
+          </Select>
+        </div>
+      </div>
+    </Section>
   );
 }
 
