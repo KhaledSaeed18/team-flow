@@ -294,7 +294,10 @@ function LabelPicker({
   const chosen = options.filter((o) => selected.includes(o.id));
   return (
     <DialogTrigger>
-      <AriaButton className="focus-ring flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-control border border-line bg-surface px-2.5 py-1 text-left text-sm data-[hovered]:border-line-strong">
+      <AriaButton
+        aria-label={`Labels: ${chosen.map((l) => l.name).join(', ') || 'none'}`}
+        className="focus-ring flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-control border border-line bg-surface px-2.5 py-1 text-left text-sm data-[hovered]:border-line-strong"
+      >
         {chosen.length === 0 && (
           <span className="flex items-center gap-1.5 text-ink-faint">
             <TagIcon /> Add labels
@@ -328,6 +331,8 @@ function LabelPicker({
               }
               items={options}
               className="outline-none"
+              // Escape closes the picker; by default it would also remove every label from the task.
+              escapeKeyBehavior="none"
             >
               {(label) => (
                 <ListBoxItem
