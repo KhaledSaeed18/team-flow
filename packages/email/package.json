@@ -1,0 +1,26 @@
+{
+  "name": "@teamflow/email",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@teamflow/tsconfig": "workspace:*",
+    "@types/bun": "catalog:",
+    "@types/react": "^19.3.0",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@react-email/components": "^1.0.12",
+    "@react-email/render": "^2.2.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "zod": "catalog:"
+  }
+}
