@@ -1,6 +1,7 @@
-import { Plus, Tray, UsersThree } from '@phosphor-icons/react';
+import { ClockCounterClockwise, Plus, Tray, UsersThree } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
+import { can } from '@teamflow/auth/permissions';
 import { Button, Tooltip } from '@teamflow/ui';
 import { useInbox } from '../../features/inbox/inbox.ts';
 import { orpc } from '../../lib/api.ts';
@@ -10,6 +11,7 @@ import { WorkspaceMenu } from './workspace-menu.tsx';
 export function Sidebar({ me, onCreateProject }: { me: Me; onCreateProject: () => void }) {
   const projects = useQuery(orpc.projects.list.queryOptions({ input: {} }));
   const unread = useInbox().data?.unread ?? 0;
+  const role = me.organizations.find((o) => o.id === me.activeOrganizationId)?.role ?? 'guest';
 
   return (
     <nav
@@ -36,6 +38,14 @@ export function Sidebar({ me, onCreateProject }: { me: Me; onCreateProject: () =
       >
         <UsersThree aria-hidden /> Members
       </Link>
+      {can(role, { audit: ['read'] }) && (
+        <Link
+          to="/settings/audit"
+          className="focus-ring flex items-center gap-2 rounded-control px-2 py-1.5 text-ink-muted text-sm outline-none hover:bg-lane hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold data-[status=active]:bg-surface data-[status=active]:text-ink"
+        >
+          <ClockCounterClockwise aria-hidden /> Audit log
+        </Link>
+      )}
 
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center justify-between px-2 pb-1">
