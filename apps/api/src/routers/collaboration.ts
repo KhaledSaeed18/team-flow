@@ -29,6 +29,12 @@ export const comments = {
 };
 
 export const notifications = {
+  digest: os.notifications.digest
+    .use(tenant)
+    .handler(({ context }) => notificationsService.digest(context)),
+  setDigest: os.notifications.setDigest
+    .use(tenant)
+    .handler(({ context, input }) => notificationsService.setDigest(context, input.frequency)),
   list: os.notifications.list
     .use(tenant)
     .handler(({ context, input }) => notificationsService.list(context, input.unreadOnly)),

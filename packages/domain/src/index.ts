@@ -1,4 +1,5 @@
 export * from './clock.ts';
+export * from './digest.ts';
 export * from './filter.ts';
 export * from './metrics.ts';
 export * from './rank.ts';

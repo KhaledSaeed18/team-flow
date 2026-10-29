@@ -1,3 +1,4 @@
+import { DigestFrequency } from '@teamflow/domain';
 import { z } from 'zod';
 import { base } from '../base.ts';
 import { Id, Timestamp } from '../schemas.ts';
@@ -125,4 +126,23 @@ export const notifications = {
     })
     .input(z.object({ ids: z.array(Id).max(200).nullable() }))
     .output(z.object({ unread: z.number().int() })),
+
+  digest: base
+    .route({
+      method: 'GET',
+      path: '/me/digest',
+      summary: 'How often you get an email summary of unread notifications',
+      tags: ['Notifications'],
+    })
+    .output(z.object({ frequency: DigestFrequency })),
+
+  setDigest: base
+    .route({
+      method: 'PUT',
+      path: '/me/digest',
+      summary: 'Change how often you get an email summary',
+      tags: ['Notifications'],
+    })
+    .input(z.object({ frequency: DigestFrequency }))
+    .output(z.object({ frequency: DigestFrequency })),
 };

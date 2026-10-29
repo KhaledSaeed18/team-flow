@@ -5,6 +5,7 @@ import { createTransport } from 'nodemailer';
 import { PgBoss } from 'pg-boss';
 import pino from 'pino';
 import { z } from 'zod';
+import { DIGEST_QUEUE, runDigests } from './digest.ts';
 import { deliverEmails } from './email.ts';
 import { createRelayLoop } from './relay.ts';
 
@@ -68,6 +69,19 @@ await boss.work(EMAIL_QUEUE, { batchSize: 10 }, (jobs) =>
     onDropped: (id) => logger.warn({ jobId: id }, 'dropped malformed email job'),
   }),
 );
+
+// Digests: an hourly pass; pg-boss runs each scheduled job once across every worker.
+await boss.createQueue(DIGEST_QUEUE);
+await boss.schedule(DIGEST_QUEUE, '0 * * * *');
+await boss.work(DIGEST_QUEUE, async () => {
+  const sent = await runDigests({
+    db: database.db,
+    now: new Date(),
+    enqueue: (message) =>
+      boss.send(EMAIL_QUEUE, message, { retryLimit: 5, retryDelay: 60, retryBackoff: true }),
+  });
+  if (sent > 0) logger.info({ sent }, 'digests enqueued');
+});
 logger.info('worker started');
 
 const shutdown = async (signal: string) => {

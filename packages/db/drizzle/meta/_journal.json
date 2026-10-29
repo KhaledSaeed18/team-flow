@@ -99,6 +99,13 @@
       "when": 1793299623322,
       "tag": "0013_comment_reactions",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1793300604901,
+      "tag": "0014_digest_settings",
+      "breakpoints": true
     }
   ]
 }

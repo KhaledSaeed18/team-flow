@@ -26,14 +26,19 @@ const colors = {
 };
 const font = '-apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif';
 
+const DEFAULT_FOOTER =
+  'You are receiving this because of an action on your TeamFlow account. If it was not you, you can ignore it.';
+
 function Layout({
   preview,
   title,
   children,
+  footer = DEFAULT_FOOTER,
 }: {
   preview: string;
   title: string;
   children: ReactNode;
+  footer?: string;
 }) {
   return (
     <Html lang="en">
@@ -62,10 +67,7 @@ function Layout({
           </Heading>
           {children}
           <Hr style={{ borderColor: colors.line, margin: '28px 0 16px' }} />
-          <Text style={{ color: colors.muted, fontSize: 12, margin: 0 }}>
-            You are receiving this because of an action on your TeamFlow account. If it was not you,
-            you can ignore it.
-          </Text>
+          <Text style={{ color: colors.muted, fontSize: 12, margin: 0 }}>{footer}</Text>
         </Container>
       </Body>
     </Html>
@@ -143,6 +145,88 @@ export function InvitationEmail({
       <Text style={{ ...paragraph, color: colors.muted, fontSize: 13, marginTop: 16 }}>
         The invitation expires in 7 days.
       </Text>
+    </Layout>
+  );
+}
+
+export interface DigestItem {
+  kind: 'assigned' | 'mentioned' | 'commented';
+  actorName: string | null;
+  identifier: string;
+  title: string;
+  excerpt?: string | undefined;
+  url: string;
+}
+
+const VERB: Record<DigestItem['kind'], string> = {
+  assigned: 'assigned you',
+  mentioned: 'mentioned you on',
+  commented: 'commented on',
+};
+
+export function DigestEmail({
+  name,
+  organizationName,
+  frequency,
+  items,
+  more,
+  inboxUrl,
+  settingsUrl,
+}: {
+  name: string;
+  organizationName: string;
+  frequency: 'daily' | 'weekly';
+  items: DigestItem[];
+  more: number;
+  inboxUrl: string;
+  settingsUrl: string;
+}) {
+  const total = items.length + more;
+  return (
+    <Layout
+      preview={`${total} unread in ${organizationName}`}
+      title={`Your ${frequency === 'daily' ? 'daily' : 'weekly'} summary`}
+      footer={`You get this ${frequency} summary of unread notifications in ${organizationName}. Change how often in account settings: ${settingsUrl}`}
+    >
+      <Text style={paragraph}>
+        Hi {name.split(' ')[0]}, here is what is waiting for you in {organizationName}.
+      </Text>
+      {items.map((item) => (
+        <Section
+          key={`${item.identifier}-${item.kind}-${item.excerpt ?? ''}`}
+          style={{ borderTop: `1px solid ${colors.line}`, padding: '12px 0' }}
+        >
+          <Text style={{ ...paragraph, margin: 0 }}>
+            {item.actorName ?? 'Someone'} {VERB[item.kind]}{' '}
+            <a href={item.url} style={{ color: colors.ink, fontWeight: 600 }}>
+              {item.identifier} {item.title}
+            </a>
+          </Text>
+          {item.excerpt && (
+            <Text style={{ ...paragraph, color: colors.muted, fontSize: 13, margin: '4px 0 0' }}>
+              “{item.excerpt}”
+            </Text>
+          )}
+        </Section>
+      ))}
+      {more > 0 && (
+        <Text style={{ ...paragraph, color: colors.muted, fontSize: 13 }}>And {more} more.</Text>
+      )}
+      <Button
+        href={inboxUrl}
+        style={{
+          backgroundColor: colors.ink,
+          borderRadius: 6,
+          color: colors.canvas,
+          display: 'inline-block',
+          fontSize: 14,
+          fontWeight: 600,
+          marginTop: 8,
+          padding: '10px 16px',
+        }}
+      >
+        Open your inbox
+      </Button>
     </Layout>
   );
 }

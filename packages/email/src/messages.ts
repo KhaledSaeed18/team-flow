@@ -13,6 +13,26 @@ export const EmailMessage = z.discriminatedUnion('kind', [
     inviterName: z.string(),
     role: z.string(),
   }),
+  z.object({
+    kind: z.literal('digest'),
+    to: z.email(),
+    name: z.string(),
+    organizationName: z.string(),
+    frequency: z.enum(['daily', 'weekly']),
+    items: z
+      .array(
+        z.object({
+          kind: z.enum(['assigned', 'mentioned', 'commented']),
+          actorName: z.string().nullable(),
+          identifier: z.string(),
+          title: z.string(),
+          excerpt: z.string().optional(),
+        }),
+      )
+      .min(1),
+    /** Unread items beyond those listed. */
+    more: z.number().int().nonnegative(),
+  }),
 ]);
 export type EmailMessage = z.infer<typeof EmailMessage>;
 
