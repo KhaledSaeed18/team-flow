@@ -1,0 +1,21 @@
+{
+  "name": "@teamflow/contract",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@teamflow/tsconfig": "workspace:*",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@orpc/contract": "^1.16.1",
+    "zod": "catalog:"
+  }
+}

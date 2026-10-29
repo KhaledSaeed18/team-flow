@@ -1,0 +1,32 @@
+{
+  "name": "@teamflow/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --env-file=../../.env --watch src/server.ts",
+    "start": "bun --env-file=../../.env src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@orpc/client": "^1.16.1",
+    "@teamflow/tsconfig": "workspace:*",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "@orpc/contract": "^1.16.1",
+    "@orpc/openapi": "^1.16.1",
+    "@orpc/server": "^1.16.1",
+    "@orpc/zod": "^1.16.1",
+    "@teamflow/auth": "workspace:*",
+    "@teamflow/contract": "workspace:*",
+    "@teamflow/db": "workspace:*",
+    "@teamflow/domain": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "hono": "^4.13.14",
+    "pino": "^10.4.0",
+    "zod": "catalog:"
+  }
+}
