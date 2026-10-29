@@ -1,7 +1,7 @@
 import { type FormEvent, useState } from 'react';
 
 /** Form submission state: runs `action`, exposes pending and a user-facing error message. */
-export function useSubmit(action: (data: FormData) => Promise<string | null | undefined | void>) {
+export function useSubmit(action: (data: FormData) => Promise<string | null | undefined>) {
   const [pending, setPending] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
