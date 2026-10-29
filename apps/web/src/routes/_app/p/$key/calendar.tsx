@@ -4,9 +4,10 @@ import { z } from 'zod';
 import { Calendar, today } from '../../../../features/calendar/calendar.tsx';
 import { useProjectView } from '../../../../features/project-context.tsx';
 import { tasksQuery } from '../../../../features/tasks.ts';
+import { lenient } from '../../../../lib/search.ts';
 
 export const Route = createFileRoute('/_app/p/$key/calendar')({
-  validateSearch: z.object({ month: z.string().refine(isIsoMonth).optional() }),
+  validateSearch: lenient(z.object({ month: z.string().refine(isIsoMonth).optional() })),
   loader: async ({ context, parentMatchPromise }) => {
     const parent = await parentMatchPromise;
     if (parent.loaderData)
