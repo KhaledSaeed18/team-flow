@@ -32,6 +32,8 @@ export interface SocketData {
   name: string;
   image: string | null;
   channels: Set<Channel>;
+  /** Messages from one socket are handled strictly in order (a subscribe must finish before its presence). */
+  queue: Promise<void>;
 }
 
 export type Socket = ServerWebSocket<SocketData>;
@@ -178,6 +180,7 @@ export function createGateway({
         name: session.user.name,
         image: session.user.image ?? null,
         channels: new Set(),
+        queue: Promise.resolve(),
       };
       return bunServer.upgrade(request, { data })
         ? undefined
@@ -189,20 +192,20 @@ export function createGateway({
       open(ws: Socket) {
         send(ws, { type: 'ready', connectionId: ws.data.connectionId });
       },
-      async message(ws: Socket, raw: string | Buffer) {
+      message(ws: Socket, raw: string | Buffer) {
         const message = parseClientMessage(typeof raw === 'string' ? raw : raw.toString());
         if (!message) {
           send(ws, { type: 'error', code: 'BAD_MESSAGE' });
           return;
         }
-        try {
-          await handle(ws, message);
-        } catch (error) {
-          logger.error(
-            { err: error, connectionId: ws.data.connectionId },
-            'realtime message failed',
-          );
-        }
+        ws.data.queue = ws.data.queue
+          .then(() => handle(ws, message))
+          .catch((error: unknown) => {
+            logger.error(
+              { err: error, connectionId: ws.data.connectionId },
+              'realtime message failed',
+            );
+          });
       },
       close(ws: Socket) {
         for (const channel of ws.data.channels) setPresence(ws, channel, null);
