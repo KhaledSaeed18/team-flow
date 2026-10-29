@@ -17,6 +17,7 @@ type EventListener = (event: DomainEvent) => void;
 type Status = 'connecting' | 'open' | 'closed';
 
 const RECONNECT_MAX_MS = 15_000;
+const RECOVERY_DELAY_MS = 1_500;
 
 class RealtimeConnection {
   private socket: WebSocket | null = null;
@@ -122,9 +123,10 @@ class RealtimeConnection {
       }
       if (event.code === 4403) {
         this.recovering = true;
-        // Counts as a reconnect, so listeners refetch whatever was missed meanwhile.
+        // Counts as a reconnect, so listeners refetch whatever was missed meanwhile. The short wait lets a new
+        // session cookie, arriving with the response that replaced the session, settle first.
         this.attempts++;
-        this.ensureOpen();
+        setTimeout(() => this.ensureOpen(), RECOVERY_DELAY_MS);
         return;
       }
       if (this.channels.size === 0) return;
