@@ -26,8 +26,10 @@
         "@teamflow/contract": "workspace:*",
         "@teamflow/db": "workspace:*",
         "@teamflow/domain": "workspace:*",
+        "@teamflow/realtime": "workspace:*",
         "hono": "^4.13.14",
         "pino": "^10.4.0",
+        "postgres": "^3.4.9",
         "zod": "catalog:",
       },
       "devDependencies": {
@@ -126,6 +128,18 @@
         "@teamflow/tsconfig": "workspace:*",
         "@types/bun": "catalog:",
         "fast-check": "^4.10.2",
+        "typescript": "catalog:",
+      },
+    },
+    "packages/realtime": {
+      "name": "@teamflow/realtime",
+      "version": "0.0.0",
+      "dependencies": {
+        "zod": "catalog:",
+      },
+      "devDependencies": {
+        "@teamflow/tsconfig": "workspace:*",
+        "@types/bun": "catalog:",
         "typescript": "catalog:",
       },
     },
@@ -538,6 +552,8 @@
     "@teamflow/db": ["@teamflow/db@workspace:packages/db"],
 
     "@teamflow/domain": ["@teamflow/domain@workspace:packages/domain"],
+
+    "@teamflow/realtime": ["@teamflow/realtime@workspace:packages/realtime"],
 
     "@teamflow/tsconfig": ["@teamflow/tsconfig@workspace:packages/tsconfig"],
 

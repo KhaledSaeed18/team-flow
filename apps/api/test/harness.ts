@@ -75,7 +75,9 @@ export async function createHarness() {
       }),
     );
 
-    return { fetch, authPost, client };
+    const cookie = () => [...jar].map(([k, v]) => `${k}=${v}`).join('; ');
+
+    return { fetch, authPost, client, cookie };
   }
 
   /** Sign up and verify a user; returns a signed-in visitor. */
@@ -117,6 +119,8 @@ export async function createHarness() {
 
   return {
     app,
+    auth,
+    database,
     db: database.db,
     emails,
     clock,

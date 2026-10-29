@@ -4,6 +4,8 @@ import { systemClock } from '@teamflow/domain';
 import { createApp } from './app.ts';
 import { readEnv } from './env.ts';
 import { createLogger } from './logger.ts';
+import { createGateway, type SocketData } from './realtime/gateway.ts';
+import { listen, presenceNotifier } from './realtime/listen.ts';
 
 const env = readEnv();
 const logger = createLogger(env.LOG_LEVEL);
@@ -36,11 +38,29 @@ const app = createApp(
   { apiUrl: env.API_URL, webUrl: env.WEB_URL },
 );
 
-const server = Bun.serve({ port: env.PORT, fetch: app.fetch });
+const gateway = createGateway({
+  db: database.db,
+  auth,
+  logger,
+  notifyPresence: presenceNotifier(database.sql),
+});
+
+const server = Bun.serve<SocketData>({
+  port: env.PORT,
+  fetch(request, bunServer) {
+    if (new URL(request.url).pathname === '/ws') return gateway.upgrade(request, bunServer);
+    return app.fetch(request, bunServer);
+  },
+  websocket: gateway.websocket,
+});
+gateway.bind(server);
+await listen(database.sql, gateway, logger);
+const heartbeat = setInterval(() => gateway.heartbeat(), 15_000);
 logger.info({ url: server.url.href }, 'api listening');
 
 const shutdown = async (signal: string) => {
   logger.info({ signal }, 'shutting down');
+  clearInterval(heartbeat);
   await server.stop();
   await database.close();
   process.exit(0);
