@@ -27,6 +27,8 @@
     "@teamflow/domain": "workspace:*",
     "hono": "^4.13.14",
     "pino": "^10.4.0",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@teamflow/realtime": "workspace:*",
+    "postgres": "^3.4.9"
   }
 }
