@@ -1,9 +1,33 @@
 import { AwsClient } from 'aws4fetch';
 import { S3Client } from 'bun';
 
+/** Raster images a browser can safely show inline. Anything else (SVG and HTML included) could run script. */
+const INLINE_TYPES = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/avif']);
+
+/**
+ * The headers an object is stored with. Uploaders choose the content type, so it is never trusted: only known
+ * raster images are served as themselves and inline; everything else is served as an opaque download under its
+ * own file name.
+ */
+export function servingHeaders(contentType: string, fileName: string) {
+  const type = contentType.split(';')[0]?.trim().toLowerCase() ?? '';
+  const inline = INLINE_TYPES.has(type);
+  const ascii = fileName.replace(/[^\x20-\x7e]/g, '_').replace(/["\\]/g, '_');
+  return {
+    type: inline ? type : 'application/octet-stream',
+    contentDisposition: inline
+      ? 'inline'
+      : `attachment; filename="${ascii}"; filename*=UTF-8''${encodeURIComponent(fileName)}`,
+  };
+}
+
 /** Where attachment bytes live. S3-compatible in development and production; in memory for tests. */
 export interface Storage {
-  put(key: string, body: ArrayBuffer, contentType: string): Promise<void>;
+  put(
+    key: string,
+    body: ArrayBuffer,
+    file: { contentType: string; fileName: string },
+  ): Promise<void>;
   remove(key: string): Promise<void>;
   /** A short-lived link to download the object. */
   url(key: string, fileName: string): string;
@@ -35,8 +59,8 @@ export async function createS3Storage(options: S3Options): Promise<Storage> {
 
   const s3 = new S3Client(options);
   return {
-    async put(key, body, contentType) {
-      await s3.write(key, body, { type: contentType });
+    async put(key, body, { contentType, fileName }) {
+      await s3.write(key, body, servingHeaders(contentType, fileName));
     },
     async remove(key) {
       await s3.delete(key);
@@ -45,14 +69,14 @@ export async function createS3Storage(options: S3Options): Promise<Storage> {
   };
 }
 
-export function createMemoryStorage(): Storage & {
-  objects: Map<string, { body: ArrayBuffer; contentType: string }>;
-} {
-  const objects = new Map<string, { body: ArrayBuffer; contentType: string }>();
+type Stored = { body: ArrayBuffer } & ReturnType<typeof servingHeaders>;
+
+export function createMemoryStorage(): Storage & { objects: Map<string, Stored> } {
+  const objects = new Map<string, Stored>();
   return {
     objects,
-    async put(key, body, contentType) {
-      objects.set(key, { body, contentType });
+    async put(key, body, { contentType, fileName }) {
+      objects.set(key, { body, ...servingHeaders(contentType, fileName) });
     },
     async remove(key) {
       objects.delete(key);
