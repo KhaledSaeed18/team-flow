@@ -110,7 +110,7 @@ export function BurndownChart({ data, title }: { data: BurndownDatum[]; title: s
   const hovered = hover === null ? null : data[hover];
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative tabular-nums">
       <svg
         width={width}
         height={HEIGHT}
@@ -247,7 +247,7 @@ export function VelocityChart({ data, title }: { data: VelocityDatum[]; title: s
   const hovered = hover === null ? null : data[hover];
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative tabular-nums">
       <svg
         width={width}
         height={HEIGHT}
@@ -374,7 +374,7 @@ export function CumulativeFlowChart({ data, title }: { data: FlowDatum[]; title:
   const hovered = hover === null ? null : data[hover];
 
   return (
-    <div ref={ref} className="relative">
+    <div ref={ref} className="relative tabular-nums">
       <svg
         width={width}
         height={HEIGHT}

@@ -26,7 +26,7 @@ export function Sidebar({ me, onCreateProject }: { me: Me; onCreateProject: () =
       >
         <Tray aria-hidden /> <span className="flex-1">Inbox</span>
         {unread > 0 && (
-          <span className="rounded-full bg-ink px-1.5 font-medium text-2xs text-canvas">
+          <span className="rounded-full bg-ink px-1.5 font-medium text-2xs text-canvas tabular-nums">
             {unread > 99 ? '99+' : unread}
             <span className="sr-only"> unread</span>
           </span>
