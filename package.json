@@ -26,7 +26,10 @@
     "prepare": "lefthook install",
     "infra:up": "docker compose up -d --wait",
     "infra:down": "docker compose down",
-    "infra:reset": "docker compose down -v && docker compose up -d --wait"
+    "infra:reset": "docker compose down -v && docker compose up -d --wait",
+    "db:generate": "bun run --cwd packages/db generate",
+    "db:migrate": "bun run --cwd packages/db migrate",
+    "db:studio": "bun run --cwd packages/db studio"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",

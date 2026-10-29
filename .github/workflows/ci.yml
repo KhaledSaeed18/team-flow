@@ -17,8 +17,22 @@ jobs:
   check:
     name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:18-alpine
+        env:
+          POSTGRES_USER: teamflow
+          POSTGRES_PASSWORD: teamflow
+          POSTGRES_DB: teamflow_test
+        ports: ["5442:5432"]
+        options: >-
+          --health-cmd "pg_isready -U teamflow"
+          --health-interval 2s
+          --health-timeout 3s
+          --health-retries 30
     env:
       TURBO_TELEMETRY_DISABLED: 1
+      TEST_DATABASE_URL: postgres://teamflow:teamflow@localhost:5442/teamflow_test
     steps:
       - uses: actions/checkout@v7
         with:
