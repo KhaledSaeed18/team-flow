@@ -11,7 +11,7 @@ Work lands as small pull requests into `dev`; `main` receives releases.
 | M3 Web app shell                   | Done (list view shipped with M8)                  |
 | M4 Real-time                       | Done                                              |
 | M5 Planning and insight            | Done                                              |
-| M6 Collaboration and notifications | Done except email digests                         |
+| M6 Collaboration and notifications | Done                                              |
 | M7 Collaborative documents         | Done                                              |
 | M8 Search and keyboard             | Done                                              |
 | M9 Public API                      | Done                                              |
