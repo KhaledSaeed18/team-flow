@@ -3,19 +3,19 @@
 Milestones are built in order. Each one ends with its exit criteria met, tests green and docs updated.
 Work lands as small pull requests into `dev`; `main` receives releases.
 
-| Milestone                          | Status                                                                     |
-| ---------------------------------- | -------------------------------------------------------------------------- |
-| M0 Foundation                      | Done                                                                       |
-| M1 Data, identity and workspaces   | Done                                                                       |
-| M2 Projects, workflows and tasks   | Done                                                                       |
-| M3 Web app shell                   | Done (list view moves to M8 with saved views)                              |
-| M4 Real-time                       | Done                                                                       |
-| M5 Planning and insight            | Done                                                                       |
-| M6 Collaboration and notifications | Done except email digests                                                  |
-| M7 Collaborative documents         | Done                                                                       |
-| M8 Search and keyboard             | Search, command palette and shortcuts done; list view and saved views next |
-| M9 Integrations and API            | Planned                                                                    |
-| M10 Ship                           | E2E and seed done; site next; deployment deferred                          |
+| Milestone                          | Status                                            |
+| ---------------------------------- | ------------------------------------------------- |
+| M0 Foundation                      | Done                                              |
+| M1 Data, identity and workspaces   | Done                                              |
+| M2 Projects, workflows and tasks   | Done                                              |
+| M3 Web app shell                   | Done (list view moves to M8 with saved views)     |
+| M4 Real-time                       | Done                                              |
+| M5 Planning and insight            | Done                                              |
+| M6 Collaboration and notifications | Done except email digests                         |
+| M7 Collaborative documents         | Done                                              |
+| M8 Search and keyboard             | Done                                              |
+| M9 Integrations and API            | Planned                                           |
+| M10 Ship                           | E2E and seed done; site next; deployment deferred |
 
 ## M0 — Foundation
 
@@ -76,7 +76,7 @@ integration tests against a real database.
 
 ## M8 — Search and keyboard
 
-- Postgres full-text search, command palette, shortcut layer, saved filters/views.
+- Postgres full-text search, command palette, shortcut layer, list filters and private or shared saved views.
 
 ## M9 — Integrations and API
 
