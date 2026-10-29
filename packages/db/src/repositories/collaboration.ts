@@ -1,7 +1,12 @@
 import { taskIdentifier } from '@teamflow/domain';
 import { and, asc, count, desc, eq, inArray, isNotNull, isNull, ne, sql } from 'drizzle-orm';
 import { members, users } from '../schema/auth.ts';
-import { comments, notifications } from '../schema/collaboration.ts';
+import {
+  commentReactions,
+  comments,
+  notifications,
+  type REACTIONS,
+} from '../schema/collaboration.ts';
 import { projects } from '../schema/projects.ts';
 import { tasks } from '../schema/tasks.ts';
 import { inTransaction, type Scope } from '../scope.ts';
@@ -10,6 +15,7 @@ import { InvalidReferenceError } from './tasks.ts';
 
 export type CommentRow = typeof comments.$inferSelect;
 export type NotificationKind = (typeof notifications.$inferInsert)['kind'];
+export type Reaction = (typeof REACTIONS)[number];
 
 const excerpt = (body: string) => (body.length > 140 ? `${body.slice(0, 137)}…` : body);
 
@@ -328,4 +334,74 @@ export async function markNotificationsRead(
     )
     .returning({ id: notifications.id });
   return rows.length;
+}
+
+/** Every reaction on these comments, oldest first, with who reacted. */
+export function listReactions(scope: Scope, commentIds: string[]) {
+  if (commentIds.length === 0) return Promise.resolve([]);
+  return scope.db
+    .select({
+      commentId: commentReactions.commentId,
+      reaction: commentReactions.reaction,
+      memberId: commentReactions.memberId,
+      name: users.name,
+    })
+    .from(commentReactions)
+    .innerJoin(
+      members,
+      and(
+        eq(members.organizationId, commentReactions.organizationId),
+        eq(members.id, commentReactions.memberId),
+      ),
+    )
+    .innerJoin(users, eq(users.id, members.userId))
+    .where(
+      and(
+        eq(commentReactions.organizationId, scope.organizationId),
+        inArray(commentReactions.commentId, commentIds),
+      ),
+    )
+    .orderBy(asc(commentReactions.createdAt), asc(commentReactions.id));
+}
+
+/** Add or remove one reaction. Idempotent both ways; announces the change only when something changed. */
+export function setReaction(
+  scope: Scope,
+  input: { commentId: string; memberId: string; reaction: Reaction; on: boolean },
+) {
+  return inTransaction(scope, async (tx) => {
+    const comment = await findComment(tx, input.commentId);
+    if (!comment) return null;
+    const changed = input.on
+      ? await tx.db
+          .insert(commentReactions)
+          .values({
+            organizationId: tx.organizationId,
+            commentId: input.commentId,
+            memberId: input.memberId,
+            reaction: input.reaction,
+          })
+          .onConflictDoNothing()
+          .returning({ id: commentReactions.id })
+      : await tx.db
+          .delete(commentReactions)
+          .where(
+            and(
+              eq(commentReactions.organizationId, tx.organizationId),
+              eq(commentReactions.commentId, input.commentId),
+              eq(commentReactions.memberId, input.memberId),
+              eq(commentReactions.reaction, input.reaction),
+            ),
+          )
+          .returning({ id: commentReactions.id });
+    if (changed.length > 0) {
+      const task = await taskSummary(tx, comment.taskId);
+      await emit(tx, 'comment.updated', {
+        taskId: comment.taskId,
+        projectId: task?.projectId,
+        commentId: comment.id,
+      });
+    }
+    return comment;
+  });
 }
