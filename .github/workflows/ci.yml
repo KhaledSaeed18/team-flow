@@ -2,58 +2,65 @@ name: CI
 
 on:
   pull_request:
-    branches:
-      - main
-      - dev
+    branches: [dev, main]
   push:
-    branches:
-      - dev
+    branches: [dev, main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
 
 jobs:
-  ci:
-    name: Type Check, Lint & Build
+  check:
+    name: Lint, typecheck, test, build
     runs-on: ubuntu-latest
-
+    env:
+      TURBO_TELEMETRY_DISABLED: 1
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v7
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v7
+      - uses: actions/checkout@v7
         with:
-          node-version: "22"
+          fetch-depth: 0
 
-      - name: Install pnpm
-        uses: pnpm/action-setup@v6
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
-
-      - name: Cache pnpm dependencies
+      - name: Cache Turborepo
         uses: actions/cache@v6
         with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-
+          path: .turbo/cache
+          key: turbo-${{ runner.os }}-${{ github.sha }}
+          restore-keys: turbo-${{ runner.os }}-
 
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install
+        run: bun install --frozen-lockfile
 
-      # prisma generate reads only the schema file
-      - name: Generate Prisma client
-        run: pnpm prisma:generate
-        env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+      - name: Lint and format
+        run: bunx biome ci .
 
-      - name: TypeScript type check
-        run: pnpm type-check
+      - name: Typecheck
+        run: bunx turbo run typecheck --cache-dir=.turbo/cache
 
-      - name: Lint
-        run: pnpm lint
+      - name: Test
+        run: bunx turbo run test --cache-dir=.turbo/cache
 
       - name: Build
-        run: pnpm build
-        env:
-          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci
+        run: bunx turbo run build --cache-dir=.turbo/cache
+
+  commits:
+    name: Conventional commits
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version-file: .bun-version
+      - run: bun install --frozen-lockfile
+      - name: Lint commit messages
+        run: bunx commitlint --from ${{ github.event.pull_request.base.sha }} --to ${{ github.event.pull_request.head.sha }}
