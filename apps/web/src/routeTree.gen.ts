@@ -25,6 +25,7 @@ import { Route as AppSettingsMembersRouteImport } from './routes/_app/settings/m
 import { Route as AppPKeyIndexRouteImport } from './routes/_app/p/$key/index'
 import { Route as AppPKeyBacklogRouteImport } from './routes/_app/p/$key/backlog'
 import { Route as AppPKeyListRouteImport } from './routes/_app/p/$key/list'
+import { Route as AppPKeySettingsRouteImport } from './routes/_app/p/$key/settings'
 import { Route as AppPKeySprintsSprintIdRouteImport } from './routes/_app/p/$key/sprints/$sprintId'
 
 const AppRoute = AppRouteImport.update({
@@ -105,6 +106,11 @@ const AppPKeyListRoute = AppPKeyListRouteImport.update({
   path: '/list',
   getParentRoute: () => AppPKeyRouteRoute,
 } as any)
+const AppPKeySettingsRoute = AppPKeySettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => AppPKeyRouteRoute,
+} as any)
 const AppPKeySprintsSprintIdRoute = AppPKeySprintsSprintIdRouteImport.update({
   id: '/sprints/$sprintId',
   path: '/sprints/$sprintId',
@@ -125,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/settings/members': typeof AppSettingsMembersRoute
   '/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/p/$key/list': typeof AppPKeyListRoute
+  '/p/$key/settings': typeof AppPKeySettingsRoute
   '/p/$key/': typeof AppPKeyIndexRoute
   '/p/$key/sprints/$sprintId': typeof AppPKeySprintsSprintIdRoute
 }
@@ -141,6 +148,7 @@ export interface FileRoutesByTo {
   '/settings/members': typeof AppSettingsMembersRoute
   '/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/p/$key/list': typeof AppPKeyListRoute
+  '/p/$key/settings': typeof AppPKeySettingsRoute
   '/p/$key': typeof AppPKeyIndexRoute
   '/p/$key/sprints/$sprintId': typeof AppPKeySprintsSprintIdRoute
 }
@@ -161,6 +169,7 @@ export interface FileRoutesById {
   '/_app/settings/members': typeof AppSettingsMembersRoute
   '/_app/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/_app/p/$key/list': typeof AppPKeyListRoute
+  '/_app/p/$key/settings': typeof AppPKeySettingsRoute
   '/_app/p/$key/': typeof AppPKeyIndexRoute
   '/_app/p/$key/sprints/$sprintId': typeof AppPKeySprintsSprintIdRoute
 }
@@ -180,6 +189,7 @@ export interface FileRouteTypes {
     | '/settings/members'
     | '/p/$key/backlog'
     | '/p/$key/list'
+    | '/p/$key/settings'
     | '/p/$key/'
     | '/p/$key/sprints/$sprintId'
   fileRoutesByTo: FileRoutesByTo
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/settings/members'
     | '/p/$key/backlog'
     | '/p/$key/list'
+    | '/p/$key/settings'
     | '/p/$key'
     | '/p/$key/sprints/$sprintId'
   id:
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/_app/settings/members'
     | '/_app/p/$key/backlog'
     | '/_app/p/$key/list'
+    | '/_app/p/$key/settings'
     | '/_app/p/$key/'
     | '/_app/p/$key/sprints/$sprintId'
   fileRoutesById: FileRoutesById
@@ -340,6 +352,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPKeyListRouteImport
       parentRoute: typeof AppPKeyRouteRoute
     }
+    '/_app/p/$key/settings': {
+      id: '/_app/p/$key/settings'
+      path: '/settings'
+      fullPath: '/p/$key/settings'
+      preLoaderRoute: typeof AppPKeySettingsRouteImport
+      parentRoute: typeof AppPKeyRouteRoute
+    }
     '/_app/p/$key/sprints/$sprintId': {
       id: '/_app/p/$key/sprints/$sprintId'
       path: '/sprints/$sprintId'
@@ -353,6 +372,7 @@ declare module '@tanstack/react-router' {
 interface AppPKeyRouteRouteChildren {
   AppPKeyBacklogRoute: typeof AppPKeyBacklogRoute
   AppPKeyListRoute: typeof AppPKeyListRoute
+  AppPKeySettingsRoute: typeof AppPKeySettingsRoute
   AppPKeyIndexRoute: typeof AppPKeyIndexRoute
   AppPKeySprintsSprintIdRoute: typeof AppPKeySprintsSprintIdRoute
 }
@@ -360,6 +380,7 @@ interface AppPKeyRouteRouteChildren {
 const AppPKeyRouteRouteChildren: AppPKeyRouteRouteChildren = {
   AppPKeyBacklogRoute: AppPKeyBacklogRoute,
   AppPKeyListRoute: AppPKeyListRoute,
+  AppPKeySettingsRoute: AppPKeySettingsRoute,
   AppPKeyIndexRoute: AppPKeyIndexRoute,
   AppPKeySprintsSprintIdRoute: AppPKeySprintsSprintIdRoute,
 }
