@@ -72,8 +72,8 @@ function Settings() {
 
   const canEditProject = can(role, { project: ['update'] });
   return (
-    <main className="mx-auto w-full max-w-4xl px-8 pb-16">
-      <h1 className="pt-8 pb-6 font-semibold text-xl">Project settings</h1>
+    <main className="w-full px-4 pb-16">
+      <h1 className="pt-4 pb-4 font-semibold text-xl">Project settings</h1>
       {project.archivedAt && (
         <Notice className="mb-6">
           This project is archived: it is read-only and hidden from the sidebar.
