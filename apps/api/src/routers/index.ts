@@ -8,6 +8,7 @@ import { relations } from './relations.ts';
 import { search } from './search.ts';
 import { sprints } from './sprints.ts';
 import { tasks } from './tasks.ts';
+import { views } from './views.ts';
 
 export const router = os.router({
   me,
@@ -22,6 +23,7 @@ export const router = os.router({
   search,
   relations,
   attachments,
+  views,
 });
 
 export type Router = typeof router;
