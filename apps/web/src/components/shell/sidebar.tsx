@@ -1,13 +1,15 @@
-import { Plus, UsersThree } from '@phosphor-icons/react';
+import { Plus, Tray, UsersThree } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Button, Tooltip } from '@teamflow/ui';
+import { useInbox } from '../../features/inbox/inbox.ts';
 import { orpc } from '../../lib/api.ts';
 import type { Me } from '../../lib/session.ts';
 import { WorkspaceMenu } from './workspace-menu.tsx';
 
 export function Sidebar({ me, onCreateProject }: { me: Me; onCreateProject: () => void }) {
   const projects = useQuery(orpc.projects.list.queryOptions({ input: {} }));
+  const unread = useInbox().data?.unread ?? 0;
 
   return (
     <nav
@@ -16,6 +18,18 @@ export function Sidebar({ me, onCreateProject }: { me: Me; onCreateProject: () =
     >
       <WorkspaceMenu me={me} />
 
+      <Link
+        to="/inbox"
+        className="focus-ring flex items-center gap-2 rounded-control px-2 py-1.5 text-ink-muted text-sm outline-none hover:bg-lane hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold data-[status=active]:bg-surface data-[status=active]:text-ink"
+      >
+        <Tray aria-hidden /> <span className="flex-1">Inbox</span>
+        {unread > 0 && (
+          <span className="rounded-full bg-ink px-1.5 font-medium text-2xs text-canvas">
+            {unread > 99 ? '99+' : unread}
+            <span className="sr-only"> unread</span>
+          </span>
+        )}
+      </Link>
       <Link
         to="/settings/members"
         className="focus-ring flex items-center gap-2 rounded-control px-2 py-1.5 text-ink-muted text-sm outline-none hover:bg-lane hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold data-[status=active]:bg-surface data-[status=active]:text-ink"

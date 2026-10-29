@@ -19,6 +19,7 @@ import {
 import { orpc } from '../../lib/api.ts';
 import { PRIORITY_LABEL, PriorityIcon } from '../board/priority-icon.tsx';
 import { type Project, type Task, tasksQuery, useUpdateTask } from '../tasks.ts';
+import { Comments } from './comments.tsx';
 import { History } from './history.tsx';
 
 const NONE = '__none__';
@@ -189,6 +190,11 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
           />
         </Property>
       </dl>
+
+      <section aria-label="Comments" className="border-line border-t px-5 py-4">
+        <h2 className="mb-3 font-medium text-ink-muted text-xs">Comments</h2>
+        <Comments taskId={task.id} />
+      </section>
 
       <section aria-label="History" className="border-line border-t px-5 py-4">
         <h2 className="mb-3 font-medium text-ink-muted text-xs">History</h2>
