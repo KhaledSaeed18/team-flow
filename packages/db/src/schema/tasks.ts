@@ -16,6 +16,7 @@ import {
 } from 'drizzle-orm/pg-core';
 import { members, organizations } from './auth.ts';
 import { labels, projects, workflowStatuses } from './projects.ts';
+import { sprints } from './sprints.ts';
 import { at, createdAt, tenantColumns, tenantKey, tenantRef, updatedAt } from './tenant.ts';
 
 export const taskPriority = pgEnum('task_priority', PRIORITIES);
@@ -36,6 +37,7 @@ export const tasks = pgTable(
     estimate: integer(),
     assigneeMemberId: uuid(),
     parentTaskId: uuid(),
+    sprintId: uuid(),
     dueDate: date({ mode: 'string' }),
     /** Order within its status column and in the backlog (fractional rank, ADR-0008). */
     rank: text().notNull(),
@@ -63,6 +65,13 @@ export const tasks = pgTable(
       ],
     }),
     tenantRef(t, t.assigneeMemberId, members),
+    // A task's sprint must be a sprint of the task's own project.
+    foreignKey({
+      name: 'tasks_sprint_in_project_fk',
+      columns: [t.organizationId, t.projectId, t.sprintId],
+      foreignColumns: [sprints.organizationId, sprints.projectId, sprints.id],
+    }),
+    index('tasks_sprint_idx').on(t.organizationId, t.sprintId).where(sql`${t.deletedAt} is null`),
     tenantRef(t, t.createdByMemberId, members),
     tenantRef(t, t.parentTaskId, t).onDelete('cascade'),
     index('tasks_board_idx')
