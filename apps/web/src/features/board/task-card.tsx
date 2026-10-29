@@ -1,5 +1,6 @@
 import { DotsSixVertical } from '@phosphor-icons/react';
 import type { Outputs } from '@teamflow/contract';
+import type { PresenceMember } from '@teamflow/realtime';
 import { Avatar } from '@teamflow/ui';
 import { Button, GridListItem } from 'react-aria-components';
 import type { Task } from '../tasks.ts';
@@ -13,7 +14,15 @@ export interface CardLookups {
   labels: Map<string, Label>;
 }
 
-export function TaskCard({ task, lookups }: { task: Task; lookups: CardLookups }) {
+export function TaskCard({
+  task,
+  lookups,
+  viewers,
+}: {
+  task: Task;
+  lookups: CardLookups;
+  viewers: PresenceMember[];
+}) {
   const assignee = task.assigneeMemberId ? lookups.members.get(task.assigneeMemberId) : undefined;
   const labels = task.labelIds.flatMap((id) => lookups.labels.get(id) ?? []);
   const pending = task.number === 0;
@@ -39,6 +48,24 @@ export function TaskCard({ task, lookups }: { task: Task; lookups: CardLookups }
           <p className="text-2xs text-ink-faint">{task.identifier}</p>
           <p className="mt-0.5 text-sm leading-snug">{task.title}</p>
         </div>
+        {viewers.length > 0 && (
+          <span
+            className="flex -space-x-1"
+            title={`Open by ${viewers.map((v) => v.name).join(', ')}`}
+          >
+            {viewers.slice(0, 3).map((viewer) => (
+              <Avatar
+                key={viewer.memberId}
+                name={viewer.name}
+                src={viewer.image}
+                size="xs"
+                decorative
+                className="ring-2 ring-surface"
+              />
+            ))}
+            <span className="sr-only">Open by {viewers.map((v) => v.name).join(', ')}</span>
+          </span>
+        )}
         <Button
           slot="drag"
           aria-label={`Move ${task.identifier}`}

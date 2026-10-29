@@ -1,8 +1,7 @@
-import { createFileRoute, getRouteApi, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { Board } from '../../../../features/board/board.tsx';
+import { useProjectView } from '../../../../features/project-context.tsx';
 import { tasksQuery } from '../../../../features/tasks.ts';
-
-const project = getRouteApi('/_app/p/$key');
 
 export const Route = createFileRoute('/_app/p/$key/')({
   loader: async ({ context, parentMatchPromise }) => {
@@ -14,11 +13,12 @@ export const Route = createFileRoute('/_app/p/$key/')({
 });
 
 function BoardView() {
-  const data = project.useLoaderData();
+  const { project, viewersByTask } = useProjectView();
   const navigate = useNavigate();
   return (
     <Board
-      project={data}
+      project={project}
+      viewersByTask={viewersByTask}
       onOpenTask={(task) =>
         navigate({ to: '.', search: (prev) => ({ ...prev, task: task.identifier }) })
       }

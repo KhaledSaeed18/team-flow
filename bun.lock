@@ -52,6 +52,7 @@
         "@teamflow/auth": "workspace:*",
         "@teamflow/contract": "workspace:*",
         "@teamflow/domain": "workspace:*",
+        "@teamflow/realtime": "workspace:*",
         "@teamflow/ui": "workspace:*",
         "better-auth": "^1.7.14",
         "react": "^19.3.1",

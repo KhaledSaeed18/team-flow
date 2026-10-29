@@ -23,7 +23,8 @@
     "react": "^19.3.1",
     "react-aria-components": "^1.22.1",
     "react-dom": "^19.3.1",
-    "zod": "catalog:"
+    "zod": "catalog:",
+    "@teamflow/realtime": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.3.3",

@@ -232,6 +232,20 @@ describe('realtime gateway', () => {
     socket.close();
   });
 
+  test('a presence sent right behind its subscribe is accepted (messages are handled in order)', async () => {
+    const ada = await h.owner('Ada5', 'ada5-org');
+    const project = await ada.client.projects.create({ key: 'ORD', name: 'Ordering' });
+    const channel = `project:${project.id}` as const;
+    const socket = await connect(url, ada.cookie());
+    await socket.next('ready');
+    socket.send({ type: 'subscribe', channel });
+    socket.send({ type: 'presence', channel, state: { taskId: null } });
+    const seen = await socket.next('presence', (m) => m.members.length === 1);
+    expect(seen.members[0]?.name).toBe('Ada5');
+    expect(await socket.drain('error')).toEqual([]);
+    socket.close();
+  });
+
   test('presence from another node shows up, and expires if that node goes quiet', async () => {
     let clock = 1_000_000;
     const isolated = createGateway({
