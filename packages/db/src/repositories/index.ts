@@ -1,4 +1,5 @@
 export * from './collaboration.ts';
+export * from './documents.ts';
 export * from './events.ts';
 export * from './labels.ts';
 export * from './outbox.ts';

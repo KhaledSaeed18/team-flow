@@ -17,5 +17,6 @@ rewritten after acceptance; a changed mind is a new record that supersedes the o
 | [0010](0010-tooling-biome.md)                    | Biome for lint and format                                                |
 | [0011](0011-react-aria-components.md)            | React Aria Components for the design system and accessible drag and drop |
 | [0012](0012-notifications-in-the-transaction.md) | Notifications are written in the transaction that causes them            |
+| [0013](0013-collaborative-descriptions.md)       | Collaborative descriptions with Yjs over the gateway                     |
 
 Template: copy `template.md`.

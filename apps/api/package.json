@@ -15,7 +15,8 @@
     "@teamflow/tsconfig": "workspace:*",
     "@types/bun": "catalog:",
     "drizzle-orm": "^0.45.4",
-    "typescript": "catalog:"
+    "typescript": "catalog:",
+    "y-websocket": "^3.1.0"
   },
   "dependencies": {
     "@orpc/contract": "^1.16.1",
@@ -26,12 +27,15 @@
     "@teamflow/contract": "workspace:*",
     "@teamflow/db": "workspace:*",
     "@teamflow/domain": "workspace:*",
+    "@teamflow/email": "workspace:*",
     "@teamflow/realtime": "workspace:*",
     "hono": "^4.13.14",
+    "lib0": "^0.2.119",
     "pg-boss": "^12.38.0",
     "pino": "^10.4.0",
     "postgres": "^3.4.9",
-    "zod": "catalog:",
-    "@teamflow/email": "workspace:*"
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.33",
+    "zod": "catalog:"
   }
 }
