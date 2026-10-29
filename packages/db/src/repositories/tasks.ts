@@ -48,6 +48,8 @@ export interface TaskFilter {
   statusIds?: string[] | undefined;
   assigneeMemberId?: string | null | undefined;
   parentTaskId?: string | undefined;
+  /** A sprint id, or `null` for the backlog. */
+  sprintId?: string | null | undefined;
 }
 
 /** Live tasks of a project in board order: by status column, then rank. */
@@ -66,6 +68,11 @@ export async function listTasks(scope: Scope, filter: TaskFilter): Promise<TaskW
             ? eq(tasks.assigneeMemberId, filter.assigneeMemberId)
             : undefined,
         filter.parentTaskId ? eq(tasks.parentTaskId, filter.parentTaskId) : undefined,
+        filter.sprintId === null
+          ? isNull(tasks.sprintId)
+          : filter.sprintId
+            ? eq(tasks.sprintId, filter.sprintId)
+            : undefined,
       ),
     )
     .orderBy(asc(tasks.statusId), asc(tasks.rank));
