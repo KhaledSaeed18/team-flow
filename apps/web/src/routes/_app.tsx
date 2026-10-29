@@ -1,11 +1,14 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Outlet, redirect, useNavigate, useParams } from '@tanstack/react-router';
 import { useState } from 'react';
 import { CreateProjectDialog } from '../components/create-project-dialog.tsx';
 import { Sidebar } from '../components/shell/sidebar.tsx';
 import { CommandPalette } from '../features/command/command-palette.tsx';
 import { ShortcutsDialog } from '../features/command/shortcuts-dialog.tsx';
+import { orpc } from '../lib/api.ts';
 import { authClient } from '../lib/auth.ts';
 import { CREATE_TASK_EVENT } from '../lib/events.ts';
+import { useChannel } from '../lib/realtime.ts';
 import { loadMe, meQuery } from '../lib/session.ts';
 import { useShortcuts } from '../lib/shortcuts.ts';
 
@@ -38,6 +41,15 @@ function AppShell() {
   const [palette, setPalette] = useState(false);
   const [help, setHelp] = useState(false);
   const overlayOpen = creating || palette || help;
+  const queryClient = useQueryClient();
+
+  // Workspace-wide changes: labels that belong to no project, and the project list itself.
+  useChannel('org', (event) => {
+    if (event.topic.startsWith('label.'))
+      void queryClient.invalidateQueries({ queryKey: orpc.labels.key() });
+    if (event.topic.startsWith('project.'))
+      void queryClient.invalidateQueries({ queryKey: orpc.projects.key() });
+  });
 
   useShortcuts(
     {

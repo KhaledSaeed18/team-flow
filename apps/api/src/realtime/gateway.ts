@@ -34,6 +34,10 @@ export interface SocketData {
   channels: Set<Channel>;
   /** Messages from one socket are handled strictly in order (a subscribe must finish before its presence). */
   queue: Promise<void>;
+  /** Set on close: queued messages still finishing their database work must not touch a dead socket. */
+  closed: boolean;
+  /** The cookie the socket authenticated with, to re-check the session while it stays open. */
+  cookie: string;
 }
 
 export type Socket = ServerWebSocket<SocketData>;
@@ -67,6 +71,7 @@ export function createGateway({
   now = Date.now,
 }: GatewayOptions) {
   let server: Server<SocketData> | null = null;
+  const sockets = new Set<Socket>();
   const topicOf = (organizationId: string, channel: Channel, memberId?: string) =>
     channel === 'me' ? `${organizationId}:member:${memberId}` : `${organizationId}:${channel}`;
 
@@ -120,12 +125,15 @@ export function createGateway({
   }
 
   async function handle(ws: Socket, message: ClientMessage) {
+    if (ws.data.closed) return;
     switch (message.type) {
       case 'ping':
         send(ws, { type: 'pong' });
         return;
       case 'subscribe': {
         const verdict = await authorize(ws, message.channel);
+        // The socket may have closed while the check ran; subscribing it now would leave a ghost behind.
+        if (ws.data.closed) return;
         if (verdict !== 'ok') {
           send(ws, { type: 'error', code: verdict, channel: message.channel });
           if (verdict === 'FORBIDDEN') ws.close(4403, 'membership revoked');
@@ -182,6 +190,8 @@ export function createGateway({
         image: session.user.image ?? null,
         channels: new Set(),
         queue: Promise.resolve(),
+        closed: false,
+        cookie: request.headers.get('cookie') ?? '',
       };
       return bunServer.upgrade(request, { data })
         ? undefined
@@ -191,6 +201,7 @@ export function createGateway({
     websocket: {
       idleTimeout: 60,
       open(ws: Socket) {
+        sockets.add(ws);
         send(ws, { type: 'ready', connectionId: ws.data.connectionId });
       },
       message(ws: Socket, raw: string | Buffer) {
@@ -209,6 +220,8 @@ export function createGateway({
           });
       },
       close(ws: Socket) {
+        ws.data.closed = true;
+        sockets.delete(ws);
         for (const channel of ws.data.channels) setPresence(ws, channel, null);
         ws.data.channels.clear();
       },
@@ -223,12 +236,16 @@ export function createGateway({
           topicOf(organizationId, channel),
           JSON.stringify({ type: 'event', channel, event: domainEvent } satisfies ServerMessage),
         );
-      deliver('org');
-      const projectId = event.payload.projectId;
-      if (typeof projectId === 'string') deliver(`project:${projectId}`);
-      // Personal events go to each recipient's own `me` channel, which is keyed by member id server-side.
+      // Personal events go only to each recipient's own `me` channel, keyed by member id server-side: nobody
+      // else learns who was notified about what.
       const recipients = event.payload.recipientMemberIds;
-      if (Array.isArray(recipients)) {
+      if (!Array.isArray(recipients)) {
+        const projectId = event.payload.projectId;
+        if (typeof projectId === 'string') deliver(`project:${projectId}`);
+        // The workspace channel carries what concerns everyone: workspace-wide items (no project) and the
+        // project list itself.
+        if (typeof projectId !== 'string' || event.topic.startsWith('project.')) deliver('org');
+      } else {
         for (const memberId of recipients) {
           if (typeof memberId !== 'string') continue;
           server.publish(
@@ -238,6 +255,31 @@ export function createGateway({
               channel: 'me',
               event: domainEvent,
             } satisfies ServerMessage),
+          );
+        }
+      }
+    },
+
+    /**
+     * Close sockets whose session was revoked or whose membership ended. Run on an interval, and straight away
+     * after a membership change on this node; a closed client gets 4403 and stops reconnecting.
+     */
+    async revalidate(filter?: { organizationId: string }) {
+      for (const ws of [...sockets]) {
+        if (filter && ws.data.organizationId !== filter.organizationId) continue;
+        try {
+          const session = await auth.api.getSession({
+            headers: new Headers({ cookie: ws.data.cookie }),
+          });
+          const member =
+            session?.user.id === ws.data.userId
+              ? await findMembership(db, ws.data.organizationId, ws.data.userId)
+              : null;
+          if (!member && !ws.data.closed) ws.close(4403, 'access revoked');
+        } catch (error) {
+          logger.warn(
+            { err: error, connectionId: ws.data.connectionId },
+            'could not revalidate socket',
           );
         }
       }

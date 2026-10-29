@@ -16,7 +16,24 @@ import { uploadAttachment } from './upload.ts';
 export interface AppOptions {
   apiUrl: string;
   webUrl: string;
+  /** Someone's access may have ended (a member removed, a session revoked): re-check open sockets now. */
+  onAccessChanged?: () => void;
 }
+
+const ACCESS_RECHECK_DELAY_MS = 1_000;
+
+/** Auth endpoints after which an open socket may no longer be entitled to what it receives. */
+const ACCESS_PATHS = new Set([
+  '/organization/remove-member',
+  '/organization/leave',
+  '/organization/update-member-role',
+  '/organization/delete',
+  '/revoke-session',
+  '/revoke-sessions',
+  '/revoke-other-sessions',
+  '/sign-out',
+  '/change-password',
+]);
 
 type Env = { Variables: { requestId: string } };
 
@@ -78,7 +95,16 @@ export function createApp(deps: Deps, options: AppOptions) {
   });
 
   const authHandler = auditedAuthHandler(deps);
-  app.on(['GET', 'POST'], '/api/auth/*', (c) => authHandler(c.req.raw));
+  app.on(['GET', 'POST'], '/api/auth/*', async (c) => {
+    const response = await authHandler(c.req.raw);
+    const path = c.req.path.replace(/^\/api\/auth/, '');
+    // After the response: the caller's own new session cookie (password change) must reach their browser before
+    // its sockets are re-checked, or the re-check would cut off the very device that made the change.
+    if (c.req.method === 'POST' && response.ok && ACCESS_PATHS.has(path)) {
+      setTimeout(() => options.onAccessChanged?.(), ACCESS_RECHECK_DELAY_MS);
+    }
+    return response;
+  });
 
   const spec = generateOpenApi(options.apiUrl);
   app.get('/api/openapi.json', async (c) => c.json(await spec));

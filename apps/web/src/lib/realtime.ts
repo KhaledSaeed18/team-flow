@@ -17,10 +17,13 @@ type EventListener = (event: DomainEvent) => void;
 type Status = 'connecting' | 'open' | 'closed';
 
 const RECONNECT_MAX_MS = 15_000;
+const RECOVERY_DELAY_MS = 1_500;
 
 class RealtimeConnection {
   private socket: WebSocket | null = null;
   private attempts = 0;
+  /** Reconnecting once after a 4403, to tell a replaced session from lost access. */
+  private recovering = false;
   private status: Status = 'closed';
   private readonly statusListeners = new Set<() => void>();
   private readonly channels = new Map<Channel, { refs: number; listeners: Set<EventListener> }>();
@@ -103,12 +106,29 @@ class RealtimeConnection {
     socket.addEventListener('message', (event) =>
       this.receive(JSON.parse(String(event.data)) as ServerMessage),
     );
-    socket.addEventListener('close', () => {
+    socket.addEventListener('close', (event) => {
+      const wasReady = this.connectionId !== null;
       clearInterval(this.heartbeat);
       this.socket = null;
       this.connectionId = null;
       this.setStatus('closed');
       for (const [channel] of this.members) this.setMembers(channel, []);
+      // 4403: the server no longer accepts this socket's session. That can mean access really ended, or only that
+      // this device's session was replaced (changing the password does that). Reconnect once, with the current
+      // cookie; if that is refused too, reload so the app shows where the person stands now.
+      const refusedAgain = this.recovering && (event.code === 4403 || !wasReady);
+      if (refusedAgain) {
+        window.location.reload();
+        return;
+      }
+      if (event.code === 4403) {
+        this.recovering = true;
+        // Counts as a reconnect, so listeners refetch whatever was missed meanwhile. The short wait lets a new
+        // session cookie, arriving with the response that replaced the session, settle first.
+        this.attempts++;
+        setTimeout(() => this.ensureOpen(), RECOVERY_DELAY_MS);
+        return;
+      }
       if (this.channels.size === 0) return;
       // Exponential backoff with jitter.
       const delay =
@@ -121,6 +141,7 @@ class RealtimeConnection {
   private receive(message: ServerMessage) {
     switch (message.type) {
       case 'ready': {
+        this.recovering = false;
         const reconnected = this.attempts > 0;
         this.attempts = 0;
         this.connectionId = message.connectionId;
