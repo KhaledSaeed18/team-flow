@@ -15,7 +15,7 @@ Work lands as small pull requests into `dev`; `main` receives releases.
 | M7 Collaborative documents         | Done                                                                       |
 | M8 Search and keyboard             | Search, command palette and shortcuts done; list view and saved views next |
 | M9 Integrations and API            | Planned                                                                    |
-| M10 Ship                           | Site, E2E and seed done; deployment deferred                               |
+| M10 Ship                           | E2E and seed done; site next; deployment deferred                          |
 
 ## M0 — Foundation
 
