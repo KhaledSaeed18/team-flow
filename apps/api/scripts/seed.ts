@@ -530,24 +530,25 @@ async function main() {
     );
   }
 
-  // Due dates around today, so the calendar has a month to show: a few overdue, most in the next three weeks.
+  // Due dates around today, so the calendar has a month to show: open work over the next three weeks (one item
+  // overdue), and a couple of recently finished tasks that met theirs.
   const iso = (offset: number) =>
     new Date(today.getTime() + offset * DAY).toISOString().slice(0, 10);
-  for (const [index, offset] of [
-    [0, -3],
-    [3, -1],
-    [5, 0],
-    [7, 1],
-    [9, 2],
-    [12, 4],
-    [14, 6],
-    [17, 8],
-    [19, 10],
-    [21, 13],
-    [23, 15],
-    [25, 20],
-  ] as const) {
-    const id = tasks[index]?.id;
+  const open: string[] = [];
+  const finished: string[] = [];
+  for (const { id } of tasks) {
+    const task = await findTask(scope, id);
+    if (task) (task.statusId === status('Done') ? finished : open).push(task.id);
+  }
+  const plan: [string | undefined, number][] = [
+    ...[-2, -1, 0, 1, 2, 3, 5, 7, 9, 12, 14].map((offset, i): [string | undefined, number] => [
+      open[i],
+      offset,
+    ]),
+    [finished.at(-1), -5],
+    [finished.at(-2), -3],
+  ];
+  for (const [id, offset] of plan) {
     const task = id ? await findTask(scope, id) : null;
     if (task) await updateTask(scope, task.id, task.version, { dueDate: iso(offset) }, at(47, 9));
   }
