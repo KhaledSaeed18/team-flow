@@ -1,3 +1,6 @@
+output:
+  - failure
+
 # Hooks stay fast: Biome on staged files and commitlint on the message.
 # Type-checking and tests run in CI through Turborepo.
 
