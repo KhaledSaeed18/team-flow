@@ -26,7 +26,6 @@
         "@teamflow/contract": "workspace:*",
         "@teamflow/db": "workspace:*",
         "@teamflow/domain": "workspace:*",
-        "drizzle-orm": "^0.45.4",
         "hono": "^4.13.14",
         "pino": "^10.4.0",
         "zod": "catalog:",
@@ -35,6 +34,7 @@
         "@orpc/client": "^1.16.1",
         "@teamflow/tsconfig": "workspace:*",
         "@types/bun": "catalog:",
+        "drizzle-orm": "^0.45.4",
         "typescript": "catalog:",
       },
     },
@@ -58,6 +58,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@orpc/contract": "^1.16.1",
+        "@teamflow/domain": "workspace:*",
         "zod": "catalog:",
       },
       "devDependencies": {

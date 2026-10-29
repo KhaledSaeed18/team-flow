@@ -79,7 +79,7 @@
       }
     },
     {
-      "includes": ["packages/db/**", "packages/auth/**"],
+      "includes": ["packages/db/**", "packages/auth/**", "apps/*/test/**"],
       "linter": {
         "rules": {
           "style": {
