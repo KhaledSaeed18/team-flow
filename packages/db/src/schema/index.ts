@@ -5,4 +5,5 @@ export * from './documents.ts';
 export * from './projects.ts';
 export * from './sprints.ts';
 export * from './tasks.ts';
+export * from './tokens.ts';
 export * from './views.ts';
