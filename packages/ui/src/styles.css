@@ -30,6 +30,7 @@
   /* Chart series, validated for lightness, chroma, colorblind separation and contrast on the card surface. */
   --color-chart-1: #2f6bd1;
   --color-chart-2: #14866d;
+  --color-chart-3: #d0632a;
 
   --radius-control: 6px;
   --radius-card: 8px;
@@ -75,6 +76,7 @@
   --color-success: #68c391;
   --color-chart-1: #5b8fe6;
   --color-chart-2: #2fa384;
+  --color-chart-3: #d9692f;
 }
 
 @layer base {

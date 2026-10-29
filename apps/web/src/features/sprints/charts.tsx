@@ -328,3 +328,151 @@ export function VelocityChart({ data, title }: { data: VelocityDatum[]; title: s
     </div>
   );
 }
+
+export interface FlowDatum {
+  label: string;
+  todo: number;
+  inProgress: number;
+  done: number;
+}
+
+/** Bottom to top: finished work at the base, so a widening middle band reads as work piling up. */
+const BANDS = [
+  { key: 'done', label: 'Done', color: 'var(--color-chart-2)' },
+  { key: 'inProgress', label: 'In progress', color: 'var(--color-chart-1)' },
+  { key: 'todo', label: 'To do', color: 'var(--color-chart-3)' },
+] as const;
+export const FLOW_BANDS = BANDS;
+
+export function CumulativeFlowChart({ data, title }: { data: FlowDatum[]; title: string }) {
+  const { ref, width } = useWidth<HTMLDivElement>();
+  const [hover, setHover] = useState<number | null>(null);
+  // Room on the right for the band names; In progress is the longest.
+  const right = 88;
+  const innerW = Math.max(100, width - MARGIN.left - right);
+  const innerH = HEIGHT - MARGIN.top - MARGIN.bottom;
+  const total = (d: FlowDatum) => d.todo + d.inProgress + d.done;
+  const axis = ticks(Math.max(1, ...data.map(total)));
+  const max = axis.at(-1) ?? 1;
+  const x = (i: number) =>
+    MARGIN.left + (data.length <= 1 ? innerW / 2 : (i / (data.length - 1)) * innerW);
+  const y = (v: number) => MARGIN.top + innerH - (v / max) * innerH;
+
+  // Cumulative tops per band: done, done + in progress, everything.
+  const top = (d: FlowDatum, band: number) =>
+    BANDS.slice(0, band + 1).reduce((sum, b) => sum + d[b.key], 0);
+  const area = (band: number) => {
+    const upper = data.map((d, i) => `${i === 0 ? 'M' : 'L'}${x(i)},${y(top(d, band))}`).join('');
+    const lower = data
+      .map((d, i) => ({ i, v: band === 0 ? 0 : top(d, band - 1) }))
+      .reverse()
+      .map(({ i, v }) => `L${x(i)},${y(v)}`)
+      .join('');
+    return `${upper}${lower}Z`;
+  };
+  const last = data.at(-1);
+  const hovered = hover === null ? null : data[hover];
+
+  return (
+    <div ref={ref} className="relative">
+      <svg
+        width={width}
+        height={HEIGHT}
+        role="img"
+        aria-label={title}
+        onPointerLeave={() => setHover(null)}
+        onPointerMove={(event) => {
+          const box = event.currentTarget.getBoundingClientRect();
+          const px = event.clientX - box.left - MARGIN.left;
+          const i = Math.round((px / innerW) * Math.max(1, data.length - 1));
+          setHover(Math.max(0, Math.min(data.length - 1, i)));
+        }}
+      >
+        {axis.map((tick) => (
+          <g key={tick}>
+            <line
+              x1={MARGIN.left}
+              x2={MARGIN.left + innerW}
+              y1={y(tick)}
+              y2={y(tick)}
+              className="stroke-line"
+              strokeWidth="1"
+            />
+            <text
+              x={MARGIN.left - 8}
+              y={y(tick)}
+              dy="0.32em"
+              textAnchor="end"
+              className="fill-ink-faint text-[10px]"
+            >
+              {tick}
+            </text>
+          </g>
+        ))}
+        {data.map((d, i) =>
+          i % Math.ceil(data.length / 8) === 0 || i === data.length - 1 ? (
+            <text
+              key={d.label}
+              x={x(i)}
+              y={HEIGHT - 8}
+              textAnchor="middle"
+              className="fill-ink-faint text-[10px]"
+            >
+              {d.label}
+            </text>
+          ) : null,
+        )}
+        {BANDS.map((band, b) => (
+          <path
+            key={band.key}
+            d={area(b)}
+            fill={band.color}
+            fillOpacity="0.85"
+            // A 2px surface seam keeps neighbouring bands apart.
+            stroke="var(--color-surface)"
+            strokeWidth="2"
+            strokeLinejoin="round"
+          />
+        ))}
+        {last &&
+          BANDS.map((band, b) =>
+            last[band.key] > 0 ? (
+              <text
+                key={band.key}
+                x={x(data.length - 1) + 8}
+                y={y(top(last, b) - last[band.key] / 2)}
+                dy="0.32em"
+                className="fill-ink-muted text-[11px]"
+              >
+                {band.label}
+              </text>
+            ) : null,
+          )}
+        {hover !== null && (
+          <line
+            x1={x(hover)}
+            x2={x(hover)}
+            y1={MARGIN.top}
+            y2={MARGIN.top + innerH}
+            className="stroke-ink"
+            strokeWidth="1"
+          />
+        )}
+      </svg>
+      {hovered && hover !== null && (
+        <Tooltip x={x(hover)} y={y(total(hovered))} width={width}>
+          <p className="font-medium text-ink">{hovered.label}</p>
+          {[...BANDS].reverse().map((band) => (
+            <p key={band.key} className="mt-1 flex items-center justify-between text-ink-muted">
+              <span className="flex items-center gap-1.5">
+                <BlockSwatch color={band.color} />
+                {band.label}
+              </span>
+              <span className="text-ink">{hovered[band.key]}</span>
+            </p>
+          ))}
+        </Tooltip>
+      )}
+    </div>
+  );
+}

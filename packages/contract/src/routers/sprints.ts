@@ -33,6 +33,10 @@ export const SprintReport = z.object({
   days: z.array(Totals.extend({ at: Timestamp, idealPoints: z.number() })),
   scopeAdded: z.number(),
   scopeRemoved: z.number(),
+  /** Tasks per stage at the end of each day: the cumulative flow diagram. */
+  flow: z.array(
+    z.object({ at: Timestamp, todo: z.number(), inProgress: z.number(), done: z.number() }),
+  ),
   /** Average completed points over the last three completed sprints of the project. */
   velocity: z.number(),
   history: z.array(

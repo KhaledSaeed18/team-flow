@@ -1,5 +1,13 @@
 import { describe, expect, test } from 'bun:test';
-import { burndown, cycleTimes, median, stateAt, type TaskChange, velocity } from './metrics.ts';
+import {
+  burndown,
+  cumulativeFlow,
+  cycleTimes,
+  median,
+  stateAt,
+  type TaskChange,
+  velocity,
+} from './metrics.ts';
 
 const S = 'sprint-1';
 const day = (n: number, hour = 12) => new Date(Date.UTC(2026, 2, 2 + n, hour));
@@ -119,5 +127,42 @@ describe('velocity and cycle time', () => {
       { startedAt: day(-10), completedAt: day(-8) },
     ];
     expect(cycleTimes(tasks, day(0, 0), day(5, 0))).toEqual([5 * hour, 4 * 86_400_000]);
+  });
+});
+
+describe('cumulativeFlow', () => {
+  test('counts tasks per stage each day, leaving out canceled and outside work', () => {
+    const changes = [
+      ...created('a', day(-1), 3),
+      ...created('b', day(-1), 5),
+      ...created('c', day(-1), 2),
+      ...created('outside', day(-1), 8, null),
+      status('a', day(1), 'started'),
+      status('a', day(2), 'completed'),
+      status('b', day(2), 'started'),
+      status('c', day(3), 'canceled'),
+      // Added mid-sprint.
+      ...created('d', day(3), 1),
+    ];
+    const flow = cumulativeFlow(S, changes, { startsAt: start, endsAt: end, now: day(10) });
+    expect(flow.map(({ todo, inProgress, done }) => [todo, inProgress, done])).toEqual([
+      [3, 0, 0], // start
+      [3, 0, 0], // end of day 0
+      [2, 1, 0],
+      [1, 1, 1],
+      [1, 1, 1], // c canceled, d added
+      [1, 1, 1],
+    ]);
+    expect(flow[0]?.at).toEqual(start);
+    expect(flow.at(-1)?.at).toEqual(end);
+  });
+
+  test('stops at now for a running sprint', () => {
+    const flow = cumulativeFlow(S, created('a', day(-1), 1), {
+      startsAt: start,
+      endsAt: end,
+      now: day(1, 12),
+    });
+    expect(flow).toHaveLength(3);
   });
 });
