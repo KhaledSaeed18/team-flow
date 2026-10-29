@@ -66,7 +66,7 @@ export function tenancyProblems(table: PgTable): string[] {
     if (PLATFORM_TABLES.has(target)) continue;
     const local = columnNames(ref.columns);
     const foreign = columnNames(ref.foreignColumns);
-    if (local.length !== 2 || local[0] !== 'organization_id' || foreign[0] !== 'organization_id') {
+    if (local.length < 2 || local[0] !== 'organization_id' || foreign[0] !== 'organization_id') {
       problems.push(
         `${name}: reference to ${target} (${local.join(', ')}) must be composite on organization_id`,
       );
