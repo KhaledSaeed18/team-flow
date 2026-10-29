@@ -12,7 +12,7 @@ import {
   uniqueViolation,
   updateSprint,
 } from '@teamflow/db';
-import { burndown, cycleTimes, median, velocity } from '@teamflow/domain';
+import { burndown, cumulativeFlow, cycleTimes, median, velocity } from '@teamflow/domain';
 import { AppError, notFound } from '../errors.ts';
 import { type Actor, authorize } from './actor.ts';
 
@@ -97,7 +97,9 @@ export const sprintsService = {
     const sprint = await load(actor, id);
     const startsAt = sprint.startedAt ?? sprint.startsAt;
     const endsAt = sprint.completedAt ?? sprint.endsAt;
-    const result = burndown(id, await sprintChanges(actor.scope, id), { startsAt, endsAt, now });
+    const changes = await sprintChanges(actor.scope, id);
+    const result = burndown(id, changes, { startsAt, endsAt, now });
+    const flow = cumulativeFlow(id, changes, { startsAt, endsAt, now });
 
     const finished = await completedSprints(actor.scope, sprint.projectId);
     const history = finished.map((s) => ({
@@ -115,6 +117,7 @@ export const sprintsService = {
     return {
       sprint: toWire(sprint),
       ...result,
+      flow,
       velocity: velocity(history),
       history,
       medianCycleTimeHours: cycle === null ? null : Math.round((cycle / 3_600_000) * 10) / 10,
