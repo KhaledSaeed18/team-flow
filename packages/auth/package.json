@@ -1,0 +1,26 @@
+{
+  "name": "@teamflow/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./permissions": "./src/permissions.ts",
+    "./client": "./src/client.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "devDependencies": {
+    "@teamflow/tsconfig": "workspace:*",
+    "@types/bun": "catalog:",
+    "typescript": "catalog:"
+  },
+  "dependencies": {
+    "better-auth": "^1.7.14",
+    "zod": "catalog:",
+    "@teamflow/db": "workspace:*",
+    "@teamflow/domain": "workspace:*"
+  }
+}
