@@ -16,7 +16,7 @@ export const Route = createFileRoute('/_app/settings/account')({ component: Acco
 
 function Account() {
   return (
-    <main className="mx-auto flex w-full max-w-3xl flex-col gap-10 p-8">
+    <main className="flex w-full flex-col gap-10 p-4">
       <div>
         <h1 className="font-semibold text-xl">Account</h1>
         <p className="mt-1 text-ink-muted text-sm">

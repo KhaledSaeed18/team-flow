@@ -62,7 +62,7 @@ export function SprintReport({ sprintId }: { sprintId: string }) {
   }));
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
+    <div className="flex w-full flex-col gap-6 p-4">
       <header>
         <h2 className="font-semibold text-lg">{sprint.name}</h2>
         <p className="mt-1 text-ink-muted text-sm">

@@ -18,7 +18,7 @@ export function AuthLayout({
     <div className="grid min-h-dvh lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
       <main className="flex flex-col px-6 py-8 sm:px-12">
         <Logo />
-        <div className="my-auto w-full max-w-sm py-12">
+        <div className="my-auto w-full py-12">
           <h1 className="font-semibold text-2xl tracking-tight">{title}</h1>
           {subtitle && <p className="mt-2 text-ink-muted text-sm leading-relaxed">{subtitle}</p>}
           <div className="mt-8">{children}</div>
