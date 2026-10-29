@@ -49,6 +49,22 @@ function narrate(entry: Entry, project: Project, members: Map<string, Member>): 
         return to === null ? 'removed the due date' : `set the due date to ${String(to)}`;
       case 'labelIds':
         return 'changed the labels';
+      case 'parentTaskId':
+        return to === null ? 'made it a top-level task' : 'made it a sub-task';
+      case 'sprintId':
+        return to === null ? 'moved it to the backlog' : 'moved it into a sprint';
+      case 'relation': {
+        const r = (to ?? from) as { type: string; direction: string } | null;
+        const verb =
+          r?.type === 'blocks'
+            ? r.direction === 'outgoing'
+              ? 'blocking'
+              : 'blocked by'
+            : r?.type === 'duplicates'
+              ? 'duplicate'
+              : 'related';
+        return to === null ? `removed a ${verb} link` : `added a ${verb} link`;
+      }
       default:
         return `changed ${field}`;
     }

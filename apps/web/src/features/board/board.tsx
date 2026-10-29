@@ -1,5 +1,6 @@
 import { Plus } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
+import { isClosed } from '@teamflow/domain';
 import type { PresenceMember } from '@teamflow/realtime';
 import { Button } from '@teamflow/ui';
 import { useEffect, useMemo, useState } from 'react';
@@ -42,8 +43,22 @@ export function Board({
     () => ({
       members: new Map((members.data ?? []).map((m) => [m.id, m])),
       labels: new Map((labels.data ?? []).map((l) => [l.id, l])),
+      progress: (() => {
+        const closed = new Set(
+          project.statuses.filter((s) => isClosed(s.category)).map((s) => s.id),
+        );
+        const map = new Map<string, { done: number; total: number }>();
+        for (const t of tasks.data ?? []) {
+          if (!t.parentTaskId) continue;
+          const entry = map.get(t.parentTaskId) ?? { done: 0, total: 0 };
+          entry.total++;
+          if (closed.has(t.statusId)) entry.done++;
+          map.set(t.parentTaskId, entry);
+        }
+        return map;
+      })(),
     }),
-    [members.data, labels.data],
+    [members.data, labels.data, tasks.data, project.statuses],
   );
 
   const columns = useMemo(() => {

@@ -1,5 +1,6 @@
 import { Tag as TagIcon, X } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { can } from '@teamflow/auth/permissions';
 import { PRIORITIES, type Priority } from '@teamflow/domain';
 import { Avatar, Button, popover, Select, SelectItem } from '@teamflow/ui';
@@ -24,6 +25,7 @@ import { type Project, type Task, tasksQuery, useUpdateTask } from '../tasks.ts'
 import { Comments } from './comments.tsx';
 import { DescriptionEditor } from './description-editor.tsx';
 import { History } from './history.tsx';
+import { Relations, Subtasks } from './related-work.tsx';
 
 const NONE = '__none__';
 
@@ -89,6 +91,11 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
   const role =
     me.data?.organizations.find((o) => o.id === me.data?.activeOrganizationId)?.role ?? 'guest';
   const canEdit = can(role, { task: ['update'] });
+  const navigate = useNavigate();
+  const openTask = (identifier: string) => {
+    const key = identifier.split('-')[0] ?? project.key;
+    void navigate({ to: '/p/$key', params: { key }, search: { task: identifier } });
+  };
   const save = (patch: Parameters<typeof update.mutate>[0]['patch']) =>
     update.mutate({ id: task.id, patch });
 
@@ -195,6 +202,16 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
           />
         </Property>
       </dl>
+
+      <section aria-label="Sub-tasks" className="border-line border-t px-5 py-4">
+        <h2 className="mb-2 font-medium text-ink-muted text-xs">Sub-tasks</h2>
+        <Subtasks task={task} project={project} canEdit={canEdit} onOpen={openTask} />
+      </section>
+
+      <section aria-label="Linked tasks" className="border-line border-t px-5 py-4">
+        <h2 className="mb-2 font-medium text-ink-muted text-xs">Linked tasks</h2>
+        <Relations task={task} canEdit={canEdit} onOpen={openTask} />
+      </section>
 
       <section aria-label="Comments" className="border-line border-t px-5 py-4">
         <h2 className="mb-3 font-medium text-ink-muted text-xs">Comments</h2>

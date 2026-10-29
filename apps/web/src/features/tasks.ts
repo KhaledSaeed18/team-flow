@@ -104,6 +104,7 @@ export function useCreateTask(project: Project) {
       title: string;
       statusId: string;
       sprintId?: string | null;
+      parentTaskId?: string | null;
     }) => client.tasks.create({ ...input, projectId: project.id }),
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey });
@@ -120,7 +121,7 @@ export function useCreateTask(project: Project) {
         priority: 'none',
         estimate: null,
         assigneeMemberId: null,
-        parentTaskId: null,
+        parentTaskId: input.parentTaskId ?? null,
         sprintId: input.sprintId ?? null,
         dueDate: null,
         rank: rankFor(previous, input.id, { statusId: input.statusId }),
