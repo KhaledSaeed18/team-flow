@@ -65,6 +65,8 @@ function narrate(entry: Entry, project: Project, members: Map<string, Member>): 
               : 'related';
         return to === null ? `removed a ${verb} link` : `added a ${verb} link`;
       }
+      case 'attachment':
+        return to === null ? `removed ${String(from)}` : `attached ${String(to)}`;
       default:
         return `changed ${field}`;
     }
