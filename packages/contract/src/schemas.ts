@@ -22,3 +22,6 @@ export const OrganizationSummary = z.object({
   role: z.string(),
 });
 export type OrganizationSummary = z.infer<typeof OrganizationSummary>;
+
+export const Color = z.string().regex(/^#[0-9a-fA-F]{6}$/, 'Use a hex color like #6366f1.');
+export const Version = z.number().int().positive();

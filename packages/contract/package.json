@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@orpc/contract": "^1.16.1",
+    "@teamflow/domain": "workspace:*",
     "zod": "catalog:"
   }
 }
