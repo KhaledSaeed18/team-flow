@@ -16,7 +16,22 @@ import { uploadAttachment } from './upload.ts';
 export interface AppOptions {
   apiUrl: string;
   webUrl: string;
+  /** Someone's access may have ended (a member removed, a session revoked): re-check open sockets now. */
+  onAccessChanged?: () => void;
 }
+
+/** Auth endpoints after which an open socket may no longer be entitled to what it receives. */
+const ACCESS_PATHS = new Set([
+  '/organization/remove-member',
+  '/organization/leave',
+  '/organization/update-member-role',
+  '/organization/delete',
+  '/revoke-session',
+  '/revoke-sessions',
+  '/revoke-other-sessions',
+  '/sign-out',
+  '/change-password',
+]);
 
 type Env = { Variables: { requestId: string } };
 
@@ -78,7 +93,13 @@ export function createApp(deps: Deps, options: AppOptions) {
   });
 
   const authHandler = auditedAuthHandler(deps);
-  app.on(['GET', 'POST'], '/api/auth/*', (c) => authHandler(c.req.raw));
+  app.on(['GET', 'POST'], '/api/auth/*', async (c) => {
+    const response = await authHandler(c.req.raw);
+    const path = c.req.path.replace(/^\/api\/auth/, '');
+    if (c.req.method === 'POST' && response.ok && ACCESS_PATHS.has(path))
+      options.onAccessChanged?.();
+    return response;
+  });
 
   const spec = generateOpenApi(options.apiUrl);
   app.get('/api/openapi.json', async (c) => c.json(await spec));

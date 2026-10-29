@@ -57,7 +57,12 @@ const storage = await createS3Storage({
 
 const app = createApp(
   { db: database.db, auth, clock: systemClock, logger, storage },
-  { apiUrl: env.API_URL, webUrl: env.WEB_URL },
+  {
+    apiUrl: env.API_URL,
+    webUrl: env.WEB_URL,
+    // Defined below; only called once requests arrive.
+    onAccessChanged: () => void revalidateSockets(),
+  },
 );
 
 const gateway = createGateway({
@@ -98,11 +103,17 @@ const server = Bun.serve<SocketData | CollabData>({
 gateway.bind(server as Server<SocketData>);
 await listen(database.sql, gateway, logger);
 const heartbeat = setInterval(() => gateway.heartbeat(), 15_000);
+// Membership and sessions can also change on another api node, or expire: re-check open sockets regularly.
+async function revalidateSockets() {
+  await gateway.revalidate();
+}
+const revalidation = setInterval(() => void revalidateSockets(), 30_000);
 logger.info({ url: server.url.href }, 'api listening');
 
 const shutdown = async (signal: string) => {
   logger.info({ signal }, 'shutting down');
   clearInterval(heartbeat);
+  clearInterval(revalidation);
   await collab.flush();
   await server.stop();
   await boss.stop({ graceful: false });
