@@ -1,11 +1,17 @@
 import { ORPCError } from '@orpc/server';
-import { StaleWriteError } from '@teamflow/db';
+import { foreignKeyViolation, InvalidReferenceError, StaleWriteError } from '@teamflow/db';
 
 /**
  * Services throw these instead of transport errors, so they stay usable from jobs and tests. A middleware turns
  * them into the contract's typed errors.
  */
-export type AppErrorCode = 'NOT_FOUND' | 'FORBIDDEN' | 'CONFLICT' | 'KEY_TAKEN' | 'BAD_REQUEST';
+export type AppErrorCode =
+  | 'NOT_FOUND'
+  | 'FORBIDDEN'
+  | 'CONFLICT'
+  | 'KEY_TAKEN'
+  | 'BAD_REQUEST'
+  | 'INVALID_REFERENCE';
 
 const STATUS: Record<AppErrorCode, number> = {
   BAD_REQUEST: 400,
@@ -13,6 +19,7 @@ const STATUS: Record<AppErrorCode, number> = {
   NOT_FOUND: 404,
   CONFLICT: 409,
   KEY_TAKEN: 409,
+  INVALID_REFERENCE: 422,
 };
 
 export class AppError extends Error {
@@ -34,6 +41,15 @@ export function toTransportError(error: unknown): unknown {
     return new ORPCError('CONFLICT', {
       message: 'This was changed by someone else. Reload and try again.',
       data: { currentVersion: error.currentVersion },
+    });
+  }
+  if (error instanceof InvalidReferenceError) {
+    return new ORPCError('INVALID_REFERENCE', { status: 422, message: error.message });
+  }
+  if (foreignKeyViolation(error)) {
+    return new ORPCError('INVALID_REFERENCE', {
+      status: 422,
+      message: 'Something this refers to does not exist in this organization.',
     });
   }
   if (error instanceof AppError) {

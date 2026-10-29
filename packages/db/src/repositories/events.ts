@@ -11,6 +11,8 @@ export interface ActivityInput {
   projectId?: string | null;
   taskId?: string | null;
   changes?: FieldChange[];
+  /** When it happened, from the caller's clock; defaults to the database's `now()`. */
+  at?: Date;
 }
 
 export async function recordActivity(scope: Scope, input: ActivityInput): Promise<void> {
@@ -21,6 +23,7 @@ export async function recordActivity(scope: Scope, input: ActivityInput): Promis
     projectId: input.projectId ?? null,
     taskId: input.taskId ?? null,
     changes: input.changes ?? [],
+    ...(input.at ? { createdAt: input.at } : {}),
   });
 }
 

@@ -1,10 +1,6 @@
 import { os, tenant } from '../orpc.ts';
 import { projectsService } from '../services/projects.ts';
-
-const withoutUndefined = <T extends Record<string, unknown>>(value: T) =>
-  Object.fromEntries(Object.entries(value).filter(([, v]) => v !== undefined)) as {
-    [K in keyof T]?: Exclude<T[K], undefined>;
-  };
+import { withoutUndefined } from './util.ts';
 
 export const projects = {
   list: os.projects.list

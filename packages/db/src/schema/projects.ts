@@ -7,6 +7,7 @@ import {
   pgEnum,
   pgTable,
   text,
+  unique,
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
@@ -56,6 +57,8 @@ export const workflowStatuses = pgTable(
   },
   (t) => [
     tenantKey(t),
+    /** Target for tasks' (organization_id, project_id, status_id) key: a status of the task's own project. */
+    unique('workflow_statuses_project_key').on(t.organizationId, t.projectId, t.id),
     tenantRef(t, t.projectId, projects).onDelete('cascade'),
     uniqueIndex('workflow_statuses_name_unique').on(
       t.organizationId,

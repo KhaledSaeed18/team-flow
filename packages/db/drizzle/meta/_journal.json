@@ -29,6 +29,13 @@
       "when": 1793281479511,
       "tag": "0003_tasks",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793281844419,
+      "tag": "0004_task_status_in_project",
+      "breakpoints": true
     }
   ]
 }

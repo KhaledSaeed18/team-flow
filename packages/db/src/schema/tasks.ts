@@ -3,6 +3,7 @@ import { relations, sql } from 'drizzle-orm';
 import {
   check,
   date,
+  foreignKey,
   index,
   integer,
   jsonb,
@@ -51,7 +52,16 @@ export const tasks = pgTable(
     tenantKey(t),
     uniqueIndex().on(t.organizationId, t.projectId, t.number),
     tenantRef(t, t.projectId, projects).onDelete('cascade'),
-    tenantRef(t, t.statusId, workflowStatuses),
+    // Composite through project_id too: a task's status must belong to the task's own project.
+    foreignKey({
+      name: 'tasks_status_in_project_fk',
+      columns: [t.organizationId, t.projectId, t.statusId],
+      foreignColumns: [
+        workflowStatuses.organizationId,
+        workflowStatuses.projectId,
+        workflowStatuses.id,
+      ],
+    }),
     tenantRef(t, t.assigneeMemberId, members),
     tenantRef(t, t.createdByMemberId, members),
     tenantRef(t, t.parentTaskId, t).onDelete('cascade'),
