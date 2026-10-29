@@ -8,18 +8,18 @@ import { authClient } from '../../lib/auth.ts';
 import { field, useSubmit } from '../../lib/use-submit.ts';
 
 export const Route = createFileRoute('/_auth/verify')({
-  validateSearch: z.object({ email: z.email() }),
+  validateSearch: z.object({ email: z.email(), redirect: z.string().startsWith('/').optional() }),
   component: Verify,
 });
 
 function Verify() {
-  const { email } = Route.useSearch();
+  const { email, redirect } = Route.useSearch();
   const [resent, setResent] = useState(false);
   const { onSubmit, pending, error } = useSubmit(async (data) => {
     const { error } = await authClient.emailOtp.verifyEmail({ email, otp: field(data, 'code') });
     if (error)
       return 'That code is wrong or has expired. Check the latest email, or send a new code.';
-    window.location.assign('/');
+    window.location.assign(redirect ?? '/');
   });
 
   const resend = async () => {
