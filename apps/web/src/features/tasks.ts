@@ -159,6 +159,7 @@ export type TaskPatch = Partial<
     | 'assigneeMemberId'
     | 'dueDate'
     | 'labelIds'
+    | 'sprintId'
   >
 >;
 

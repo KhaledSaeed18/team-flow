@@ -20,6 +20,7 @@ import { Route as AuthSignUpRouteImport } from './routes/_auth/sign-up'
 import { Route as AuthVerifyRouteImport } from './routes/_auth/verify'
 import { Route as AppPKeyRouteRouteImport } from './routes/_app/p/$key/route'
 import { Route as AppPKeyIndexRouteImport } from './routes/_app/p/$key/index'
+import { Route as AppPKeyBacklogRouteImport } from './routes/_app/p/$key/backlog'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -74,6 +75,11 @@ const AppPKeyIndexRoute = AppPKeyIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AppPKeyRouteRoute,
 } as any)
+const AppPKeyBacklogRoute = AppPKeyBacklogRouteImport.update({
+  id: '/backlog',
+  path: '/backlog',
+  getParentRoute: () => AppPKeyRouteRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/sign-up': typeof AuthSignUpRoute
   '/verify': typeof AuthVerifyRoute
   '/p/$key': typeof AppPKeyRouteRouteWithChildren
+  '/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/p/$key/': typeof AppPKeyIndexRoute
 }
 export interface FileRoutesByTo {
@@ -94,6 +101,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/verify': typeof AuthVerifyRoute
+  '/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/p/$key': typeof AppPKeyIndexRoute
 }
 export interface FileRoutesById {
@@ -108,6 +116,7 @@ export interface FileRoutesById {
   '/_auth/verify': typeof AuthVerifyRoute
   '/_app/': typeof AppIndexRoute
   '/_app/p/$key': typeof AppPKeyRouteRouteWithChildren
+  '/_app/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/_app/p/$key/': typeof AppPKeyIndexRoute
 }
 export interface FileRouteTypes {
@@ -121,6 +130,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/verify'
     | '/p/$key'
+    | '/p/$key/backlog'
     | '/p/$key/'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify'
+    | '/p/$key/backlog'
     | '/p/$key'
   id:
     | '__root__'
@@ -144,6 +155,7 @@ export interface FileRouteTypes {
     | '/_auth/verify'
     | '/_app/'
     | '/_app/p/$key'
+    | '/_app/p/$key/backlog'
     | '/_app/p/$key/'
   fileRoutesById: FileRoutesById
 }
@@ -232,14 +244,23 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPKeyIndexRouteImport
       parentRoute: typeof AppPKeyRouteRoute
     }
+    '/_app/p/$key/backlog': {
+      id: '/_app/p/$key/backlog'
+      path: '/backlog'
+      fullPath: '/p/$key/backlog'
+      preLoaderRoute: typeof AppPKeyBacklogRouteImport
+      parentRoute: typeof AppPKeyRouteRoute
+    }
   }
 }
 
 interface AppPKeyRouteRouteChildren {
+  AppPKeyBacklogRoute: typeof AppPKeyBacklogRoute
   AppPKeyIndexRoute: typeof AppPKeyIndexRoute
 }
 
 const AppPKeyRouteRouteChildren: AppPKeyRouteRouteChildren = {
+  AppPKeyBacklogRoute: AppPKeyBacklogRoute,
   AppPKeyIndexRoute: AppPKeyIndexRoute,
 }
 
