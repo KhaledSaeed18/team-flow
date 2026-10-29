@@ -55,6 +55,12 @@ export function useLiveProject(project: Project) {
         });
         void queryClient.invalidateQueries({ queryKey: tasksKey });
         return;
+      case 'sprint.changed':
+      case 'sprint.carried_over':
+        void queryClient.invalidateQueries({ queryKey: orpc.sprints.key() });
+        if (event.topic === 'sprint.carried_over')
+          void queryClient.invalidateQueries({ queryKey: tasksKey });
+        return;
       case 'label.changed':
       case 'label.deleted':
         void queryClient.invalidateQueries({ queryKey: orpc.labels.key() });

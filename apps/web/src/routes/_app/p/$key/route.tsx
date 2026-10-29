@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
-import { createFileRoute, notFound, Outlet, useNavigate } from '@tanstack/react-router';
+import { createFileRoute, Link, notFound, Outlet, useNavigate } from '@tanstack/react-router';
 import { type PresenceMember, projectChannel } from '@teamflow/realtime';
 import { useMemo } from 'react';
 import { z } from 'zod';
@@ -70,6 +70,24 @@ function ProjectLayout() {
         />
         <h1 className="font-semibold text-sm">{project.name}</h1>
         <span className="text-ink-faint text-xs">{project.key}</span>
+        <nav aria-label="Views" className="ml-4 flex gap-1">
+          {(
+            [
+              ['/p/$key', 'Board'],
+              ['/p/$key/backlog', 'Planning'],
+            ] as const
+          ).map(([to, label]) => (
+            <Link
+              key={to}
+              to={to}
+              params={{ key: project.key }}
+              activeOptions={{ exact: true }}
+              className="rounded-control px-2.5 py-1 text-ink-muted text-sm outline-none hover:bg-lane hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold data-[status=active]:bg-surface data-[status=active]:text-ink data-[status=active]:shadow-[inset_0_0_0_1px_var(--color-line)]"
+            >
+              {label}
+            </Link>
+          ))}
+        </nav>
         <span className="flex-1" />
         <PresenceStack members={present} selfMemberId={selfMemberId} />
         <ConnectionStatus />
