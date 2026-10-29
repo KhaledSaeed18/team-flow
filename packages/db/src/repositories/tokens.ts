@@ -2,7 +2,8 @@ import { and, desc, eq, isNull, lt, or } from 'drizzle-orm';
 import type { Executor } from '../client.ts';
 import { members, users } from '../schema/auth.ts';
 import { apiTokens } from '../schema/tokens.ts';
-import type { Scope } from '../scope.ts';
+import { inTransaction, type Scope } from '../scope.ts';
+import { recordActivity } from './events.ts';
 
 export type ApiTokenRow = typeof apiTokens.$inferSelect;
 
@@ -16,25 +17,41 @@ export function listApiTokens(scope: Scope, memberId: string) {
     .orderBy(desc(apiTokens.createdAt));
 }
 
-export async function createApiToken(
+export function createApiToken(
   scope: Scope,
   input: Pick<ApiTokenRow, 'memberId' | 'name' | 'prefix' | 'tokenHash' | 'access' | 'expiresAt'>,
 ) {
-  const [row] = await scope.db
-    .insert(apiTokens)
-    .values({ organizationId: scope.organizationId, ...input })
-    .returning();
-  if (!row) throw new Error('insert returned no row');
-  return row;
+  return inTransaction(scope, async (tx) => {
+    const [row] = await tx.db
+      .insert(apiTokens)
+      .values({ organizationId: tx.organizationId, ...input })
+      .returning();
+    if (!row) throw new Error('insert returned no row');
+    await recordActivity(tx, {
+      kind: 'token.created',
+      changes: [
+        { field: 'token', from: null, to: row.name },
+        { field: 'access', from: null, to: row.access },
+      ],
+    });
+    return row;
+  });
 }
 
 /** Revoke one of `memberId`'s tokens; null when it is not theirs. */
-export async function deleteApiToken(scope: Scope, id: string, memberId: string) {
-  const [row] = await scope.db
-    .delete(apiTokens)
-    .where(and(inOrg(scope), eq(apiTokens.id, id), eq(apiTokens.memberId, memberId)))
-    .returning({ id: apiTokens.id });
-  return row ?? null;
+export function deleteApiToken(scope: Scope, id: string, memberId: string) {
+  return inTransaction(scope, async (tx) => {
+    const [row] = await tx.db
+      .delete(apiTokens)
+      .where(and(inOrg(tx), eq(apiTokens.id, id), eq(apiTokens.memberId, memberId)))
+      .returning({ id: apiTokens.id, name: apiTokens.name });
+    if (!row) return null;
+    await recordActivity(tx, {
+      kind: 'token.revoked',
+      changes: [{ field: 'token', from: row.name, to: null }],
+    });
+    return row;
+  });
 }
 
 /**

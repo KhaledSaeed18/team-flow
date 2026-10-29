@@ -6,6 +6,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { requestId } from 'hono/request-id';
 import { secureHeaders } from 'hono/secure-headers';
+import { auditedAuthHandler } from './auth-audit.ts';
 import type { Deps, RequestContext } from './context.ts';
 import { generateOpenApi, referencePage } from './openapi.ts';
 import { router } from './routers/index.ts';
@@ -76,7 +77,8 @@ export function createApp(deps: Deps, options: AppOptions) {
     }
   });
 
-  app.on(['GET', 'POST'], '/api/auth/*', (c) => deps.auth.handler(c.req.raw));
+  const authHandler = auditedAuthHandler(deps);
+  app.on(['GET', 'POST'], '/api/auth/*', (c) => authHandler(c.req.raw));
 
   const spec = generateOpenApi(options.apiUrl);
   app.get('/api/openapi.json', async (c) => c.json(await spec));

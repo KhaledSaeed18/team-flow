@@ -1,5 +1,6 @@
 import { os } from '../orpc.ts';
 import { attachments } from './attachments.ts';
+import { audit } from './audit.ts';
 import { labels, members, workflow } from './catalog.ts';
 import { comments, notifications } from './collaboration.ts';
 import { me } from './me.ts';
@@ -26,6 +27,7 @@ export const router = os.router({
   attachments,
   views,
   tokens,
+  audit,
 });
 
 export type Router = typeof router;

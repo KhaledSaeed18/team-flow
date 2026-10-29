@@ -40,7 +40,11 @@ export function createLabel(
       .values({ organizationId: tx.organizationId, ...input })
       .returning();
     if (!label) throw new Error('insert returned no row');
-    await recordActivity(tx, { kind: 'label.created', projectId: label.projectId });
+    await recordActivity(tx, {
+      kind: 'label.created',
+      projectId: label.projectId,
+      changes: [{ field: 'label', from: null, to: label.name }],
+    });
     await emit(tx, 'label.changed', { labelId: label.id, projectId: label.projectId });
     return label;
   });
@@ -48,12 +52,23 @@ export function createLabel(
 
 export function updateLabel(scope: Scope, id: string, patch: { name?: string; color?: string }) {
   return inTransaction(scope, async (tx) => {
+    const before = await findLabel(tx, id);
     const [label] = await tx.db
       .update(labels)
       .set(patch)
       .where(and(inOrg(tx), eq(labels.id, id)))
       .returning();
-    if (!label) return null;
+    if (!label || !before) return null;
+    const changes = (['name', 'color'] as const)
+      .filter((field) => before[field] !== label[field])
+      .map((field) => ({ field, from: before[field], to: label[field] }));
+    if (changes.length > 0) {
+      await recordActivity(tx, {
+        kind: 'label.updated',
+        projectId: label.projectId,
+        changes: [{ field: 'label', from: before.name, to: label.name }, ...changes],
+      });
+    }
     await emit(tx, 'label.changed', { labelId: label.id, projectId: label.projectId });
     return label;
   });
@@ -66,7 +81,11 @@ export function deleteLabel(scope: Scope, id: string) {
       .where(and(inOrg(tx), eq(labels.id, id)))
       .returning();
     if (!label) return null;
-    await recordActivity(tx, { kind: 'label.deleted', projectId: label.projectId });
+    await recordActivity(tx, {
+      kind: 'label.deleted',
+      projectId: label.projectId,
+      changes: [{ field: 'label', from: label.name, to: null }],
+    });
     await emit(tx, 'label.deleted', { labelId: label.id, projectId: label.projectId });
     return label;
   });
