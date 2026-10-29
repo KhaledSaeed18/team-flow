@@ -21,6 +21,7 @@ import { Route as AuthSignUpRouteImport } from './routes/_auth/sign-up'
 import { Route as AuthVerifyRouteImport } from './routes/_auth/verify'
 import { Route as InvitationsInvitationIdRouteImport } from './routes/invitations/$invitationId'
 import { Route as AppPKeyRouteRouteImport } from './routes/_app/p/$key/route'
+import { Route as AppSettingsAccountRouteImport } from './routes/_app/settings/account'
 import { Route as AppSettingsMembersRouteImport } from './routes/_app/settings/members'
 import { Route as AppPKeyIndexRouteImport } from './routes/_app/p/$key/index'
 import { Route as AppPKeyBacklogRouteImport } from './routes/_app/p/$key/backlog'
@@ -86,6 +87,11 @@ const AppPKeyRouteRoute = AppPKeyRouteRouteImport.update({
   path: '/p/$key',
   getParentRoute: () => AppRoute,
 } as any)
+const AppSettingsAccountRoute = AppSettingsAccountRouteImport.update({
+  id: '/settings/account',
+  path: '/settings/account',
+  getParentRoute: () => AppRoute,
+} as any)
 const AppSettingsMembersRoute = AppSettingsMembersRouteImport.update({
   id: '/settings/members',
   path: '/settings/members',
@@ -128,6 +134,7 @@ export interface FileRoutesByFullPath {
   '/verify': typeof AuthVerifyRoute
   '/invitations/$invitationId': typeof InvitationsInvitationIdRoute
   '/p/$key': typeof AppPKeyRouteRouteWithChildren
+  '/settings/account': typeof AppSettingsAccountRoute
   '/settings/members': typeof AppSettingsMembersRoute
   '/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/p/$key/list': typeof AppPKeyListRoute
@@ -145,6 +152,7 @@ export interface FileRoutesByTo {
   '/sign-up': typeof AuthSignUpRoute
   '/verify': typeof AuthVerifyRoute
   '/invitations/$invitationId': typeof InvitationsInvitationIdRoute
+  '/settings/account': typeof AppSettingsAccountRoute
   '/settings/members': typeof AppSettingsMembersRoute
   '/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/p/$key/list': typeof AppPKeyListRoute
@@ -166,6 +174,7 @@ export interface FileRoutesById {
   '/invitations/$invitationId': typeof InvitationsInvitationIdRoute
   '/_app/': typeof AppIndexRoute
   '/_app/p/$key': typeof AppPKeyRouteRouteWithChildren
+  '/_app/settings/account': typeof AppSettingsAccountRoute
   '/_app/settings/members': typeof AppSettingsMembersRoute
   '/_app/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/_app/p/$key/list': typeof AppPKeyListRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/verify'
     | '/invitations/$invitationId'
     | '/p/$key'
+    | '/settings/account'
     | '/settings/members'
     | '/p/$key/backlog'
     | '/p/$key/list'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/verify'
     | '/invitations/$invitationId'
+    | '/settings/account'
     | '/settings/members'
     | '/p/$key/backlog'
     | '/p/$key/list'
@@ -223,6 +234,7 @@ export interface FileRouteTypes {
     | '/invitations/$invitationId'
     | '/_app/'
     | '/_app/p/$key'
+    | '/_app/settings/account'
     | '/_app/settings/members'
     | '/_app/p/$key/backlog'
     | '/_app/p/$key/list'
@@ -324,6 +336,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AppPKeyRouteRouteImport
       parentRoute: typeof AppRoute
     }
+    '/_app/settings/account': {
+      id: '/_app/settings/account'
+      path: '/settings/account'
+      fullPath: '/settings/account'
+      preLoaderRoute: typeof AppSettingsAccountRouteImport
+      parentRoute: typeof AppRoute
+    }
     '/_app/settings/members': {
       id: '/_app/settings/members'
       path: '/settings/members'
@@ -393,6 +412,7 @@ interface AppRouteChildren {
   AppInboxRoute: typeof AppInboxRoute
   AppIndexRoute: typeof AppIndexRoute
   AppPKeyRouteRoute: typeof AppPKeyRouteRouteWithChildren
+  AppSettingsAccountRoute: typeof AppSettingsAccountRoute
   AppSettingsMembersRoute: typeof AppSettingsMembersRoute
 }
 
@@ -400,6 +420,7 @@ const AppRouteChildren: AppRouteChildren = {
   AppInboxRoute: AppInboxRoute,
   AppIndexRoute: AppIndexRoute,
   AppPKeyRouteRoute: AppPKeyRouteRouteWithChildren,
+  AppSettingsAccountRoute: AppSettingsAccountRoute,
   AppSettingsMembersRoute: AppSettingsMembersRoute,
 }
 

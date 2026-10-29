@@ -1,5 +1,6 @@
 import { CaretUpDown, Check, Moon, SignOut, Sun } from '@phosphor-icons/react';
 import { useQueryClient } from '@tanstack/react-query';
+import { useNavigate } from '@tanstack/react-router';
 import { Avatar, Menu, MenuItem, MenuSeparator, MenuTrigger } from '@teamflow/ui';
 import { Button } from 'react-aria-components';
 import { authClient } from '../../lib/auth.ts';
@@ -10,6 +11,7 @@ import { setTheme, useTheme } from '../../lib/theme.ts';
 export function WorkspaceMenu({ me }: { me: Me }) {
   const queryClient = useQueryClient();
   const theme = useTheme();
+  const navigate = useNavigate();
   const active = me.organizations.find((o) => o.id === me.activeOrganizationId);
 
   const switchTo = async (organizationId: string) => {
@@ -53,7 +55,10 @@ export function WorkspaceMenu({ me }: { me: Me }) {
           {theme === 'dark' ? 'Light theme' : 'Dark theme'}
         </MenuItem>
         <MenuSeparator />
-        <MenuItem textValue="Account" isDisabled>
+        <MenuItem
+          textValue="Account settings"
+          onAction={() => navigate({ to: '/settings/account' })}
+        >
           <span className="flex items-center gap-2">
             <Avatar name={me.user.name} src={me.user.image} size="xs" />
             <span className="truncate text-ink-muted">{me.user.email}</span>
