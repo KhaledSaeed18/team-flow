@@ -1,0 +1,633 @@
+---
+import '@fontsource-variable/schibsted-grotesk';
+
+const repo = 'https://github.com/KhaledSaeed18/team-flow';
+
+const views = [
+  {
+    id: 'board',
+    label: 'Board',
+    image: '/screenshots/board.png',
+    alt: 'The board for Rover Firmware with a task open beside it, showing status, priority, assignee and labels.',
+    caption:
+      'Drive the board from the keyboard. Open a card and it sits beside the board, so you can still see the work.',
+  },
+  {
+    id: 'list',
+    label: 'List',
+    image: '/screenshots/list.png',
+    alt: 'A table of every task in the project, sorted by priority, with filters for assignee, priority, label and status.',
+    caption:
+      'Every task in a virtualized table. Filter by person, priority, label or status, and save the result as a view.',
+  },
+  {
+    id: 'calendar',
+    label: 'Calendar',
+    image: '/screenshots/calendar.png',
+    alt: 'A month calendar of tasks by due date, with unscheduled work in a tray on the right.',
+    caption: 'Due dates by month. Drag a card to another day, or into the tray to unschedule it.',
+  },
+  {
+    id: 'report',
+    label: 'Report',
+    image: '/screenshots/report.png',
+    alt: 'A sprint report with burndown, cumulative flow and velocity charts.',
+    caption:
+      'Burndown, cumulative flow, velocity and cycle time, replayed from the activity log instead of snapshots.',
+  },
+];
+
+const stack = [
+  [
+    'Hono and oRPC on Bun',
+    'One typed contract serves the web app, the REST API and its OpenAPI document.',
+  ],
+  [
+    'Drizzle over PostgreSQL',
+    'Composite tenant keys, so even a wrong query cannot reach another workspace.',
+  ],
+  [
+    'An outbox and pg-boss',
+    'Every change, its history and its events commit together. Events can be late, never lost.',
+  ],
+  [
+    'WebSockets and Yjs',
+    'Live boards, presence, and descriptions edited by several people at once.',
+  ],
+  ['React Aria', 'Drag and drop, tables and menus that work with a keyboard and a screen reader.'],
+  ['Postgres for the rest', 'Queues, pub/sub and full-text search in the one database. No Redis.'],
+];
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>TeamFlow — a real-time, keyboard-first agile workspace</title>
+    <meta
+      name="description"
+      content="TeamFlow is an agile workspace where boards update live, descriptions are written together, and everything works from the keyboard."
+    />
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="top">
+      <a href="/" class="brand">TeamFlow</a>
+      <nav aria-label="Site">
+        <a href="/docs/">Docs</a>
+        <a href="/docs/guides/api/">API</a>
+        <a href={repo}>Source</a>
+      </nav>
+    </header>
+
+    <main id="main">
+      <section class="hero" aria-labelledby="headline">
+        <div class="pitch">
+          <h1 id="headline">Plan the sprint together, without waiting on each other.</h1>
+          <p class="lede">
+            TeamFlow is an agile workspace where the board moves for everyone the moment someone drags a card,
+            descriptions are written together, and every action is a keystroke away.
+          </p>
+          <p class="actions">
+            <a class="button primary" href="/docs/getting-started/">Run it locally</a>
+            <a class="button" href="/docs/">Read the docs</a>
+          </p>
+        </div>
+
+        <figure class="demo" aria-labelledby="demo-caption">
+          <div class="board" data-board>
+            {
+              [
+                ['todo', 'To do'],
+                ['doing', 'In progress'],
+                ['done', 'Done'],
+              ].map(([id, name]) => (
+                <section class="lane" data-lane={id} aria-label={name}>
+                  <h2>{name}</h2>
+                  <ul data-cards>
+                    {id === 'todo' && (
+                      <li>
+                        <button class="card yours" data-card="yours" type="button">
+                          <span class="key">RF-12</span>
+                          Lidar driver timeouts
+                        </button>
+                      </li>
+                    )}
+                    {id === 'todo' && (
+                      <li>
+                        <div class="card">
+                          <span class="key">RF-16</span>
+                          Secure boot key rotation
+                        </div>
+                      </li>
+                    )}
+                    {id === 'doing' && (
+                      <li>
+                        <div class="card" data-card="maya">
+                          <span class="key">RF-18</span>
+                          Charge limit by temperature
+                          <span class="who" aria-label="Maya is moving this card">Maya</span>
+                        </div>
+                      </li>
+                    )}
+                    {id === 'doing' && (
+                      <li>
+                        <div class="card">
+                          <span class="key">RF-22</span>
+                          Path planner replans too often
+                        </div>
+                      </li>
+                    )}
+                    {id === 'done' && (
+                      <li>
+                        <div class="card">
+                          <span class="key">RF-7</span>
+                          Emergency stop latency
+                        </div>
+                      </li>
+                    )}
+                  </ul>
+                </section>
+              ))
+            }
+          </div>
+          <figcaption id="demo-caption">
+            Focus <strong>RF-12</strong> and press <kbd>←</kbd> <kbd>→</kbd> to move it. Maya’s card moves on
+            its own, as it would on your screen.
+          </figcaption>
+          <p class="sr-only" aria-live="polite" data-announce></p>
+        </figure>
+      </section>
+
+      <section class="views" aria-labelledby="views-title">
+        <h2 id="views-title">Four views of the same work</h2>
+        <div class="tabs" role="tablist" aria-label="Views">
+          {
+            views.map((view, i) => (
+              <button
+                role="tab"
+                type="button"
+                id={`tab-${view.id}`}
+                aria-controls={`panel-${view.id}`}
+                aria-selected={i === 0 ? 'true' : 'false'}
+                tabindex={i === 0 ? 0 : -1}
+              >
+                {view.label}
+              </button>
+            ))
+          }
+        </div>
+        {
+          views.map((view, i) => (
+            <div
+              role="tabpanel"
+              id={`panel-${view.id}`}
+              aria-labelledby={`tab-${view.id}`}
+              hidden={i !== 0}
+              class="panel"
+            >
+              <p>{view.caption}</p>
+              <img src={view.image} alt={view.alt} width="1440" height="900" loading={i === 0 ? 'eager' : 'lazy'} />
+            </div>
+          ))
+        }
+      </section>
+
+      <section class="built" aria-labelledby="built-title">
+        <h2 id="built-title">How it is built</h2>
+        <p class="intro">
+          A portfolio project about the hard parts of a planning tool: many people changing the same thing at
+          once, types that hold from the database to the button, and a runtime small enough for one machine.
+        </p>
+        <dl>
+          {
+            stack.map(([term, detail]) => (
+              <div>
+                <dt>{term}</dt>
+                <dd>{detail}</dd>
+              </div>
+            ))
+          }
+        </dl>
+        <p><a href="/docs/architecture/overview/">Read the architecture</a></p>
+      </section>
+
+      <section class="run" aria-labelledby="run-title">
+        <h2 id="run-title">Run it in five commands</h2>
+        <pre><code>bun install
+bun run infra:up
+bun run db:migrate
+bun run db:seed
+bun run dev</code></pre>
+        <p>Then sign in at localhost:5173 as demo@teamflow.dev with the password teamflow-demo.</p>
+      </section>
+    </main>
+
+    <footer>
+      <p>
+        TeamFlow by <a href="https://khaledsaeed.tech">Khaled Saeed</a>. Its sibling project, <a
+          href="https://github.com/KhaledSaeed18/patchgrid">PatchGrid</a>, takes the opposite bets on stack and
+        tenancy.
+      </p>
+    </footer>
+
+    <script>
+      // The hero board: the visitor's card moves with the arrow keys; Maya's moves once on its own.
+      const lanes = [...document.querySelectorAll<HTMLElement>('[data-lane]')];
+      const announce = document.querySelector<HTMLElement>('[data-announce]');
+      const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+      function move(card: HTMLElement, to: number) {
+        const lane = lanes[to];
+        const item = card.closest('li');
+        if (!lane || !item) return;
+        const first = card.getBoundingClientRect();
+        lane.querySelector('[data-cards]')?.prepend(item);
+        if (!reduced) {
+          const last = card.getBoundingClientRect();
+          card.animate(
+            [
+              { transform: `translate(${first.left - last.left}px, ${first.top - last.top}px)` },
+              { transform: 'translate(0, 0)' },
+            ],
+            { duration: 260, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' },
+          );
+        }
+        return lane.getAttribute('aria-label');
+      }
+
+      const yours = document.querySelector<HTMLElement>('[data-card="yours"]');
+      yours?.addEventListener('keydown', (event) => {
+        if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+        event.preventDefault();
+        const from = lanes.findIndex((lane) => lane.contains(yours));
+        const to = from + (event.key === 'ArrowRight' ? 1 : -1);
+        if (to < 0 || to >= lanes.length) return;
+        const name = move(yours, to);
+        yours.focus();
+        if (announce && name) announce.textContent = `Moved RF-12 to ${name}.`;
+      });
+
+      const maya = document.querySelector<HTMLElement>('[data-card="maya"]');
+      if (maya) {
+        setTimeout(() => {
+          move(maya, 2);
+          maya.classList.add('settled');
+        }, 1600);
+      }
+
+      // Tabs: arrow keys move between them, as in the app.
+      const tabs = [...document.querySelectorAll<HTMLButtonElement>('[role="tab"]')];
+      const select = (tab: HTMLButtonElement) => {
+        for (const other of tabs) {
+          const selected = other === tab;
+          other.setAttribute('aria-selected', String(selected));
+          other.tabIndex = selected ? 0 : -1;
+          const panel = document.getElementById(other.getAttribute('aria-controls') ?? '');
+          if (panel) panel.hidden = !selected;
+        }
+      };
+      for (const [i, tab] of tabs.entries()) {
+        tab.addEventListener('click', () => select(tab));
+        tab.addEventListener('keydown', (event) => {
+          const step = event.key === 'ArrowRight' ? 1 : event.key === 'ArrowLeft' ? -1 : 0;
+          if (!step) return;
+          const next = tabs[(i + step + tabs.length) % tabs.length];
+          if (!next) return;
+          select(next);
+          next.focus();
+        });
+      }
+    </script>
+
+    <style is:global>
+      :root {
+        --canvas: #eef1f4;
+        --lane: #e4e8ed;
+        --surface: #ffffff;
+        --line: #d5dbe2;
+        --ink: #1b2430;
+        --muted: #5b6878;
+        --faint: #8a96a3;
+        --marigold: #e8a317;
+        font-family: 'Schibsted Grotesk Variable', ui-sans-serif, system-ui, sans-serif;
+        font-feature-settings: 'ss01' 1;
+        color: var(--ink);
+        background: var(--canvas);
+      }
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        -webkit-font-smoothing: antialiased;
+      }
+      a {
+        color: inherit;
+        text-underline-offset: 3px;
+      }
+      :focus-visible {
+        outline: 2px solid var(--marigold);
+        outline-offset: 3px;
+      }
+      .sr-only {
+        position: absolute;
+        width: 1px;
+        height: 1px;
+        overflow: hidden;
+        clip-path: inset(50%);
+        white-space: nowrap;
+      }
+      .skip {
+        position: absolute;
+        left: 1rem;
+        top: -3rem;
+        background: var(--surface);
+        padding: 0.5rem 0.75rem;
+        border-radius: 6px;
+      }
+      .skip:focus {
+        top: 1rem;
+      }
+
+      .top,
+      main,
+      footer {
+        width: min(72rem, 100% - 3rem);
+        margin-inline: auto;
+      }
+      .top {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding-block: 1.25rem;
+      }
+      .brand {
+        font-weight: 700;
+        font-size: 1.125rem;
+        text-decoration: none;
+      }
+      .top nav {
+        display: flex;
+        gap: 1.5rem;
+        font-size: 0.9375rem;
+        color: var(--muted);
+      }
+      .top nav a {
+        text-decoration: none;
+      }
+      .top nav a:hover {
+        color: var(--ink);
+      }
+
+      .hero {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+        gap: 3.5rem;
+        align-items: center;
+        padding-block: 4.5rem 6rem;
+      }
+      h1 {
+        font-size: clamp(2.5rem, 5vw, 4rem);
+        line-height: 1.02;
+        letter-spacing: -0.03em;
+        font-weight: 700;
+        margin: 0;
+        max-width: 14ch;
+      }
+      .lede {
+        font-size: 1.1875rem;
+        line-height: 1.55;
+        color: var(--muted);
+        max-width: 38ch;
+        margin: 1.5rem 0 2rem;
+      }
+      .actions {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        margin: 0;
+      }
+      .button {
+        display: inline-block;
+        padding: 0.75rem 1.125rem;
+        border-radius: 6px;
+        border: 1px solid var(--line);
+        background: var(--surface);
+        font-weight: 600;
+        font-size: 0.9375rem;
+        text-decoration: none;
+      }
+      .button.primary {
+        background: var(--ink);
+        border-color: var(--ink);
+        color: var(--canvas);
+      }
+
+      .demo {
+        margin: 0;
+      }
+      .board {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.625rem;
+        padding: 0.875rem;
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 14px;
+      }
+      .lane {
+        background: var(--lane);
+        border-radius: 10px;
+        padding: 0.625rem;
+        min-height: 15rem;
+      }
+      .lane h2 {
+        font-size: 0.8125rem;
+        font-weight: 600;
+        color: var(--muted);
+        margin: 0.125rem 0.25rem 0.625rem;
+      }
+      .lane ul {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 0.5rem;
+      }
+      .card {
+        position: relative;
+        display: block;
+        width: 100%;
+        text-align: left;
+        font: inherit;
+        font-size: 0.875rem;
+        line-height: 1.35;
+        color: var(--ink);
+        background: var(--surface);
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        padding: 0.625rem 0.6875rem 0.75rem;
+      }
+      .card .key {
+        display: block;
+        font-size: 0.75rem;
+        color: var(--faint);
+        margin-bottom: 0.1875rem;
+      }
+      .card.yours {
+        cursor: pointer;
+      }
+      .card.yours:focus-visible {
+        outline-offset: 2px;
+      }
+      .who {
+        position: absolute;
+        top: -0.625rem;
+        right: 0.5rem;
+        font-size: 0.6875rem;
+        font-weight: 600;
+        padding: 0.0625rem 0.4375rem;
+        border-radius: 999px;
+        background: #8a5a7a;
+        color: #fff;
+        transition: opacity 600ms 900ms;
+      }
+      .settled .who {
+        opacity: 0;
+      }
+      figcaption {
+        font-size: 0.875rem;
+        color: var(--muted);
+        margin-top: 0.875rem;
+        line-height: 1.5;
+      }
+      kbd {
+        font: inherit;
+        font-size: 0.8125rem;
+        padding: 0.0625rem 0.375rem;
+        border: 1px solid var(--line);
+        border-bottom-width: 2px;
+        border-radius: 4px;
+        background: var(--surface);
+      }
+
+      .views,
+      .built,
+      .run {
+        padding-block: 3.5rem;
+        border-top: 1px solid var(--line);
+      }
+      .views h2,
+      .built h2,
+      .run h2 {
+        font-size: 1.75rem;
+        letter-spacing: -0.02em;
+        margin: 0 0 1.25rem;
+      }
+      .tabs {
+        display: inline-flex;
+        gap: 0.25rem;
+        padding: 0.25rem;
+        background: var(--lane);
+        border-radius: 8px;
+      }
+      .tabs button {
+        font: inherit;
+        font-size: 0.9375rem;
+        color: var(--muted);
+        background: none;
+        border: 0;
+        border-radius: 6px;
+        padding: 0.4375rem 0.875rem;
+        cursor: pointer;
+      }
+      .tabs button[aria-selected='true'] {
+        background: var(--surface);
+        color: var(--ink);
+        box-shadow: 0 1px 2px rgb(27 36 48 / 0.12);
+      }
+      .panel p {
+        color: var(--muted);
+        max-width: 60ch;
+        margin: 1.25rem 0;
+        line-height: 1.55;
+      }
+      .panel img {
+        display: block;
+        width: 100%;
+        height: auto;
+        border-radius: 12px;
+        border: 1px solid var(--line);
+        box-shadow: 0 24px 48px -24px rgb(27 36 48 / 0.35);
+      }
+
+      .intro {
+        color: var(--muted);
+        max-width: 62ch;
+        line-height: 1.55;
+        margin: 0 0 2rem;
+      }
+      dl {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 1.5rem 3rem;
+        margin: 0 0 2rem;
+      }
+      dt {
+        font-weight: 600;
+      }
+      dd {
+        margin: 0.25rem 0 0;
+        color: var(--muted);
+        line-height: 1.5;
+      }
+
+      pre {
+        background: var(--ink);
+        color: #e6ebf0;
+        border-radius: 10px;
+        padding: 1.125rem 1.25rem;
+        font-size: 0.9375rem;
+        line-height: 1.7;
+        overflow-x: auto;
+        max-width: 36rem;
+        margin: 0 0 1rem;
+      }
+      .run p {
+        color: var(--muted);
+      }
+      footer {
+        border-top: 1px solid var(--line);
+        padding-block: 2rem 3rem;
+        color: var(--muted);
+        font-size: 0.875rem;
+      }
+
+      @media (max-width: 52rem) {
+        .hero {
+          grid-template-columns: 1fr;
+          gap: 2.5rem;
+          padding-block: 2.5rem 4rem;
+        }
+        dl {
+          grid-template-columns: 1fr;
+        }
+      }
+      @media (max-width: 32rem) {
+        .board {
+          grid-template-columns: 1fr;
+        }
+        .lane {
+          min-height: 0;
+        }
+        .top nav {
+          gap: 1rem;
+        }
+      }
+    </style>
+  </body>
+</html>

@@ -1,0 +1,30 @@
+{
+  "name": "@teamflow/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./schema": "./src/schema/index.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "generate": "drizzle-kit generate",
+    "migrate": "bun src/migrate.ts",
+    "studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@teamflow/domain": "workspace:*",
+    "drizzle-orm": "^0.45.4",
+    "postgres": "^3.4.9",
+    "uuid": "^14.0.3"
+  },
+  "devDependencies": {
+    "@teamflow/tsconfig": "workspace:*",
+    "@types/bun": "catalog:",
+    "drizzle-kit": "^0.31.11",
+    "typescript": "catalog:"
+  }
+}

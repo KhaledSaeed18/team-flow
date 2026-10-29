@@ -1,0 +1,4 @@
+{
+  "extends": "@teamflow/tsconfig/react-library.json",
+  "include": ["src"]
+}

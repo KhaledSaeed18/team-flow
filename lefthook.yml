@@ -1,0 +1,17 @@
+output:
+  - failure
+
+# Hooks stay fast: Biome on staged files and commitlint on the message.
+# Type-checking and tests run in CI through Turborepo.
+
+pre-commit:
+  jobs:
+    - name: biome
+      glob: "*.{js,jsx,ts,tsx,json,jsonc,css,md,yml,yaml}"
+      run: bunx biome check --write --no-errors-on-unmatched --files-ignore-unknown=true {staged_files}
+      stage_fixed: true
+
+commit-msg:
+  jobs:
+    - name: commitlint
+      run: bunx commitlint --edit {1}

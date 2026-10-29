@@ -1,0 +1,188 @@
+@import "@fontsource-variable/schibsted-grotesk";
+
+/*
+ * TeamFlow design tokens.
+ *
+ * A cool whiteboard canvas, white index cards, slate ink. The one loud colour is marigold, and it is reserved
+ * for focus and selection — in a keyboard-first tool, where you are is the most important thing on screen.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Schibsted Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-canvas: #eef1f4;
+  --color-lane: #e4e8ed;
+  --color-surface: #ffffff;
+  --color-raised: #f7f9fb;
+  --color-line: #d5dbe2;
+  --color-line-strong: #b9c2cc;
+  --color-ink: #1b2430;
+  --color-ink-muted: #5b6878;
+  --color-ink-faint: #8a96a3;
+  --color-marigold: #e8a317;
+  --color-marigold-soft: #fbedc9;
+  --color-danger: #c2412d;
+  --color-danger-soft: #f8e1dc;
+  --color-success: #2f855a;
+
+  /* Chart series, validated for lightness, chroma, colorblind separation and contrast on the card surface. */
+  --color-chart-1: #2f6bd1;
+  --color-chart-2: #14866d;
+  --color-chart-3: #d0632a;
+
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --radius-lane: 12px;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  --animate-fade-in: fade-in 120ms ease-out;
+  --animate-fade-out: fade-in 100ms ease-in reverse;
+  --animate-slide-in: slide-in 160ms cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  @keyframes fade-in {
+    from {
+      opacity: 0;
+    }
+  }
+
+  @keyframes slide-in {
+    from {
+      transform: translateX(16px);
+      opacity: 0;
+    }
+  }
+
+  --shadow-lifted: 0 10px 24px -8px rgb(27 36 48 / 0.28), 0 2px 6px -2px rgb(27 36 48 / 0.18);
+}
+
+.dark {
+  --color-canvas: #141920;
+  --color-lane: #1a2029;
+  --color-surface: #212833;
+  --color-raised: #28303c;
+  --color-line: #313a47;
+  --color-line-strong: #46515f;
+  --color-ink: #e6ebf0;
+  --color-ink-muted: #a3aebb;
+  --color-ink-faint: #6f7b89;
+  --color-marigold: #f2b632;
+  --color-marigold-soft: #3d3218;
+  --color-danger: #f0816e;
+  --color-danger-soft: #3d2420;
+  --color-success: #68c391;
+  --color-chart-1: #5b8fe6;
+  --color-chart-2: #2fa384;
+  --color-chart-3: #d9692f;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    /* Tabular figures are opt-in (`tabular-nums`) where numbers line up: in this face "tnum" also makes commas and
+       full stops figure-width, which opens a gap before them in running text. */
+    font-feature-settings: "ss01" 1;
+    color: var(--color-ink);
+    background: var(--color-canvas);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-marigold-soft);
+  }
+}
+
+/* The marigold ring: every focusable thing uses it, nothing else may. */
+@utility focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  &[data-focus-visible] {
+    outline-color: var(--color-marigold);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component transitions */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component transitions */
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Rich text in task descriptions (Tiptap). Quiet, document-like, sized for the side panel. */
+.tiptap {
+  & > * + * {
+    margin-top: 0.5em;
+  }
+  & h2 {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  & h3 {
+    font-size: 0.875rem;
+    font-weight: 600;
+  }
+  & ul {
+    list-style: disc;
+    padding-left: 1.25rem;
+  }
+  & ol {
+    list-style: decimal;
+    padding-left: 1.25rem;
+  }
+  & code {
+    border-radius: 4px;
+    background: var(--color-lane);
+    padding: 0.1em 0.3em;
+    font-size: 0.85em;
+  }
+  & pre {
+    border-radius: var(--radius-control);
+    background: var(--color-lane);
+    padding: 0.6em 0.8em;
+    font-size: 0.85em;
+  }
+  & blockquote {
+    border-left: 2px solid var(--color-line-strong);
+    padding-left: 0.75rem;
+    color: var(--color-ink-muted);
+  }
+  & p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+    color: var(--color-ink-faint);
+  }
+}
+
+/* Other people's carets: a thin bar in their colour with their name above it. */
+.collaboration-carets__caret {
+  position: relative;
+  margin-left: -1px;
+  margin-right: -1px;
+  border-left: 1px solid;
+  border-right: 1px solid;
+  word-break: normal;
+  pointer-events: none;
+}
+
+.collaboration-carets__label {
+  position: absolute;
+  top: -1.35em;
+  left: -1px;
+  border-radius: 3px 3px 3px 0;
+  padding: 0.05rem 0.3rem;
+  color: #fff;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: normal;
+  white-space: nowrap;
+  user-select: none;
+}

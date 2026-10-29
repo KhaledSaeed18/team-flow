@@ -1,0 +1,28 @@
+{
+  "name": "@teamflow/worker",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --env-file=../../.env --watch src/main.ts",
+    "start": "bun --env-file=../../.env src/main.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test"
+  },
+  "dependencies": {
+    "@teamflow/db": "workspace:*",
+    "@teamflow/domain": "workspace:*",
+    "@teamflow/realtime": "workspace:*",
+    "nodemailer": "^10.3.1",
+    "pg-boss": "^12.38.0",
+    "pino": "^10.4.0",
+    "zod": "catalog:",
+    "@teamflow/email": "workspace:*"
+  },
+  "devDependencies": {
+    "@teamflow/tsconfig": "workspace:*",
+    "@types/bun": "catalog:",
+    "@types/nodemailer": "^8.0.2",
+    "typescript": "catalog:"
+  }
+}

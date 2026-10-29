@@ -1,0 +1,4 @@
+{
+  "extends": "@teamflow/tsconfig/bun.json",
+  "include": ["src", "test", "scripts"]
+}

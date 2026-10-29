@@ -1,0 +1,42 @@
+{
+  "name": "@teamflow/api",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "bun --env-file=../../.env --watch src/server.ts",
+    "start": "bun --env-file=../../.env src/server.ts",
+    "typecheck": "tsc --noEmit",
+    "test": "bun test",
+    "seed": "bun --env-file=../../.env scripts/seed.ts"
+  },
+  "devDependencies": {
+    "@orpc/client": "^1.16.1",
+    "@teamflow/tsconfig": "workspace:*",
+    "@types/bun": "catalog:",
+    "drizzle-orm": "^0.45.4",
+    "typescript": "catalog:",
+    "y-websocket": "^3.1.0"
+  },
+  "dependencies": {
+    "@orpc/contract": "^1.16.1",
+    "@orpc/openapi": "^1.16.1",
+    "@orpc/server": "^1.16.1",
+    "@orpc/zod": "^1.16.1",
+    "@teamflow/auth": "workspace:*",
+    "@teamflow/contract": "workspace:*",
+    "@teamflow/db": "workspace:*",
+    "@teamflow/domain": "workspace:*",
+    "@teamflow/email": "workspace:*",
+    "@teamflow/realtime": "workspace:*",
+    "aws4fetch": "^1.0.20",
+    "hono": "^4.13.14",
+    "lib0": "^0.2.119",
+    "pg-boss": "^12.38.0",
+    "pino": "^10.4.0",
+    "postgres": "^3.4.9",
+    "y-protocols": "^1.0.7",
+    "yjs": "^13.6.33",
+    "zod": "catalog:"
+  }
+}
