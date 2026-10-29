@@ -1,5 +1,5 @@
 import { relations, sql } from 'drizzle-orm';
-import { index, jsonb, pgEnum, pgTable, text, uuid } from 'drizzle-orm/pg-core';
+import { index, jsonb, pgEnum, pgTable, text, uniqueIndex, uuid } from 'drizzle-orm/pg-core';
 import { members } from './auth.ts';
 import { tasks } from './tasks.ts';
 import { at, createdAt, tenantColumns, tenantKey, tenantRef } from './tenant.ts';
@@ -22,6 +22,32 @@ export const comments = pgTable(
     tenantRef(t, t.taskId, tasks).onDelete('cascade'),
     tenantRef(t, t.authorMemberId, members),
     index('comments_task_idx').on(t.organizationId, t.taskId, t.createdAt),
+  ],
+);
+
+export const REACTIONS = ['thumbsup', 'tada', 'heart', 'smile', 'eyes', 'rocket'] as const;
+export const reactionKind = pgEnum('reaction', REACTIONS);
+
+/** One person's reaction to a comment; at most one of each kind per person. */
+export const commentReactions = pgTable(
+  'comment_reactions',
+  {
+    ...tenantColumns(),
+    commentId: uuid().notNull(),
+    memberId: uuid().notNull(),
+    reaction: reactionKind().notNull(),
+    createdAt: createdAt(),
+  },
+  (t) => [
+    tenantKey(t),
+    tenantRef(t, t.commentId, comments).onDelete('cascade'),
+    tenantRef(t, t.memberId, members).onDelete('cascade'),
+    uniqueIndex('comment_reactions_unique').on(
+      t.organizationId,
+      t.commentId,
+      t.memberId,
+      t.reaction,
+    ),
   ],
 );
 

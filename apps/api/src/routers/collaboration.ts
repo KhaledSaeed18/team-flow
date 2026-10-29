@@ -18,6 +18,9 @@ export const comments = {
         context.clock.now(),
       ),
     ),
+  react: os.comments.react
+    .use(tenant)
+    .handler(({ context, input }) => commentsService.react(context, input)),
   delete: os.comments.delete
     .use(tenant)
     .handler(({ context, input }) =>

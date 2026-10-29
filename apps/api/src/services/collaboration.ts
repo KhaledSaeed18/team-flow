@@ -6,7 +6,10 @@ import {
   findTask,
   listComments,
   listNotifications,
+  listReactions,
   markNotificationsRead,
+  type Reaction,
+  setReaction,
   unreadCount,
   updateComment,
 } from '@teamflow/db';
@@ -19,8 +22,37 @@ async function visibleTask(actor: Actor, taskId: string) {
   return task;
 }
 
+/** Comments on a task, each with its reactions grouped by kind in the order they were first given. */
+async function commentsWithReactions(actor: Actor, taskId: string) {
+  const list = await listComments(actor.scope, taskId);
+  const rows = await listReactions(
+    actor.scope,
+    list.map((c) => c.id),
+  );
+  const byComment = new Map<string, Map<Reaction, { memberIds: string[]; names: string[] }>>();
+  for (const row of rows) {
+    const kinds = byComment.get(row.commentId) ?? new Map();
+    const group = kinds.get(row.reaction) ?? { memberIds: [], names: [] };
+    group.memberIds.push(row.memberId);
+    group.names.push(row.name);
+    kinds.set(row.reaction, group);
+    byComment.set(row.commentId, kinds);
+  }
+  return list.map((comment) => ({
+    ...comment,
+    reactions: [...(byComment.get(comment.id) ?? new Map()).entries()].map(
+      ([reaction, group]: [Reaction, { memberIds: string[]; names: string[] }]) => ({
+        reaction,
+        count: group.memberIds.length,
+        mine: group.memberIds.includes(actor.member.id),
+        names: group.names,
+      }),
+    ),
+  }));
+}
+
 async function commentWithAuthor(actor: Actor, taskId: string, id: string) {
-  const comment = (await listComments(actor.scope, taskId)).find((c) => c.id === id);
+  const comment = (await commentsWithReactions(actor, taskId)).find((c) => c.id === id);
   if (!comment) throw notFound('Comment not found.');
   return comment;
 }
@@ -28,7 +60,15 @@ async function commentWithAuthor(actor: Actor, taskId: string, id: string) {
 export const commentsService = {
   async list(actor: Actor, taskId: string) {
     await visibleTask(actor, taskId);
-    return listComments(actor.scope, taskId);
+    return commentsWithReactions(actor, taskId);
+  },
+
+  /** Anyone who may comment may react, guests included. */
+  async react(actor: Actor, input: { commentId: string; reaction: Reaction; on: boolean }) {
+    authorize(actor, { comment: ['create'] });
+    const comment = await setReaction(actor.scope, { ...input, memberId: actor.member.id });
+    if (!comment) throw notFound('Comment not found.');
+    return commentWithAuthor(actor, comment.taskId, comment.id);
   },
 
   async create(
