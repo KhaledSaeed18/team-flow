@@ -103,12 +103,18 @@ class RealtimeConnection {
     socket.addEventListener('message', (event) =>
       this.receive(JSON.parse(String(event.data)) as ServerMessage),
     );
-    socket.addEventListener('close', () => {
+    socket.addEventListener('close', (event) => {
       clearInterval(this.heartbeat);
       this.socket = null;
       this.connectionId = null;
       this.setStatus('closed');
       for (const [channel] of this.members) this.setMembers(channel, []);
+      // Access was revoked (removed from the workspace, or signed out elsewhere). Reconnecting would only be refused
+      // again; reloading lets the app show where the person stands now.
+      if (event.code === 4403) {
+        window.location.reload();
+        return;
+      }
       if (this.channels.size === 0) return;
       // Exponential backoff with jitter.
       const delay =
