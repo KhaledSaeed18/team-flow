@@ -1,14 +1,28 @@
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, redirect } from '@tanstack/react-router';
+import { orpc } from '../../lib/api.ts';
 
-export const Route = createFileRoute('/_app/')({ component: Home });
+/** The workspace home opens the first project; with none, the empty state invites creating one. */
+export const Route = createFileRoute('/_app/')({
+  beforeLoad: async ({ context }) => {
+    const projects = await context.queryClient.ensureQueryData(
+      orpc.projects.list.queryOptions({ input: {} }),
+    );
+    const first = projects[0];
+    if (first) throw redirect({ to: '/p/$key', params: { key: first.key } });
+  },
+  component: Empty,
+});
 
-function Home() {
-  const { me } = Route.useRouteContext();
-  const org = me.organizations.find((o) => o.id === me.activeOrganizationId);
+function Empty() {
   return (
-    <main className="p-8">
-      <h1 className="font-semibold text-xl">{org?.name}</h1>
-      <p className="mt-1 text-ink-muted text-sm">Signed in as {me.user.name}</p>
+    <main className="grid flex-1 place-items-center p-8">
+      <div className="max-w-sm text-center">
+        <h1 className="font-semibold text-lg">Start with a project</h1>
+        <p className="mt-2 text-ink-muted text-sm leading-relaxed">
+          A project holds a board of tasks and the workflow they move through. Use the + next to
+          Projects to create one.
+        </p>
+      </div>
     </main>
   );
 }
