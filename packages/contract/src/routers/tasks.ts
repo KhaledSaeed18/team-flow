@@ -16,6 +16,7 @@ export const Task = z.object({
   estimate: z.number().int().nullable(),
   assigneeMemberId: Id.nullable(),
   parentTaskId: Id.nullable(),
+  sprintId: Id.nullable(),
   dueDate: z.iso.date().nullable(),
   rank: z.string(),
   labelIds: z.array(Id),
@@ -67,6 +68,8 @@ export const tasks = {
         /** A member id, or `null` for unassigned. */
         assigneeMemberId: Id.nullable().optional(),
         parentTaskId: Id.optional(),
+        /** A sprint id, or `null` for the backlog (tasks in no sprint). */
+        sprintId: Id.nullable().optional(),
       }),
     )
     .output(z.array(Task)),
@@ -101,6 +104,7 @@ export const tasks = {
         estimate: Estimate.nullable().optional(),
         assigneeMemberId: Id.nullable().optional(),
         parentTaskId: Id.nullable().optional(),
+        sprintId: Id.nullable().optional(),
         dueDate: DueDate.nullable().optional(),
         labelIds: z.array(Id).max(20).optional(),
       }),
@@ -121,6 +125,7 @@ export const tasks = {
         estimate: Estimate.nullable().optional(),
         assigneeMemberId: Id.nullable().optional(),
         parentTaskId: Id.nullable().optional(),
+        sprintId: Id.nullable().optional(),
         dueDate: DueDate.nullable().optional(),
         labelIds: z.array(Id).max(20).optional(),
       }),

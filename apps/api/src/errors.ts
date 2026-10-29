@@ -3,6 +3,7 @@ import {
   foreignKeyViolation,
   InvalidReferenceError,
   InvalidWorkflowError,
+  SprintStateError,
   StaleWriteError,
 } from '@teamflow/db';
 
@@ -18,7 +19,8 @@ export type AppErrorCode =
   | 'BAD_REQUEST'
   | 'INVALID_REFERENCE'
   | 'INVALID_WORKFLOW'
-  | 'NAME_TAKEN';
+  | 'NAME_TAKEN'
+  | 'SPRINT_STATE';
 
 const STATUS: Record<AppErrorCode, number> = {
   BAD_REQUEST: 400,
@@ -29,6 +31,7 @@ const STATUS: Record<AppErrorCode, number> = {
   INVALID_REFERENCE: 422,
   INVALID_WORKFLOW: 422,
   NAME_TAKEN: 409,
+  SPRINT_STATE: 409,
 };
 
 export class AppError extends Error {
@@ -54,6 +57,9 @@ export function toTransportError(error: unknown): unknown {
   }
   if (error instanceof InvalidReferenceError) {
     return new ORPCError('INVALID_REFERENCE', { status: 422, message: error.message });
+  }
+  if (error instanceof SprintStateError) {
+    return new ORPCError('SPRINT_STATE', { status: 409, message: error.message });
   }
   if (error instanceof InvalidWorkflowError) {
     return new ORPCError('INVALID_WORKFLOW', { status: 422, message: error.message });

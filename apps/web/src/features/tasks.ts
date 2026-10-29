@@ -117,6 +117,7 @@ export function useCreateTask(project: Project) {
         estimate: null,
         assigneeMemberId: null,
         parentTaskId: null,
+        sprintId: null,
         dueDate: null,
         rank: rankFor(previous, input.id, { statusId: input.statusId }),
         labelIds: [],
