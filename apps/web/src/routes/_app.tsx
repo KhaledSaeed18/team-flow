@@ -47,6 +47,7 @@ function AppShell() {
       'g i': () => navigate({ to: '/inbox' }),
       'g b': () => params.key && navigate({ to: '/p/$key', params: { key: params.key } }),
       'g l': () => params.key && navigate({ to: '/p/$key/list', params: { key: params.key } }),
+      'g c': () => params.key && navigate({ to: '/p/$key/calendar', params: { key: params.key } }),
       'g p': () => params.key && navigate({ to: '/p/$key/backlog', params: { key: params.key } }),
       c: () => {
         if (!params.key) return;
