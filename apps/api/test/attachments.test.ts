@@ -66,7 +66,10 @@ describe('attachments', () => {
   test('guests can read but neither upload nor delete', async () => {
     const guest = await h.join(ada, 'Grace', 'guest');
     expect((await upload(guest, taskId, 'g.txt', 'g')).status).toBe(403);
-    expect((await guest.client.attachments.list({ taskId })).length).toBeGreaterThan(0);
+    const seen = await guest.client.attachments.list({ taskId });
+    expect(seen.length).toBeGreaterThan(0);
+    expect(seen.every((a) => !a.canDelete)).toBe(true);
+    expect((await ada.client.attachments.list({ taskId }))[0]?.canDelete).toBe(true);
 
     const [first] = await ada.client.attachments.list({ taskId });
     await expect(guest.client.attachments.delete({ id: first?.id ?? '' })).rejects.toMatchObject({

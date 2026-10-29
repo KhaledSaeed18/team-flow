@@ -14,6 +14,8 @@ export const Attachment = z.object({
   uploaderName: z.string().nullable(),
   /** Short-lived download link. */
   url: z.string(),
+  /** Whether the caller may remove it: their own upload, or anyone's if they can delete tasks. */
+  canDelete: z.boolean(),
 });
 export type Attachment = z.infer<typeof Attachment>;
 

@@ -1,3 +1,4 @@
+import { can } from '@teamflow/auth';
 import {
   createAttachment,
   deleteAttachment,
@@ -6,7 +7,7 @@ import {
   listAttachments,
   newId,
 } from '@teamflow/db';
-import { AppError, forbidden, notFound } from '../errors.ts';
+import { AppError, notFound } from '../errors.ts';
 import type { Storage } from '../storage.ts';
 import { type Actor, authorize } from './actor.ts';
 
@@ -19,14 +20,20 @@ export const cleanFileName = (name: string) =>
     .trim()
     .slice(0, 200) || 'file';
 
+/** Your own uploads, while you can still edit tasks. */
+const mayRemoveOwn = (actor: Actor, uploaderMemberId: string | null) =>
+  uploaderMemberId === actor.member.id && can(actor.member.role, { task: ['update'] });
+
 export function attachmentsService(storage: Storage) {
   return {
     async list(actor: Actor, taskId: string) {
       if (!(await findTask(actor.scope, taskId))) throw notFound('Task not found.');
       const rows = await listAttachments(actor.scope, taskId);
-      return rows.map(({ storageKey, uploaderMemberId: _u, ...row }) => ({
+      const deleteAny = can(actor.member.role, { task: ['delete'] });
+      return rows.map(({ storageKey, uploaderMemberId, ...row }) => ({
         ...row,
         url: storage.url(storageKey, row.fileName),
+        canDelete: deleteAny || mayRemoveOwn(actor, uploaderMemberId),
       }));
     },
 
@@ -69,15 +76,7 @@ export function attachmentsService(storage: Storage) {
       if (!attachment) throw notFound('Attachment not found.');
       const task = await findTask(actor.scope, attachment.taskId);
       if (!task) throw notFound('Attachment not found.');
-      // Your own uploads, or anyone's if you can delete tasks.
-      const own = attachment.uploaderMemberId === actor.member.id;
-      if (!own) {
-        try {
-          authorize(actor, { task: ['delete'] });
-        } catch {
-          throw forbidden();
-        }
-      }
+      if (!mayRemoveOwn(actor, attachment.uploaderMemberId)) authorize(actor, { task: ['delete'] });
       await deleteAttachment(actor.scope, id, task.projectId, now);
       await storage.remove(attachment.storageKey).catch(() => {});
       return { id };
