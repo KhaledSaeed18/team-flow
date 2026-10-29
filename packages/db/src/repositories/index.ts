@@ -4,6 +4,7 @@ export * from './events.ts';
 export * from './labels.ts';
 export * from './outbox.ts';
 export * from './projects.ts';
+export * from './relations.ts';
 export * from './search.ts';
 export * from './sprints.ts';
 export * from './tasks.ts';
