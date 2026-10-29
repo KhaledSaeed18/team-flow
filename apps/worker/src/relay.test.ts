@@ -58,4 +58,32 @@ describe('relay loop', () => {
     await loop.run();
     expect(errors).toHaveLength(1);
   });
+
+  test('run joins a drain in progress and resolves only when it has finished (shutdown waits for it)', async () => {
+    let release: () => void = () => {};
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let finished = false;
+    let passes = 0;
+    const loop = createRelayLoop(
+      async () => {
+        passes++;
+        if (passes === 1) await gate;
+        if (passes === 2) finished = true;
+        return 0;
+      },
+      () => {},
+    );
+    loop.wake();
+    let joined = false;
+    const waiting = loop.run().then(() => {
+      joined = true;
+    });
+    await Promise.resolve();
+    expect(joined).toBe(false);
+    release();
+    await waiting;
+    expect(finished).toBe(true);
+  });
 });

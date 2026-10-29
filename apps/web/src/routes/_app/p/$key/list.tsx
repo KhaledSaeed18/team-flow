@@ -12,15 +12,18 @@ import { useProjectView } from '../../../../features/project-context.tsx';
 import { sprintsQuery } from '../../../../features/sprints/queries.ts';
 import { tasksQuery } from '../../../../features/tasks.ts';
 import { orpc } from '../../../../lib/api.ts';
+import { lenient } from '../../../../lib/search.ts';
 import { meQuery } from '../../../../lib/session.ts';
 
 export const Route = createFileRoute('/_app/p/$key/list')({
   // The whole view state lives in the URL, so a filtered, sorted list can be shared as a link.
-  validateSearch: TaskFilter.extend({
-    sort: ListSort.optional(),
-    dir: SortDirection.optional(),
-    view: z.string().optional(),
-  }),
+  validateSearch: lenient(
+    TaskFilter.extend({
+      sort: ListSort.optional(),
+      dir: SortDirection.optional(),
+      view: z.string().optional(),
+    }),
+  ),
   loader: async ({ context, parentMatchPromise }) => {
     const parent = await parentMatchPromise;
     if (!parent.loaderData) return;
@@ -54,6 +57,7 @@ function ListView() {
         <TextField
           aria-label="Filter tasks"
           placeholder="Filter by title or ID"
+          maxLength={200}
           value={search.q ?? ''}
           onChange={(q) => set({ q: q || undefined })}
           className="w-64"

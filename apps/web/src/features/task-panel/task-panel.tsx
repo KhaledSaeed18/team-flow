@@ -4,7 +4,7 @@ import { useNavigate } from '@tanstack/react-router';
 import { can } from '@teamflow/auth/permissions';
 import { PRIORITIES, type Priority } from '@teamflow/domain';
 import { Avatar, Button, popover, Select, SelectItem } from '@teamflow/ui';
-import { type ReactNode, useEffect, useState } from 'react';
+import { type ReactNode, useEffect, useRef, useState } from 'react';
 import {
   Button as AriaButton,
   Dialog,
@@ -20,6 +20,7 @@ import {
 } from 'react-aria-components';
 import { orpc } from '../../lib/api.ts';
 import { meQuery } from '../../lib/session.ts';
+import { isTyping } from '../../lib/shortcuts.ts';
 import { PRIORITY_LABEL, PriorityIcon } from '../board/priority-icon.tsx';
 import { type Project, type Task, tasksQuery, useUpdateTask } from '../tasks.ts';
 import { Attachments } from './attachments.tsx';
@@ -48,9 +49,11 @@ export function TaskPanel({
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
+      // Escape in a field belongs to the field (undo a title edit, keep a half-written comment), not the panel.
       if (
         event.key === 'Escape' &&
         !event.defaultPrevented &&
+        !isTyping(event.target) &&
         !document.querySelector('[data-rac][role="dialog"]')
       ) {
         onClose();
@@ -106,7 +109,8 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
         <CommitField
           label="Title"
           value={task.title}
-          onCommit={(title) => title.trim() && save({ title: title.trim() })}
+          required
+          onCommit={(title) => save({ title: title.trim() })}
           className="font-semibold text-lg leading-snug"
         />
         <DescriptionEditor
@@ -194,13 +198,7 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
           </NumberField>
         </Property>
         <Property label="Due date">
-          <input
-            type="date"
-            aria-label="Due date"
-            value={task.dueDate ?? ''}
-            onChange={(event) => save({ dueDate: event.target.value || null })}
-            className="h-9 rounded-control border border-line bg-surface px-2.5 text-sm outline-none focus-visible:outline-2 focus-visible:outline-marigold"
-          />
+          <DueDate value={task.dueDate} onChange={(dueDate) => save({ dueDate })} />
         </Property>
       </dl>
 
@@ -232,6 +230,42 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
   );
 }
 
+/**
+ * A date field that saves complete dates only. Typing a year fires a change per digit (0002, 0020, 0202, 2026),
+ * and each one would otherwise be saved, recorded in history and broadcast.
+ */
+function DueDate({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: (value: string | null) => void;
+}) {
+  const [draft, setDraft] = useState(value ?? '');
+  useEffect(() => setDraft(value ?? ''), [value]);
+  const settle = (next: string) => {
+    if (next === (value ?? '')) return;
+    if (next === '') onChange(null);
+    else if (Number(next.slice(0, 4)) >= 1900) onChange(next);
+  };
+  return (
+    <input
+      type="date"
+      aria-label="Due date"
+      value={draft}
+      onChange={(event) => {
+        setDraft(event.target.value);
+        settle(event.target.value);
+      }}
+      onBlur={() => {
+        // A half-typed year is not a date anyone meant: show the saved one again.
+        if (draft !== '' && Number(draft.slice(0, 4)) < 1900) setDraft(value ?? '');
+      }}
+      className="h-9 rounded-control border border-line bg-surface px-2.5 text-sm outline-none focus-visible:outline-2 focus-visible:outline-marigold"
+    />
+  );
+}
+
 function Property({ label, children }: { label: string; children: ReactNode }) {
   return (
     <>
@@ -247,6 +281,7 @@ function CommitField({
   value,
   onCommit,
   multiline = false,
+  required = false,
   placeholder,
   className = '',
 }: {
@@ -254,16 +289,43 @@ function CommitField({
   value: string;
   onCommit: (value: string) => void;
   multiline?: boolean;
+  /** An empty value is not saved, and the field shows the saved value again. */
+  required?: boolean;
   placeholder?: string;
   className?: string;
 }) {
   const [draft, setDraft] = useState(value);
-  useEffect(() => setDraft(value), [value]);
-  const commit = () => draft !== value && onCommit(draft);
+  // Follow changes from elsewhere (someone else renamed the task), except while this field is being edited.
+  const editing = useRef(false);
+  useEffect(() => {
+    if (!editing.current) setDraft(value);
+  }, [value]);
+  // Escape reverts and blurs; that blur must not save the draft being thrown away.
+  const discarding = useRef(false);
+  const commit = () => {
+    editing.current = false;
+    if (discarding.current) {
+      discarding.current = false;
+      return;
+    }
+    if (required && !draft.trim()) {
+      setDraft(value);
+      return;
+    }
+    if (draft !== value) onCommit(draft);
+  };
   const shared = `w-full resize-none rounded-control border border-transparent bg-transparent px-2 py-1 -mx-2 outline-none placeholder:text-ink-faint hover:border-line focus:border-line focus-visible:outline-2 focus-visible:outline-marigold ${className}`;
 
   return (
-    <TextField aria-label={label} value={draft} onChange={setDraft} onBlur={commit}>
+    <TextField
+      aria-label={label}
+      value={draft}
+      onChange={setDraft}
+      onFocus={() => {
+        editing.current = true;
+      }}
+      onBlur={commit}
+    >
       {multiline ? (
         <TextArea placeholder={placeholder} className={shared} />
       ) : (
@@ -272,7 +334,12 @@ function CommitField({
           className={shared}
           onKeyDown={(event) => {
             if (event.key === 'Enter') event.currentTarget.blur();
-            if (event.key === 'Escape') setDraft(value);
+            if (event.key === 'Escape') {
+              // Revert and let go of focus; the next Escape closes the panel.
+              discarding.current = true;
+              setDraft(value);
+              event.currentTarget.blur();
+            }
           }}
         />
       )}

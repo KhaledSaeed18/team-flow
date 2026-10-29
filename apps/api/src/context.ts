@@ -12,6 +12,8 @@ export interface Deps {
   clock: Clock;
   logger: Logger;
   storage: Storage;
+  /** The description was replaced through the API; collaborative documents must follow. */
+  onDescriptionReplaced?: (organizationId: string, taskId: string, text: string) => Promise<void>;
 }
 
 /** What every procedure receives. */

@@ -56,8 +56,22 @@ const storage = await createS3Storage({
 });
 
 const app = createApp(
-  { db: database.db, auth, clock: systemClock, logger, storage },
-  { apiUrl: env.API_URL, webUrl: env.WEB_URL },
+  {
+    db: database.db,
+    auth,
+    clock: systemClock,
+    logger,
+    storage,
+    // Defined below; only called once requests arrive.
+    onDescriptionReplaced: (organizationId, taskId, text) =>
+      collab.replaceDescription(organizationId, taskId, text),
+  },
+  {
+    apiUrl: env.API_URL,
+    webUrl: env.WEB_URL,
+    // Defined below; only called once requests arrive.
+    onAccessChanged: () => void revalidateSockets(),
+  },
 );
 
 const gateway = createGateway({
@@ -98,13 +112,22 @@ const server = Bun.serve<SocketData | CollabData>({
 gateway.bind(server as Server<SocketData>);
 await listen(database.sql, gateway, logger);
 const heartbeat = setInterval(() => gateway.heartbeat(), 15_000);
+// Membership and sessions can also change on another api node, or expire: re-check open sockets regularly.
+async function revalidateSockets() {
+  await gateway.revalidate();
+  await collab.revalidate();
+}
+const revalidation = setInterval(() => void revalidateSockets(), 30_000);
 logger.info({ url: server.url.href }, 'api listening');
 
 const shutdown = async (signal: string) => {
   logger.info({ signal }, 'shutting down');
   clearInterval(heartbeat);
+  clearInterval(revalidation);
+  // Close every connection first (`stop()` alone waits for open sockets, which clients keep alive forever), so no
+  // edit can arrive after the final save; then save what the editors left behind.
+  await server.stop(true);
   await collab.flush();
-  await server.stop();
   await boss.stop({ graceful: false });
   await database.close();
   process.exit(0);

@@ -19,9 +19,19 @@ export const tasks = {
     .use(tenant)
     .handler(({ context, input }) => tasksService.create(context, input, context.clock.now())),
 
-  update: os.tasks.update.use(tenant).handler(({ context, input }) => {
+  update: os.tasks.update.use(tenant).handler(async ({ context, input }) => {
     const { id, version, ...patch } = input;
-    return tasksService.update(context, id, version, withoutUndefined(patch), context.clock.now());
+    const task = await tasksService.update(
+      context,
+      id,
+      version,
+      withoutUndefined(patch),
+      context.clock.now(),
+    );
+    if (patch.description !== undefined) {
+      await context.onDescriptionReplaced?.(context.scope.organizationId, id, patch.description);
+    }
+    return task;
   }),
 
   move: os.tasks.move.use(tenant).handler(({ context, input }) => {

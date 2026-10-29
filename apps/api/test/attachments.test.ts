@@ -88,4 +88,25 @@ describe('attachments', () => {
       code: 'NOT_FOUND',
     });
   });
+
+  test('only raster images are served inline; anything else downloads as an opaque file', async () => {
+    const before = new Set(h.storage.objects.keys());
+    await upload(ada, taskId, 'photo.png', 'png', 'image/png');
+    await upload(ada, taskId, 'evil.html', '<script>alert(1)</script>', 'text/html');
+    await upload(ada, taskId, 'logo.svg', '<svg/>', 'image/svg+xml');
+    const added = [...h.storage.objects.entries()].filter(([key]) => !before.has(key));
+    const byType = added.map(([, o]) => [o.type, o.contentDisposition]);
+    expect(byType).toContainEqual(['image/png', 'inline']);
+    expect(byType).toContainEqual([
+      'application/octet-stream',
+      `attachment; filename="evil.html"; filename*=UTF-8''evil.html`,
+    ]);
+    expect(byType).toContainEqual([
+      'application/octet-stream',
+      `attachment; filename="logo.svg"; filename*=UTF-8''logo.svg`,
+    ]);
+    // The list still reports what was uploaded, for icons and previews.
+    const listed = await ada.client.attachments.list({ taskId });
+    expect(listed.find((a) => a.fileName === 'evil.html')?.contentType).toBe('text/html');
+  });
 });

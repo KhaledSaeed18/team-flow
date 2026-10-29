@@ -8,6 +8,9 @@ import { orpc } from '../../lib/api.ts';
 
 type Attachment = Outputs['attachments']['list'][number];
 
+/** The types the server serves inline (the rest download as files), so only these can show a thumbnail. */
+const PREVIEWABLE = new Set(['image/png', 'image/jpeg', 'image/gif', 'image/webp', 'image/avif']);
+
 export const formatBytes = (bytes: number) =>
   bytes < 1024
     ? `${bytes} B`
@@ -128,7 +131,7 @@ function AttachmentRow({
   canDelete: boolean;
   onDelete: () => void;
 }) {
-  const isImage = attachment.contentType.startsWith('image/');
+  const isImage = PREVIEWABLE.has(attachment.contentType);
   return (
     <li className="group flex items-center gap-2.5 rounded-control px-1.5 py-1 hover:bg-raised">
       {isImage ? (

@@ -61,7 +61,8 @@ boss.on('error', (error) => logger.error({ err: error }, 'job queue error'));
 await boss.start();
 await boss.createQueue(EMAIL_QUEUE);
 const mailer = createTransport(env.SMTP_URL);
-await boss.work(EMAIL_QUEUE, { batchSize: 10 }, (jobs) =>
+// One email per job run: a delivery failure retries that email only, never the ones already sent beside it.
+await boss.work(EMAIL_QUEUE, { batchSize: 1 }, (jobs) =>
   deliverEmails(jobs, {
     mailer,
     from: env.MAIL_FROM,

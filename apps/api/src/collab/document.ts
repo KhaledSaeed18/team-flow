@@ -29,18 +29,30 @@ export function plainText(doc: Y.Doc): string {
     .trim();
 }
 
+const paragraphs = (text: string) =>
+  text.split('\n').map((line) => {
+    const paragraph = new Y.XmlElement('paragraph');
+    if (line) paragraph.insert(0, [new Y.XmlText(line)]);
+    return paragraph;
+  });
+
 /** A new document holding existing plain text, one paragraph per line, so older descriptions carry over. */
 export function seedFromText(doc: Y.Doc, text: string): void {
   if (!text.trim()) return;
   const fragment = doc.getXmlFragment(FRAGMENT);
   doc.transact(() => {
-    fragment.insert(
-      0,
-      text.split('\n').map((line) => {
-        const paragraph = new Y.XmlElement('paragraph');
-        if (line) paragraph.insert(0, [new Y.XmlText(line)]);
-        return paragraph;
-      }),
-    );
+    fragment.insert(0, paragraphs(text));
   }, 'seed');
+}
+
+/**
+ * Replace the whole description with plain text, as an ordinary edit (so connected editors receive it). Used when
+ * the description is changed outside the editor, through the API.
+ */
+export function replaceText(doc: Y.Doc, text: string, origin: unknown): void {
+  const fragment = doc.getXmlFragment(FRAGMENT);
+  doc.transact(() => {
+    fragment.delete(0, fragment.length);
+    if (text.trim()) fragment.insert(0, paragraphs(text));
+  }, origin);
 }

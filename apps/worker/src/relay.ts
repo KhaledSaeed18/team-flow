@@ -3,15 +3,10 @@
  * come back. A wake that arrives mid-drain schedules exactly one more pass, so no event waits for the poll.
  */
 export function createRelayLoop(drain: () => Promise<number>, onError: (error: unknown) => void) {
-  let running = false;
+  let current: Promise<void> | null = null;
   let again = false;
 
-  async function run() {
-    if (running) {
-      again = true;
-      return;
-    }
-    running = true;
+  async function loop() {
     try {
       do {
         again = false;
@@ -22,8 +17,18 @@ export function createRelayLoop(drain: () => Promise<number>, onError: (error: u
     } catch (error) {
       onError(error);
     } finally {
-      running = false;
+      current = null;
     }
+  }
+
+  /** Drain now, or join the drain already running (and ask it for one more pass). Resolves when it is done. */
+  function run(): Promise<void> {
+    if (current) {
+      again = true;
+      return current;
+    }
+    current = loop();
+    return current;
   }
 
   return { wake: () => void run(), run };
