@@ -3,6 +3,16 @@
 Milestones are built in order. Each one ends with its exit criteria met, tests green and docs updated.
 Work lands as small pull requests into `dev`; `main` receives releases.
 
+| Milestone                        | Status                                        |
+| -------------------------------- | --------------------------------------------- |
+| M0 Foundation                    | Done                                          |
+| M1 Data, identity and workspaces | Done                                          |
+| M2 Projects, workflows and tasks | Done                                          |
+| M3 Web app shell                 | Done (list view moves to M8 with saved views) |
+| M4 Real-time                     | Done                                          |
+| M5 Planning and insight          | Next                                          |
+| M6–M10                           | Planned                                       |
+
 ## M0 — Foundation
 
 - Archive v1 (tag `v1.0.0`), Bun workspaces + Turborepo, shared tsconfig, Biome, lefthook + commitlint.
