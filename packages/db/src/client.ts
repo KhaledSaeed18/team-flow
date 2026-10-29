@@ -1,3 +1,4 @@
+import { sql } from 'drizzle-orm';
 import { drizzle, type PostgresJsDatabase } from 'drizzle-orm/postgres-js';
 import postgres from 'postgres';
 import * as schema from './schema/index.ts';
@@ -35,4 +36,9 @@ export function createDatabase({
   });
   const db = drizzle(sql, { schema, casing: 'snake_case' });
   return { db, sql, close: () => sql.end({ timeout: 5 }) };
+}
+
+/** Round-trip to the database; used by readiness checks. */
+export async function ping(db: Database): Promise<void> {
+  await db.execute(sql`select 1`);
 }

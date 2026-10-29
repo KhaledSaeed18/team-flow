@@ -42,7 +42,16 @@
         "useImportType": "error",
         "useExportType": "error",
         "useNodejsImportProtocol": "error",
-        "noParameterAssign": "error"
+        "noParameterAssign": "error",
+        "noRestrictedImports": {
+          "level": "error",
+          "options": {
+            "paths": {
+              "@teamflow/db/schema": "Tables are only imported inside packages/db (ADR-0004). Add a repository function instead.",
+              "drizzle-orm": "Queries live in packages/db. Add a repository function instead."
+            }
+          }
+        }
       },
       "correctness": {
         "noUnusedImports": "error",
@@ -65,6 +74,16 @@
         "rules": {
           "style": {
             "noNonNullAssertion": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["packages/db/**", "packages/auth/**"],
+      "linter": {
+        "rules": {
+          "style": {
+            "noRestrictedImports": "off"
           }
         }
       }
