@@ -17,3 +17,8 @@ distinct. A job rebalances a column when any key exceeds 32 characters.
 
 - O(1) writes per move, trivially optimistic on the client (the client computes the same key).
 - Ordering lives in `packages/domain`, shared by client and server.
+
+## Update (2026-10-29)
+
+`needsRebalance` implements the 32-character check, but no job runs it yet: realistic use stays far below the
+threshold. The job is listed under Deferred in the roadmap.

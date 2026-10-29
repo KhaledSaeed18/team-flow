@@ -23,7 +23,7 @@ The interesting engineering in a planning tool is not CRUD. It is:
 
 | Area          | v2 capability                                                                                             |
 | ------------- | --------------------------------------------------------------------------------------------------------- |
-| Workspaces    | Organizations, invitations, roles (owner / admin / member / guest), teams                                 |
+| Workspaces    | Organizations, invitations, roles (owner / admin / member / guest), an audit log                          |
 | Projects      | Project keys (`TF-42`), custom workflows per project, archive/restore                                     |
 | Work items    | Tasks with sub-tasks, relations (blocks / relates / duplicates), estimates, priority, labels, due dates   |
 | Views         | Board, list (virtualized table), backlog, calendar, saved filters                                         |
@@ -32,7 +32,7 @@ The interesting engineering in a planning tool is not CRUD. It is:
 | Notifications | In-app inbox, real-time toasts, batched email digests                                                     |
 | Search        | Full-text search across tasks and comments, command palette (`⌘K`), keyboard shortcuts everywhere         |
 | Integrations  | Deferred: GitHub linking and outgoing webhooks are out of scope while TeamFlow runs fully locally         |
-| Platform      | Public, documented API (OpenAPI), personal access tokens, audit log                                       |
+| Platform      | Public, documented API (OpenAPI), personal access tokens                                                  |
 
 ## Explicitly out of scope
 
