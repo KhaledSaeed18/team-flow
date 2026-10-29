@@ -31,7 +31,7 @@ The interesting engineering in a planning tool is not CRUD. It is:
 | Collaboration | Live board updates, presence, collaborative rich-text descriptions, comments with @mentions and reactions |
 | Notifications | In-app inbox, real-time toasts, batched email digests                                                     |
 | Search        | Full-text search across tasks and comments, command palette (`⌘K`), keyboard shortcuts everywhere         |
-| Integrations  | GitHub: link PRs and commits to tasks, auto-transition on merge; outgoing webhooks                        |
+| Integrations  | Deferred: GitHub linking and outgoing webhooks are out of scope while TeamFlow runs fully locally         |
 | Platform      | Public, documented API (OpenAPI), personal access tokens, audit log                                       |
 
 ## Explicitly out of scope

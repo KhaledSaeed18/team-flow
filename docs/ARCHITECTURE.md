@@ -39,9 +39,8 @@ flowchart LR
   API -- "SQL (Drizzle)" --> PG[(PostgreSQL)]
   W -- "SQL" --> PG
   PG -- "LISTEN/NOTIFY" --> API
-  API -- "presigned PUT/GET" --> S3[(S3-compatible storage)]
+  API -- "uploads, signed GET URLs" --> S3[(S3-compatible storage)]
   W -- SMTP --> MAIL[Mail]
-  GH[GitHub] -- webhooks --> API
 ```
 
 Only two stateful services: PostgreSQL and object storage. There is no Redis.
@@ -66,7 +65,7 @@ Every mutation runs in one transaction that:
 After commit, `pg_notify('outbox', id)` wakes the relay in the worker, which:
 
 - publishes the event to the org's realtime channel via `NOTIFY realtime_<shard>` (picked up by every api node),
-- leaves follow-up work to pg-boss jobs (emails, webhooks, GitHub status). Notifications themselves are written
+- leaves follow-up work to pg-boss jobs (emails and digests). Notifications themselves are written
   in the mutation's own transaction (ADR-0012) and only _announced_ through the outbox.
 
 Because the outbox row is written in the same transaction as the change, an event can be delayed but never lost or

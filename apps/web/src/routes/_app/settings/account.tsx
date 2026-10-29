@@ -4,6 +4,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { Avatar, Button, Notice, Switch, TextField, toast } from '@teamflow/ui';
 import { useRef, useState } from 'react';
 import { Form } from 'react-aria-components';
+import { ApiTokens } from '../../../features/settings/api-tokens.tsx';
 import { authClient } from '../../../lib/auth.ts';
 import { describeDevice } from '../../../lib/device.ts';
 import { meQuery } from '../../../lib/session.ts';
@@ -17,12 +18,13 @@ function Account() {
       <div>
         <h1 className="font-semibold text-xl">Account</h1>
         <p className="mt-1 text-ink-muted text-sm">
-          Your profile, password and where you are signed in.
+          Your profile, password, where you are signed in, and API tokens.
         </p>
       </div>
       <Profile />
       <Password />
       <Sessions />
+      <Tokens />
     </main>
   );
 }
@@ -43,6 +45,17 @@ function Section({
       </h2>
       {children}
     </section>
+  );
+}
+
+function Tokens() {
+  const { me } = Route.useRouteContext();
+  const workspace = me.organizations.find((o) => o.id === me.activeOrganizationId)?.name;
+  if (!workspace) return null;
+  return (
+    <Section id="tokens" title="API tokens">
+      <ApiTokens workspace={workspace} />
+    </Section>
   );
 }
 
