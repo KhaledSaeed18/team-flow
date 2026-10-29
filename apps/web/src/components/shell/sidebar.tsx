@@ -1,4 +1,4 @@
-import { Plus } from '@phosphor-icons/react';
+import { Plus, UsersThree } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { Button, Tooltip } from '@teamflow/ui';
@@ -15,6 +15,13 @@ export function Sidebar({ me, onCreateProject }: { me: Me; onCreateProject: () =
       className="flex h-full w-60 shrink-0 flex-col gap-4 border-line border-r bg-canvas p-2"
     >
       <WorkspaceMenu me={me} />
+
+      <Link
+        to="/settings/members"
+        className="focus-ring flex items-center gap-2 rounded-control px-2 py-1.5 text-ink-muted text-sm outline-none hover:bg-lane hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold data-[status=active]:bg-surface data-[status=active]:text-ink"
+      >
+        <UsersThree aria-hidden /> Members
+      </Link>
 
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center justify-between px-2 pb-1">

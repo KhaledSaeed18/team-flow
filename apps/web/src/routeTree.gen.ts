@@ -18,7 +18,9 @@ import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-pass
 import { Route as AuthSignInRouteImport } from './routes/_auth/sign-in'
 import { Route as AuthSignUpRouteImport } from './routes/_auth/sign-up'
 import { Route as AuthVerifyRouteImport } from './routes/_auth/verify'
+import { Route as InvitationsInvitationIdRouteImport } from './routes/invitations/$invitationId'
 import { Route as AppPKeyRouteRouteImport } from './routes/_app/p/$key/route'
+import { Route as AppSettingsMembersRouteImport } from './routes/_app/settings/members'
 import { Route as AppPKeyIndexRouteImport } from './routes/_app/p/$key/index'
 import { Route as AppPKeyBacklogRouteImport } from './routes/_app/p/$key/backlog'
 import { Route as AppPKeySprintsSprintIdRouteImport } from './routes/_app/p/$key/sprints/$sprintId'
@@ -66,9 +68,19 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
   path: '/verify',
   getParentRoute: () => AuthRoute,
 } as any)
+const InvitationsInvitationIdRoute = InvitationsInvitationIdRouteImport.update({
+  id: '/invitations/$invitationId',
+  path: '/invitations/$invitationId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AppPKeyRouteRoute = AppPKeyRouteRouteImport.update({
   id: '/p/$key',
   path: '/p/$key',
+  getParentRoute: () => AppRoute,
+} as any)
+const AppSettingsMembersRoute = AppSettingsMembersRouteImport.update({
+  id: '/settings/members',
+  path: '/settings/members',
   getParentRoute: () => AppRoute,
 } as any)
 const AppPKeyIndexRoute = AppPKeyIndexRouteImport.update({
@@ -95,7 +107,9 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/verify': typeof AuthVerifyRoute
+  '/invitations/$invitationId': typeof InvitationsInvitationIdRoute
   '/p/$key': typeof AppPKeyRouteRouteWithChildren
+  '/settings/members': typeof AppSettingsMembersRoute
   '/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/p/$key/': typeof AppPKeyIndexRoute
   '/p/$key/sprints/$sprintId': typeof AppPKeySprintsSprintIdRoute
@@ -108,6 +122,8 @@ export interface FileRoutesByTo {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/verify': typeof AuthVerifyRoute
+  '/invitations/$invitationId': typeof InvitationsInvitationIdRoute
+  '/settings/members': typeof AppSettingsMembersRoute
   '/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/p/$key': typeof AppPKeyIndexRoute
   '/p/$key/sprints/$sprintId': typeof AppPKeySprintsSprintIdRoute
@@ -122,8 +138,10 @@ export interface FileRoutesById {
   '/_auth/sign-in': typeof AuthSignInRoute
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_auth/verify': typeof AuthVerifyRoute
+  '/invitations/$invitationId': typeof InvitationsInvitationIdRoute
   '/_app/': typeof AppIndexRoute
   '/_app/p/$key': typeof AppPKeyRouteRouteWithChildren
+  '/_app/settings/members': typeof AppSettingsMembersRoute
   '/_app/p/$key/backlog': typeof AppPKeyBacklogRoute
   '/_app/p/$key/': typeof AppPKeyIndexRoute
   '/_app/p/$key/sprints/$sprintId': typeof AppPKeySprintsSprintIdRoute
@@ -138,7 +156,9 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify'
+    | '/invitations/$invitationId'
     | '/p/$key'
+    | '/settings/members'
     | '/p/$key/backlog'
     | '/p/$key/'
     | '/p/$key/sprints/$sprintId'
@@ -151,6 +171,8 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify'
+    | '/invitations/$invitationId'
+    | '/settings/members'
     | '/p/$key/backlog'
     | '/p/$key'
     | '/p/$key/sprints/$sprintId'
@@ -164,8 +186,10 @@ export interface FileRouteTypes {
     | '/_auth/sign-in'
     | '/_auth/sign-up'
     | '/_auth/verify'
+    | '/invitations/$invitationId'
     | '/_app/'
     | '/_app/p/$key'
+    | '/_app/settings/members'
     | '/_app/p/$key/backlog'
     | '/_app/p/$key/'
     | '/_app/p/$key/sprints/$sprintId'
@@ -175,6 +199,7 @@ export interface RootRouteChildren {
   AppRoute: typeof AppRouteWithChildren
   AuthRoute: typeof AuthRouteWithChildren
   OnboardingRoute: typeof OnboardingRoute
+  InvitationsInvitationIdRoute: typeof InvitationsInvitationIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -242,11 +267,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthVerifyRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/invitations/$invitationId': {
+      id: '/invitations/$invitationId'
+      path: '/invitations/$invitationId'
+      fullPath: '/invitations/$invitationId'
+      preLoaderRoute: typeof InvitationsInvitationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_app/p/$key': {
       id: '/_app/p/$key'
       path: '/p/$key'
       fullPath: '/p/$key'
       preLoaderRoute: typeof AppPKeyRouteRouteImport
+      parentRoute: typeof AppRoute
+    }
+    '/_app/settings/members': {
+      id: '/_app/settings/members'
+      path: '/settings/members'
+      fullPath: '/settings/members'
+      preLoaderRoute: typeof AppSettingsMembersRouteImport
       parentRoute: typeof AppRoute
     }
     '/_app/p/$key/': {
@@ -292,11 +331,13 @@ const AppPKeyRouteRouteWithChildren = AppPKeyRouteRoute._addFileChildren(
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
   AppPKeyRouteRoute: typeof AppPKeyRouteRouteWithChildren
+  AppSettingsMembersRoute: typeof AppSettingsMembersRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
   AppPKeyRouteRoute: AppPKeyRouteRouteWithChildren,
+  AppSettingsMembersRoute: AppSettingsMembersRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
@@ -323,6 +364,7 @@ const rootRouteChildren: RootRouteChildren = {
   AppRoute: AppRouteWithChildren,
   AuthRoute: AuthRouteWithChildren,
   OnboardingRoute: OnboardingRoute,
+  InvitationsInvitationIdRoute: InvitationsInvitationIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
