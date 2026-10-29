@@ -1,6 +1,7 @@
 import { and, asc, eq } from 'drizzle-orm';
 import type { Executor } from '../client.ts';
-import { members, organizations } from '../schema/auth.ts';
+import { members, organizations, users } from '../schema/auth.ts';
+import type { Scope } from '../scope.ts';
 
 /**
  * Membership lookups are the one place that legitimately reads across organizations: they answer
@@ -29,4 +30,22 @@ export async function findMembership(db: Executor, organizationId: string, userI
     .where(and(eq(members.organizationId, organizationId), eq(members.userId, userId)))
     .limit(1);
   return row ?? null;
+}
+
+/** Members of the scope's organization with their user profile, for pickers and avatars. */
+export function listMembers(scope: Scope) {
+  return scope.db
+    .select({
+      id: members.id,
+      userId: users.id,
+      name: users.name,
+      email: users.email,
+      image: users.image,
+      role: members.role,
+      joinedAt: members.createdAt,
+    })
+    .from(members)
+    .innerJoin(users, eq(users.id, members.userId))
+    .where(eq(members.organizationId, scope.organizationId))
+    .orderBy(asc(users.name));
 }

@@ -1,5 +1,10 @@
 import { ORPCError } from '@orpc/server';
-import { foreignKeyViolation, InvalidReferenceError, StaleWriteError } from '@teamflow/db';
+import {
+  foreignKeyViolation,
+  InvalidReferenceError,
+  InvalidWorkflowError,
+  StaleWriteError,
+} from '@teamflow/db';
 
 /**
  * Services throw these instead of transport errors, so they stay usable from jobs and tests. A middleware turns
@@ -11,7 +16,9 @@ export type AppErrorCode =
   | 'CONFLICT'
   | 'KEY_TAKEN'
   | 'BAD_REQUEST'
-  | 'INVALID_REFERENCE';
+  | 'INVALID_REFERENCE'
+  | 'INVALID_WORKFLOW'
+  | 'NAME_TAKEN';
 
 const STATUS: Record<AppErrorCode, number> = {
   BAD_REQUEST: 400,
@@ -20,6 +27,8 @@ const STATUS: Record<AppErrorCode, number> = {
   CONFLICT: 409,
   KEY_TAKEN: 409,
   INVALID_REFERENCE: 422,
+  INVALID_WORKFLOW: 422,
+  NAME_TAKEN: 409,
 };
 
 export class AppError extends Error {
@@ -45,6 +54,9 @@ export function toTransportError(error: unknown): unknown {
   }
   if (error instanceof InvalidReferenceError) {
     return new ORPCError('INVALID_REFERENCE', { status: 422, message: error.message });
+  }
+  if (error instanceof InvalidWorkflowError) {
+    return new ORPCError('INVALID_WORKFLOW', { status: 422, message: error.message });
   }
   if (foreignKeyViolation(error)) {
     return new ORPCError('INVALID_REFERENCE', {
