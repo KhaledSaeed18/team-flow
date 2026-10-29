@@ -82,9 +82,9 @@
 @layer base {
   html {
     font-family: var(--font-sans);
-    font-feature-settings:
-      "tnum" 1,
-      "ss01" 1;
+    /* Tabular figures are opt-in (`tabular-nums`) where numbers line up: in this face "tnum" also makes commas and
+       full stops figure-width, which opens a gap before them in running text. */
+    font-feature-settings: "ss01" 1;
     color: var(--color-ink);
     background: var(--color-canvas);
     -webkit-font-smoothing: antialiased;
