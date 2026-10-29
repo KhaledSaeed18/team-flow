@@ -17,6 +17,7 @@ const env = {
   PORT: String(E2E.apiPort),
   LOG_LEVEL: 'warn',
   RELAY_POLL_MS: '500',
+  AUTH_RATE_LIMIT: 'off',
 };
 
 const url = new URL(E2E.databaseUrl);

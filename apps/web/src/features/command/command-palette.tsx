@@ -7,6 +7,7 @@ import {
   SignOut,
   Sun,
   Tray,
+  UserCircle,
   UsersThree,
 } from '@phosphor-icons/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
@@ -97,6 +98,12 @@ export function CommandPalette({
         label: 'Go to members',
         icon: <UsersThree />,
         run: () => navigate({ to: '/settings/members' }),
+      },
+      {
+        id: 'account',
+        label: 'Go to account settings',
+        icon: <UserCircle />,
+        run: () => navigate({ to: '/settings/account' }),
       },
       {
         id: 'theme',

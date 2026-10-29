@@ -36,6 +36,7 @@ const auth = createAuth({
   secret: env.BETTER_AUTH_SECRET,
   baseURL: env.API_URL,
   trustedOrigins: [env.WEB_URL],
+  rateLimit: env.AUTH_RATE_LIMIT === 'on',
   github:
     env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
       ? { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET }

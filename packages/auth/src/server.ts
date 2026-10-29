@@ -52,7 +52,9 @@ export function createAuth(options: AuthOptions) {
     session: {
       expiresIn: 60 * 60 * 24 * 30,
       updateAge: 60 * 60 * 24,
-      cookieCache: { enabled: true, maxAge: 60 * 5 },
+      // No cookie cache: every request already reads membership from Postgres, and a cached session would keep a
+      // revoked device signed in until the cache expired.
+      cookieCache: { enabled: false },
     },
     emailAndPassword: {
       enabled: true,
