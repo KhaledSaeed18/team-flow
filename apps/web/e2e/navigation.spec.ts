@@ -30,6 +30,7 @@ test.describe('getting around', () => {
     await page.getByRole('link', { name: 'Report' }).first().click();
     await expect(page.getByRole('img', { name: /Burndown for Sprint 4/ })).toBeVisible();
     await expect(page.getByText(/tasks at the start/)).toBeVisible();
+    await expect(page.getByRole('img', { name: /Cumulative flow for Sprint 4/ })).toBeVisible();
     await expect(page.getByRole('heading', { name: /Velocity/ })).toContainText(
       'points per sprint',
     );

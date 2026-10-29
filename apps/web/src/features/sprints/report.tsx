@@ -2,7 +2,15 @@ import { useQuery } from '@tanstack/react-query';
 import { Spinner } from '@teamflow/ui';
 import type { ReactNode } from 'react';
 import { orpc } from '../../lib/api.ts';
-import { BlockSwatch, BurndownChart, Legend, LineSwatch, VelocityChart } from './charts.tsx';
+import {
+  BlockSwatch,
+  BurndownChart,
+  CumulativeFlowChart,
+  FLOW_BANDS,
+  Legend,
+  LineSwatch,
+  VelocityChart,
+} from './charts.tsx';
 import { sprintDates, sprintTiming } from './queries.ts';
 
 const dayLabel = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
@@ -29,6 +37,7 @@ export function SprintReport({ sprintId }: { sprintId: string }) {
     days,
     scopeAdded,
     scopeRemoved,
+    flow,
     velocity,
     history,
     medianCycleTimeHours,
@@ -39,6 +48,12 @@ export function SprintReport({ sprintId }: { sprintId: string }) {
     label: dayLabel.format(d.at),
     remaining: d.remainingPoints,
     ideal: d.idealPoints,
+  }));
+  const flowData = flow.map((d) => ({
+    label: dayLabel.format(d.at),
+    todo: d.todo,
+    inProgress: d.inProgress,
+    done: d.done,
   }));
   const velocityData = history.map((h) => ({
     label: h.name,
@@ -121,6 +136,40 @@ export function SprintReport({ sprintId }: { sprintId: string }) {
             d.idealPoints,
             d.remainingTasks,
           ])}
+        />
+      </section>
+
+      <section
+        aria-labelledby="flow-title"
+        className="rounded-lane border border-line bg-surface p-4"
+      >
+        <div className="flex flex-wrap items-baseline justify-between gap-2">
+          <h3 id="flow-title" className="font-medium text-sm">
+            Cumulative flow{' '}
+            <span className="font-normal text-ink-muted">tasks per stage each day</span>
+          </h3>
+          <Legend
+            items={[...FLOW_BANDS]
+              .reverse()
+              .map((band) => ({ label: band.label, swatch: <BlockSwatch color={band.color} /> }))}
+          />
+        </div>
+        {flowData.length === 0 ? (
+          <p className="py-10 text-center text-ink-muted text-sm">
+            The flow starts once the sprint does.
+          </p>
+        ) : (
+          <div className="mt-3">
+            <CumulativeFlowChart
+              data={flowData}
+              title={`Cumulative flow for ${sprint.name}: tasks to do, in progress and done by day`}
+            />
+          </div>
+        )}
+        <DataTable
+          caption="Tasks in each stage by day"
+          headers={['Day', 'To do', 'In progress', 'Done']}
+          rows={flow.map((d) => [dayLabel.format(d.at), d.todo, d.inProgress, d.done])}
         />
       </section>
 
