@@ -1,7 +1,11 @@
 import { createDatabase, OUTBOX_WAKE_CHANNEL, pruneOutbox, relayOutbox } from '@teamflow/db';
+import { EMAIL_QUEUE } from '@teamflow/email';
 import { PG_EVENTS_CHANNEL } from '@teamflow/realtime';
+import { createTransport } from 'nodemailer';
+import { PgBoss } from 'pg-boss';
 import pino from 'pino';
 import { z } from 'zod';
+import { deliverEmails } from './email.ts';
 import { createRelayLoop } from './relay.ts';
 
 const env = z
@@ -9,6 +13,9 @@ const env = z
     DATABASE_URL: z.url(),
     LOG_LEVEL: z.string().default('info'),
     RELAY_POLL_MS: z.coerce.number().int().positive().default(5_000),
+    WEB_URL: z.url().default('http://localhost:5173'),
+    SMTP_URL: z.string().default('smtp://localhost:1035'),
+    MAIL_FROM: z.string().default('TeamFlow <no-reply@teamflow.local>'),
   })
   .parse(process.env);
 
@@ -43,12 +50,31 @@ const prune = setInterval(
   60 * 60 * 1000,
 );
 relay.wake();
+
+// Jobs: pg-boss in the same database (ADR-0006).
+const boss = new PgBoss({
+  connectionString: env.DATABASE_URL,
+  application_name: 'teamflow-worker',
+});
+boss.on('error', (error) => logger.error({ err: error }, 'job queue error'));
+await boss.start();
+await boss.createQueue(EMAIL_QUEUE);
+const mailer = createTransport(env.SMTP_URL);
+await boss.work(EMAIL_QUEUE, { batchSize: 10 }, (jobs) =>
+  deliverEmails(jobs, {
+    mailer,
+    from: env.MAIL_FROM,
+    webUrl: env.WEB_URL,
+    onDropped: (id) => logger.warn({ jobId: id }, 'dropped malformed email job'),
+  }),
+);
 logger.info('worker started');
 
 const shutdown = async (signal: string) => {
   logger.info({ signal }, 'shutting down');
   clearInterval(poll);
   clearInterval(prune);
+  await boss.stop({ graceful: true });
   await relay.run();
   await database.close();
   process.exit(0);
