@@ -13,6 +13,7 @@ import { relations } from './routers/relations.ts';
 import { search } from './routers/search.ts';
 import { sprints } from './routers/sprints.ts';
 import { tasks } from './routers/tasks.ts';
+import { tokens } from './routers/tokens.ts';
 import { views } from './routers/views.ts';
 import { workflow } from './routers/workflow.ts';
 
@@ -30,6 +31,7 @@ export const contract = {
   relations,
   attachments,
   views,
+  tokens,
 };
 
 export type Contract = typeof contract;
@@ -47,5 +49,6 @@ export * from './routers/relations.ts';
 export * from './routers/search.ts';
 export * from './routers/sprints.ts';
 export * from './routers/tasks.ts';
+export * from './routers/tokens.ts';
 export * from './routers/views.ts';
 export * from './schemas.ts';
