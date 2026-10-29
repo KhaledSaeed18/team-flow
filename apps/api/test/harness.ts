@@ -6,6 +6,7 @@ import { createTestDatabase, type TestDatabase } from '@teamflow/db/testing';
 import { fixedClock } from '@teamflow/domain';
 import { createApp } from '../src/app.ts';
 import { createLogger } from '../src/logger.ts';
+import { createMemoryStorage } from '../src/storage.ts';
 
 const API_URL = 'http://api.test';
 const WEB_URL = 'http://web.test';
@@ -28,8 +29,9 @@ export async function createHarness() {
       emails.push(email);
     },
   });
+  const storage = createMemoryStorage();
   const app = createApp(
-    { db: database.db, auth, clock, logger: createLogger('silent') },
+    { db: database.db, auth, clock, logger: createLogger('silent'), storage },
     { apiUrl: API_URL, webUrl: WEB_URL },
   );
 
@@ -123,6 +125,7 @@ export async function createHarness() {
     database,
     db: database.db,
     emails,
+    storage,
     clock,
     visitor,
     user,
