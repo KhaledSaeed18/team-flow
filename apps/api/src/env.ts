@@ -9,6 +9,8 @@ const Env = z.object({
   DATABASE_URL: z.url(),
   DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
   BETTER_AUTH_SECRET: z.string().min(32),
+  /** Only the end-to-end stack turns this off: its specs sign the same people in many times a minute. */
+  AUTH_RATE_LIMIT: z.enum(['on', 'off']).default('on'),
   S3_ENDPOINT: z.url().default('http://localhost:9100'),
   S3_REGION: z.string().default('us-east-1'),
   S3_BUCKET: z.string().default('teamflow-attachments'),
