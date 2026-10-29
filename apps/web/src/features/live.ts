@@ -61,6 +61,11 @@ export function useLiveProject(project: Project) {
             queryKey: orpc.relations.list.key({ input: { taskId } }),
           });
         return;
+      case 'views.changed':
+        void queryClient.invalidateQueries({
+          queryKey: orpc.views.list.key({ input: { projectId: project.id } }),
+        });
+        return;
       case 'attachments.changed':
         if (taskId)
           void queryClient.invalidateQueries({
