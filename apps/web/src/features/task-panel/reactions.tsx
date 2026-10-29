@@ -131,7 +131,8 @@ function toggled(comment: Comment, reaction: Reaction, on: boolean, myName: stri
     ...existing,
     count: existing.count - 1,
     mine: false,
-    names: existing.names.filter((n) => n !== myName),
+    // Remove one occurrence only: another member may share the name.
+    names: existing.names.filter((_, i) => i !== existing.names.lastIndexOf(myName)),
   };
   return {
     ...comment,
