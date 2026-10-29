@@ -21,6 +21,9 @@ test.describe('getting around', () => {
     await expect(page).toHaveURL(/\/p\/RF\/backlog$/);
     await expect(page.getByRole('heading', { name: 'Planning' })).toBeVisible();
     await page.keyboard.press('g');
+    await page.keyboard.press('c');
+    await expect(page).toHaveURL(/\/p\/RF\/calendar/);
+    await page.keyboard.press('g');
     await page.keyboard.press('b');
     await expect(page).toHaveURL(/\/p\/RF$/);
   });
