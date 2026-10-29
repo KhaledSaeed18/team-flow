@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
-import type { ServerMessage } from '@teamflow/realtime';
+import { relayOutbox } from '@teamflow/db';
+import { PG_EVENTS_CHANNEL, type ServerMessage } from '@teamflow/realtime';
 import type { Server } from 'bun';
 import { createLogger } from '../src/logger.ts';
 import {
@@ -8,6 +9,7 @@ import {
   type PresenceUpdate,
   type SocketData,
 } from '../src/realtime/gateway.ts';
+import { listen } from '../src/realtime/listen.ts';
 import { createHarness, type Harness } from './harness.ts';
 
 /** A test client that queues every message so tests can wait for the next one matching a predicate. */
@@ -94,6 +96,7 @@ describe('realtime gateway', () => {
       websocket: gateway.websocket,
     });
     gateway.bind(server);
+    await listen(h.database.sql, gateway, createLogger('silent'));
     url = `ws://localhost:${server.port}/ws`;
   });
 
@@ -203,6 +206,30 @@ describe('realtime gateway', () => {
     const after = await a.next('presence', (m) => m.members.length === 1);
     expect(after.members.map((m) => m.name)).toEqual(['Ada3']);
     a.close();
+  });
+
+  test('end to end: a mutation reaches subscribers through the outbox, the relay and LISTEN', async () => {
+    const ada = await h.owner('Ada4', 'ada4-org');
+    const project = await ada.client.projects.create({ key: 'E2E', name: 'End to end' });
+    const socket = await connect(url, ada.cookie());
+    await socket.next('ready');
+    socket.send({ type: 'subscribe', channel: `project:${project.id}` });
+    await socket.next('subscribed');
+
+    const task = await ada.client.tasks.create({ projectId: project.id, title: 'Live' });
+    // Nothing is delivered until the relay publishes: the write and the announcement are decoupled.
+    expect(await socket.drain('event')).toEqual([]);
+
+    while ((await relayOutbox(h.db, { channel: PG_EVENTS_CHANNEL })) > 0) {
+      // drain every pending event, including ones from earlier tests
+    }
+    const event = await socket.next('event', (m) => m.event.topic === 'task.created');
+    expect(event.event.payload).toMatchObject({
+      taskId: task.id,
+      projectId: project.id,
+      version: 1,
+    });
+    socket.close();
   });
 
   test('presence from another node shows up, and expires if that node goes quiet', async () => {
