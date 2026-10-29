@@ -4,15 +4,18 @@ import {
   deleteComment,
   findComment,
   findTask,
+  getDigestFrequency,
   listComments,
   listNotifications,
   listReactions,
   markNotificationsRead,
   type Reaction,
+  setDigestFrequency,
   setReaction,
   unreadCount,
   updateComment,
 } from '@teamflow/db';
+import type { DigestFrequency } from '@teamflow/domain';
 import { forbidden, notFound } from '../errors.ts';
 import { type Actor, authorize } from './actor.ts';
 
@@ -104,6 +107,15 @@ export const commentsService = {
 };
 
 export const notificationsService = {
+  async digest(actor: Actor) {
+    return { frequency: await getDigestFrequency(actor.scope, actor.member.id) };
+  },
+
+  async setDigest(actor: Actor, frequency: DigestFrequency) {
+    await setDigestFrequency(actor.scope, actor.member.id, frequency);
+    return { frequency };
+  },
+
   async list(actor: Actor, unreadOnly: boolean) {
     const [items, unread] = await Promise.all([
       listNotifications(actor.scope, actor.member.id, { unreadOnly }),
