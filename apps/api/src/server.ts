@@ -2,8 +2,10 @@ import { createAuth } from '@teamflow/auth';
 import { createDatabase } from '@teamflow/db';
 import { systemClock } from '@teamflow/domain';
 import { EMAIL_QUEUE } from '@teamflow/email';
+import type { Server, ServerWebSocket } from 'bun';
 import { PgBoss } from 'pg-boss';
 import { createApp } from './app.ts';
+import { type CollabData, createCollab } from './collab/server.ts';
 import { readEnv } from './env.ts';
 import { createLogger } from './logger.ts';
 import { createGateway, type SocketData } from './realtime/gateway.ts';
@@ -55,15 +57,35 @@ const gateway = createGateway({
   notifyPresence: presenceNotifier(database.sql),
 });
 
-const server = Bun.serve<SocketData>({
+const collab = createCollab({ db: database.db, auth, clock: systemClock, logger });
+
+// One Bun server, two kinds of socket: realtime events (`/ws`) and collaborative documents (`/collab/:taskId`).
+type AnySocket = ServerWebSocket<SocketData | CollabData>;
+const isCollab = (ws: AnySocket): ws is ServerWebSocket<CollabData> =>
+  'kind' in ws.data && ws.data.kind === 'collab';
+const asRealtime = (ws: AnySocket) => ws as ServerWebSocket<SocketData>;
+
+const server = Bun.serve<SocketData | CollabData>({
   port: env.PORT,
   fetch(request, bunServer) {
-    if (new URL(request.url).pathname === '/ws') return gateway.upgrade(request, bunServer);
+    const { pathname } = new URL(request.url);
+    if (pathname === '/ws') return gateway.upgrade(request, bunServer as Server<SocketData>);
+    if (collab.matches(pathname)) return collab.upgrade(request, bunServer as Server<CollabData>);
     return app.fetch(request, bunServer);
   },
-  websocket: gateway.websocket,
+  websocket: {
+    idleTimeout: 60,
+    open: (ws) =>
+      isCollab(ws) ? collab.websocket.open(ws) : gateway.websocket.open(asRealtime(ws)),
+    message: (ws, message) =>
+      isCollab(ws)
+        ? collab.websocket.message(ws, message)
+        : gateway.websocket.message(asRealtime(ws), message),
+    close: (ws) =>
+      isCollab(ws) ? collab.websocket.close(ws) : gateway.websocket.close(asRealtime(ws)),
+  },
 });
-gateway.bind(server);
+gateway.bind(server as Server<SocketData>);
 await listen(database.sql, gateway, logger);
 const heartbeat = setInterval(() => gateway.heartbeat(), 15_000);
 logger.info({ url: server.url.href }, 'api listening');
@@ -71,6 +93,7 @@ logger.info({ url: server.url.href }, 'api listening');
 const shutdown = async (signal: string) => {
   logger.info({ signal }, 'shutting down');
   clearInterval(heartbeat);
+  await collab.flush();
   await server.stop();
   await boss.stop({ graceful: false });
   await database.close();
