@@ -43,6 +43,13 @@
       "when": 1793283986873,
       "tag": "0005_outbox_wake_trigger",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793284791154,
+      "tag": "0006_sprints",
+      "breakpoints": true
     }
   ]
 }
