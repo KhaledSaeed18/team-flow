@@ -2,6 +2,7 @@ import type { Auth, Session } from '@teamflow/auth';
 import type { Database } from '@teamflow/db';
 import type { Clock } from '@teamflow/domain';
 import type { Logger } from './logger.ts';
+import type { Storage } from './storage.ts';
 
 /** Long-lived dependencies, created once at startup. */
 export interface Deps {
@@ -9,6 +10,7 @@ export interface Deps {
   auth: Auth;
   clock: Clock;
   logger: Logger;
+  storage: Storage;
 }
 
 /** What every procedure receives. */
