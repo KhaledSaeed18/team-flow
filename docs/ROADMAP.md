@@ -11,7 +11,7 @@ Work lands as small pull requests into `dev`; `main` receives releases.
 | M3 Web app shell                   | Done (list view moves to M8 with saved views)                              |
 | M4 Real-time                       | Done                                                                       |
 | M5 Planning and insight            | Done                                                                       |
-| M6 Collaboration and notifications | Done except attachments and digests                                        |
+| M6 Collaboration and notifications | Done except email digests                                                  |
 | M7 Collaborative documents         | Done                                                                       |
 | M8 Search and keyboard             | Search, command palette and shortcuts done; list view and saved views next |
 | M9 Integrations and API            | Planned                                                                    |
@@ -67,7 +67,7 @@ integration tests against a real database.
 
 ## M6 — Collaboration and notifications
 
-- Comments with @mentions and reactions, attachments via presigned S3 uploads.
+- Comments with @mentions and reactions, attachments (uploaded through the api, downloaded with signed S3 URLs).
 - Notification inbox, real-time toasts, email digests via pg-boss + React Email.
 
 ## M7 — Collaborative documents
