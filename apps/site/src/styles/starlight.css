@@ -1,0 +1,35 @@
+/* The docs wear the product's palette: slate ink, cool canvas, and marigold kept for focus. */
+:root {
+  --sl-font: "Schibsted Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+  --sl-color-accent-low: #1d2a3d;
+  --sl-color-accent: #2f6bd1;
+  --sl-color-accent-high: #c9dbf7;
+  --sl-color-white: #e6ebf0;
+  --sl-color-gray-1: #c7d0da;
+  --sl-color-gray-2: #a3aebb;
+  --sl-color-gray-3: #6f7b89;
+  --sl-color-gray-4: #46515f;
+  --sl-color-gray-5: #313a47;
+  --sl-color-gray-6: #212833;
+  --sl-color-black: #141920;
+}
+
+:root[data-theme="light"] {
+  --sl-color-accent-low: #dde8fa;
+  --sl-color-accent: #2f6bd1;
+  --sl-color-accent-high: #1b3e7a;
+  --sl-color-white: #1b2430;
+  --sl-color-gray-1: #26303d;
+  --sl-color-gray-2: #3d4856;
+  --sl-color-gray-3: #5b6878;
+  --sl-color-gray-4: #8a96a3;
+  --sl-color-gray-5: #d5dbe2;
+  --sl-color-gray-6: #eef1f4;
+  --sl-color-gray-7: #f7f9fb;
+  --sl-color-black: #ffffff;
+}
+
+:focus-visible {
+  outline: 2px solid #e8a317;
+  outline-offset: 2px;
+}

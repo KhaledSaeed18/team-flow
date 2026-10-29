@@ -8,7 +8,13 @@
   },
   "files": {
     "ignoreUnknown": true,
-    "includes": ["**", "!**/drizzle/meta", "!**/routeTree.gen.ts", "!**/bun.lock"]
+    "includes": [
+      "**",
+      "!**/drizzle/meta",
+      "!**/routeTree.gen.ts",
+      "!**/bun.lock",
+      "!apps/site/src/content"
+    ]
   },
   "formatter": {
     "enabled": true,
@@ -84,6 +90,17 @@
         "rules": {
           "style": {
             "noRestrictedImports": "off"
+          }
+        }
+      }
+    },
+    {
+      "includes": ["**/*.astro"],
+      "linter": {
+        "rules": {
+          "correctness": {
+            "noUnusedVariables": "off",
+            "noUnusedImports": "off"
           }
         }
       }
