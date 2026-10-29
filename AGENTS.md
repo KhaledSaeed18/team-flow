@@ -63,3 +63,5 @@ Project skills live in `.agents/skills/` (also visible as `.claude/skills/`). Us
 
 - `teamflow-pr` — shipping a change as a small PR
 - `teamflow-review` — the review checklist for this codebase
+- `teamflow-procedure` — adding an API procedure: contract → repository → service → router → test
+- `teamflow-tenant-table` — adding a tenant-owned table with composite keys and a reviewed migration
