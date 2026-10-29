@@ -22,6 +22,13 @@
       "when": 1793281325634,
       "tag": "0002_projects",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793281479511,
+      "tag": "0003_tasks",
+      "breakpoints": true
     }
   ]
 }

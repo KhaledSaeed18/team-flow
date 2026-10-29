@@ -25,6 +25,7 @@ export const PLATFORM_TABLES = new Set([
 const CROSS_TENANT_INDEXES = new Set([
   'members.user_id', // "which organizations can I enter?"
   'invitations.email', // "which invitations are waiting for me?"
+  'outbox.id', // the relay drains pending events for every organization
 ]);
 
 // Drizzle keeps property names in table config; `casing: 'snake_case'` maps them when SQL is built.
