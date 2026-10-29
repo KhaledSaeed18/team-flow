@@ -36,6 +36,10 @@ test('two people on one board see each other and each other’s moves', async ({
   await expect(page.getByRole('button', { name: /Also viewing: Maya Chen/ })).toBeHidden();
 });
 
+// End only reaches the end of the visual line, and the description wraps in the panel; this reaches the end of
+// the document wherever the click landed.
+const DOC_END = process.platform === 'darwin' ? 'Meta+ArrowDown' : 'Control+End';
+
 test('two people edit a description together and see each other’s caret', async ({
   page,
   browser,
@@ -50,7 +54,7 @@ test('two people edit a description together and see each other’s caret', asyn
   await expect(hers).toContainText('Compare commanded and measured wheel speed.');
 
   await mine.click();
-  await page.keyboard.press('End');
+  await page.keyboard.press(DOC_END);
   await page.keyboard.type(' Threshold 15%.');
   await expect(hers).toContainText('Threshold 15%.');
   await expect(
@@ -58,7 +62,7 @@ test('two people edit a description together and see each other’s caret', asyn
   ).toBeVisible();
 
   await hers.click();
-  await maya.page.keyboard.press('End');
+  await maya.page.keyboard.press(DOC_END);
   await maya.page.keyboard.type(' Log every slip event.');
   await expect(mine).toContainText('Threshold 15%. Log every slip event.');
   await maya.close();
