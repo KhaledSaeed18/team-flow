@@ -25,10 +25,12 @@
     "@teamflow/contract": "workspace:*",
     "@teamflow/db": "workspace:*",
     "@teamflow/domain": "workspace:*",
-    "hono": "^4.13.14",
-    "pino": "^10.4.0",
-    "zod": "catalog:",
     "@teamflow/realtime": "workspace:*",
-    "postgres": "^3.4.9"
+    "hono": "^4.13.14",
+    "pg-boss": "^12.38.0",
+    "pino": "^10.4.0",
+    "postgres": "^3.4.9",
+    "zod": "catalog:",
+    "@teamflow/email": "workspace:*"
   }
 }

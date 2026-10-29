@@ -1,6 +1,8 @@
 import { createAuth } from '@teamflow/auth';
 import { createDatabase } from '@teamflow/db';
 import { systemClock } from '@teamflow/domain';
+import { EMAIL_QUEUE } from '@teamflow/email';
+import { PgBoss } from 'pg-boss';
 import { createApp } from './app.ts';
 import { readEnv } from './env.ts';
 import { createLogger } from './logger.ts';
@@ -15,6 +17,17 @@ const database = createDatabase({
   applicationName: 'teamflow-api',
 });
 
+// The api only enqueues; the worker owns schedules, maintenance and delivery.
+const boss = new PgBoss({
+  connectionString: env.DATABASE_URL,
+  application_name: 'teamflow-api',
+  supervise: false,
+  schedule: false,
+});
+boss.on('error', (error) => logger.error({ err: error }, 'job queue error'));
+await boss.start();
+await boss.createQueue(EMAIL_QUEUE);
+
 const auth = createAuth({
   db: database.db,
   secret: env.BETTER_AUTH_SECRET,
@@ -24,12 +37,9 @@ const auth = createAuth({
     env.GITHUB_CLIENT_ID && env.GITHUB_CLIENT_SECRET
       ? { clientId: env.GITHUB_CLIENT_ID, clientSecret: env.GITHUB_CLIENT_SECRET }
       : undefined,
-  // Until the worker owns delivery, development prints codes to the log.
   sendEmail: async (email) => {
-    logger.info(
-      { email: env.NODE_ENV === 'production' ? { kind: email.kind } : email },
-      'auth email',
-    );
+    await boss.send(EMAIL_QUEUE, email, { retryLimit: 5, retryDelay: 10, retryBackoff: true });
+    if (env.NODE_ENV !== 'production') logger.debug({ email }, 'email queued');
   },
 });
 
@@ -62,6 +72,7 @@ const shutdown = async (signal: string) => {
   logger.info({ signal }, 'shutting down');
   clearInterval(heartbeat);
   await server.stop();
+  await boss.stop({ graceful: false });
   await database.close();
   process.exit(0);
 };

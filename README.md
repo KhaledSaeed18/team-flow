@@ -44,8 +44,8 @@ bun run db:migrate
 bun run dev          # api on :4000, web on :5173, outbox worker
 ```
 
-Open http://localhost:5173 and create an account. Until email delivery lands, verification codes are printed in the
-api log.
+Open http://localhost:5173 and create an account. Emails (verification codes, invitations) land in Mailpit at
+http://localhost:8035.
 
 ```bash
 bun run check        # biome, typecheck and every test suite — what CI runs
