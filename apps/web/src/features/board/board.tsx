@@ -2,9 +2,10 @@ import { Plus } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import type { PresenceMember } from '@teamflow/realtime';
 import { Button } from '@teamflow/ui';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { DropIndicator, GridList, Input, TextField, useDragAndDrop } from 'react-aria-components';
 import { orpc } from '../../lib/api.ts';
+import { CREATE_TASK_EVENT } from '../../lib/events.ts';
 import {
   byRank,
   type Placement,
@@ -86,6 +87,8 @@ function Column({
   onMove,
   onOpenTask,
 }: ColumnProps) {
+  const isFirstUnstarted =
+    project.statuses.find((s) => s.category === 'unstarted')?.id === status.id;
   const byId = (id: unknown) => tasks.find((t) => t.id === id);
 
   const place = (id: string, target: { key: unknown; dropPosition: 'before' | 'after' | 'on' }) => {
@@ -168,13 +171,31 @@ function Column({
           <TaskCard task={task} lookups={lookups} viewers={viewersByTask.get(task.id) ?? []} />
         )}
       </GridList>
-      <QuickAdd project={project} statusId={status.id} />
+      <QuickAdd
+        project={project}
+        statusId={status.id}
+        listen={status.category === 'unstarted' && isFirstUnstarted}
+      />
     </section>
   );
 }
 
-function QuickAdd({ project, statusId }: { project: Project; statusId: string }) {
+function QuickAdd({
+  project,
+  statusId,
+  listen,
+}: {
+  project: Project;
+  statusId: string;
+  listen: boolean;
+}) {
   const [open, setOpen] = useState(false);
+  useEffect(() => {
+    if (!listen) return;
+    const onCreate = () => setOpen(true);
+    window.addEventListener(CREATE_TASK_EVENT, onCreate);
+    return () => window.removeEventListener(CREATE_TASK_EVENT, onCreate);
+  }, [listen]);
   const [title, setTitle] = useState('');
   const create = useCreateTask(project);
 
