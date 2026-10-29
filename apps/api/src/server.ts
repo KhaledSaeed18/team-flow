@@ -124,8 +124,10 @@ const shutdown = async (signal: string) => {
   logger.info({ signal }, 'shutting down');
   clearInterval(heartbeat);
   clearInterval(revalidation);
+  // Close every connection first (`stop()` alone waits for open sockets, which clients keep alive forever), so no
+  // edit can arrive after the final save; then save what the editors left behind.
+  await server.stop(true);
   await collab.flush();
-  await server.stop();
   await boss.stop({ graceful: false });
   await database.close();
   process.exit(0);
