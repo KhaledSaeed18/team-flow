@@ -11,7 +11,7 @@ TeamFlow v2: a real-time, keyboard-first agile workspace. Bun + Turborepo monore
 | Path                | What                                                                |
 | ------------------- | ------------------------------------------------------------------- |
 | `apps/api`          | Hono on Bun: oRPC procedures, Better Auth routes, WebSocket gateway |
-| `apps/worker`       | pg-boss consumers: outbox relay, email, digests, integrations       |
+| `apps/worker`       | pg-boss consumers: outbox relay, email delivery, hourly digests     |
 | `apps/web`          | Vite + React SPA: TanStack Router/Query, Tailwind v4                |
 | `apps/site`         | Astro marketing site and Starlight docs                             |
 | `packages/contract` | oRPC contract and Zod schemas — the single source of wire shapes    |

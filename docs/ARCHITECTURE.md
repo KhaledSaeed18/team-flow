@@ -5,9 +5,9 @@
 ```
 apps/
   api/        Hono on Bun — oRPC procedures, OpenAPI, auth routes, WebSocket gateway
-  worker/     pg-boss consumers — outbox relay, email, digests, GitHub sync, scheduled sweeps
+  worker/     pg-boss consumers — outbox relay, email delivery, hourly digests, outbox pruning
   web/        Vite + React 19 SPA — TanStack Router, TanStack Query, Tailwind v4
-  site/       Astro — marketing pages, changelog and Starlight docs
+  site/       Astro — the landing page and Starlight docs
 packages/
   contract/   oRPC contract + Zod schemas: the single source of truth for wire shapes
   db/         Drizzle schema, migrations, seed and the tenant-scoped query helpers
@@ -15,7 +15,7 @@ packages/
   auth/       Better Auth server config and the access-control statements shared by api and web
   realtime/   Event envelope types, channel naming and the client/server message protocol
   email/      React Email templates
-  ui/         Shared React components (shadcn-style, owned in-repo)
+  ui/         Design tokens and React Aria based components, owned in-repo
   tsconfig/   Shared TypeScript configs
 ```
 
@@ -47,8 +47,10 @@ Only two stateful services: PostgreSQL and object storage. There is no Redis.
 
 ## Request path
 
-1. Hono middleware: request id, structured logging, secure headers, CORS, rate limit (Postgres-backed token bucket).
-2. Better Auth resolves the session cookie (or a personal access token) into an `Actor`.
+1. Hono middleware: request id, structured logging, secure headers, CORS. Auth endpoints are rate limited by
+   Better Auth, with its counters in Postgres.
+2. Better Auth resolves the session cookie into a user; on `/api/v1` a personal access token (`Bearer tf_…`)
+   may stand in for it, pinned to one organization and, if read-only, to GET requests.
 3. oRPC middleware builds the `Context`: actor, active organization, membership role, and a `Scope` object that
    is the only way to reach tenant-owned tables.
 4. The procedure validates input with the contract's Zod schema, calls a service, and returns a contract-typed
@@ -64,7 +66,8 @@ Every mutation runs in one transaction that:
 
 After commit, `pg_notify('outbox', id)` wakes the relay in the worker, which:
 
-- publishes the event to the org's realtime channel via `NOTIFY realtime_<shard>` (picked up by every api node),
+- publishes the event with `NOTIFY teamflow_events` (every api node listens, and forwards it to the sockets
+  subscribed to its channel),
 - leaves follow-up work to pg-boss jobs (emails and digests). Notifications themselves are written
   in the mutation's own transaction (ADR-0012) and only _announced_ through the outbox.
 
@@ -73,12 +76,12 @@ invented. The relay is idempotent on the outbox id.
 
 ## Real-time
 
-- One WebSocket per tab, multiplexed: clients subscribe to channels (`org:<id>`, `project:<id>`, `task:<id>`).
-  Subscriptions are authorized on join and re-checked when membership changes.
+- One WebSocket per tab, multiplexed: clients subscribe to channels (`org`, `me`, `project:<id>`), always relative
+  to the session's organization. Subscriptions are authorized on join.
 - Server events carry the entity and its new `version`; the client patches the TanStack Query cache in place and
   ignores events whose version is not newer than what it has (its own optimistic writes included).
-- Presence (who is viewing a board or task, cursors on a board) is ephemeral, kept in memory per api node and
-  fanned out over `NOTIFY`; it never touches a table.
+- Presence (who is looking at a project, and which task each person has open) is ephemeral, kept in memory per
+  api node and fanned out over `NOTIFY`; it never touches a table.
 - Collaborative descriptions use Yjs. The api hosts the Yjs WebSocket provider, persists merged document state to
   `task_document` (bytea) with debounced writes, and derives a plain-text projection for search.
 
@@ -86,7 +89,8 @@ invented. The relay is idempotent on the outbox id.
 
 Board columns and the backlog are ordered by a fractional index string (`rank`). Moving a card writes one row and
 never renumbers neighbours. Two clients inserting in the same gap get distinct keys because a short random suffix is
-appended; a background job rebalances only when keys grow past a length threshold.
+appended. Keys grow only when people keep inserting into the same gap; `needsRebalance` detects that, but no job
+acts on it yet, because realistic use stays far below the threshold.
 
 ## Tenancy
 
@@ -102,11 +106,11 @@ construction rather than by convention — see ADR-0004:
 
 ## Analytics
 
-Burndown, velocity, cycle/lead time and cumulative flow are pure functions in `packages/domain` over the `activity`
-stream for a time range. The api runs them over SQL-windowed slices; nothing is precomputed except a nightly
-per-sprint snapshot used to make historical charts cheap.
+Burndown, scope change, velocity, cycle time and cumulative flow are pure functions in `packages/domain` over the
+`activity` stream for a sprint. The api loads one sprint's changes and replays them; nothing is precomputed except
+the committed and completed points recorded on a sprint when it starts and completes, which velocity reads.
 
 ## Observability
 
-Structured JSON logs (pino-compatible) with a request id and actor/org on every line, OpenTelemetry traces for HTTP,
-SQL and jobs, and a `/health` (liveness) plus `/ready` (database + queue) pair.
+Structured JSON logs (pino) with a request id, method, path, status and duration on every request, errors logged
+with their cause, and a `/health` (liveness) plus `/ready` (database reachable) pair.
