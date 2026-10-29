@@ -35,3 +35,31 @@ test('two people on one board see each other and each other’s moves', async ({
   await maya.close();
   await expect(page.getByRole('button', { name: /Also viewing: Maya Chen/ })).toBeHidden();
 });
+
+test('two people edit a description together and see each other’s caret', async ({
+  page,
+  browser,
+}) => {
+  await page.goto('/p/RF?task=RF-17');
+  const maya = await anotherPerson(browser, 'maya');
+  await maya.page.goto('/p/RF?task=RF-17');
+
+  const mine = page.locator('[aria-label="Description"][contenteditable]');
+  const hers = maya.page.locator('[aria-label="Description"][contenteditable]');
+  await expect(mine).toContainText('Compare commanded and measured wheel speed.');
+  await expect(hers).toContainText('Compare commanded and measured wheel speed.');
+
+  await mine.click();
+  await page.keyboard.press('End');
+  await page.keyboard.type(' Threshold 15%.');
+  await expect(hers).toContainText('Threshold 15%.');
+  await expect(
+    maya.page.locator('.collaboration-carets__label', { hasText: 'Demo User' }),
+  ).toBeVisible();
+
+  await hers.click();
+  await maya.page.keyboard.press('End');
+  await maya.page.keyboard.type(' Log every slip event.');
+  await expect(mine).toContainText('Threshold 15%. Log every slip event.');
+  await maya.close();
+});
