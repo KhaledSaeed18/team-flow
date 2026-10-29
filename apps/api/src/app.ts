@@ -1,7 +1,7 @@
 import { OpenAPIHandler } from '@orpc/openapi/fetch';
 import { onError } from '@orpc/server';
 import { RPCHandler } from '@orpc/server/fetch';
-import { sql } from 'drizzle-orm';
+import { ping } from '@teamflow/db';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { requestId } from 'hono/request-id';
@@ -66,7 +66,7 @@ export function createApp(deps: Deps, options: AppOptions) {
   app.get('/health', (c) => c.json({ status: 'ok' }));
   app.get('/ready', async (c) => {
     try {
-      await deps.db.execute(sql`select 1`);
+      await ping(deps.db);
       return c.json({ status: 'ready' });
     } catch (error) {
       logger.warn({ err: error }, 'readiness check failed');
