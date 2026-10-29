@@ -3,6 +3,8 @@ import type { Outputs } from '@teamflow/contract';
 import { Avatar, Button, toast } from '@teamflow/ui';
 import { type KeyboardEvent, useId, useMemo, useRef, useState } from 'react';
 import { orpc } from '../../lib/api.ts';
+import { meQuery } from '../../lib/session.ts';
+import { Reactions } from './reactions.tsx';
 
 type Member = Outputs['members']['list'][number];
 type Comment = Outputs['comments']['list'][number];
@@ -41,6 +43,7 @@ function Body({ comment, members }: { comment: Comment; members: Member[] }) {
 export function Comments({ taskId }: { taskId: string }) {
   const comments = useQuery(orpc.comments.list.queryOptions({ input: { taskId } }));
   const members = useQuery(orpc.members.list.queryOptions());
+  const me = useQuery(meQuery());
 
   return (
     <div className="flex flex-col gap-4">
@@ -65,6 +68,7 @@ export function Comments({ taskId }: { taskId: string }) {
               <p className="mt-0.5 whitespace-pre-wrap text-ink-muted text-sm leading-relaxed">
                 <Body comment={comment} members={members.data ?? []} />
               </p>
+              <Reactions comment={comment} taskId={taskId} myName={me.data?.user.name ?? ''} />
             </div>
           </li>
         ))}
