@@ -18,6 +18,7 @@ import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-pass
 import { Route as AuthSignInRouteImport } from './routes/_auth/sign-in'
 import { Route as AuthSignUpRouteImport } from './routes/_auth/sign-up'
 import { Route as AuthVerifyRouteImport } from './routes/_auth/verify'
+import { Route as AppPKeyRouteImport } from './routes/_app/p/$key'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -62,6 +63,11 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
   path: '/verify',
   getParentRoute: () => AuthRoute,
 } as any)
+const AppPKeyRoute = AppPKeyRouteImport.update({
+  id: '/p/$key',
+  path: '/p/$key',
+  getParentRoute: () => AppRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AppIndexRoute
@@ -71,6 +77,7 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/verify': typeof AuthVerifyRoute
+  '/p/$key': typeof AppPKeyRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/verify': typeof AuthVerifyRoute
+  '/p/$key': typeof AppPKeyRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_auth/verify': typeof AuthVerifyRoute
   '/_app/': typeof AppIndexRoute
+  '/_app/p/$key': typeof AppPKeyRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -103,6 +112,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify'
+    | '/p/$key'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -112,6 +122,7 @@ export interface FileRouteTypes {
     | '/sign-in'
     | '/sign-up'
     | '/verify'
+    | '/p/$key'
   id:
     | '__root__'
     | '/_app'
@@ -123,6 +134,7 @@ export interface FileRouteTypes {
     | '/_auth/sign-up'
     | '/_auth/verify'
     | '/_app/'
+    | '/_app/p/$key'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -196,15 +208,24 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthVerifyRouteImport
       parentRoute: typeof AuthRoute
     }
+    '/_app/p/$key': {
+      id: '/_app/p/$key'
+      path: '/p/$key'
+      fullPath: '/p/$key'
+      preLoaderRoute: typeof AppPKeyRouteImport
+      parentRoute: typeof AppRoute
+    }
   }
 }
 
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
+  AppPKeyRoute: typeof AppPKeyRoute
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
+  AppPKeyRoute: AppPKeyRoute,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)
