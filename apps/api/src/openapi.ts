@@ -13,9 +13,15 @@ export function generateOpenApi(serverUrl: string) {
         'The public TeamFlow API. Every operation here is generated from the same contract the web app uses.',
     },
     servers: [{ url: `${serverUrl}/api/v1` }],
-    security: [{ session: [] }],
+    security: [{ token: [] }, { session: [] }],
     components: {
       securitySchemes: {
+        token: {
+          type: 'http',
+          scheme: 'bearer',
+          description:
+            'A personal access token (`tf_…`), created in Account settings. Read tokens may only make GET requests.',
+        },
         session: { type: 'apiKey', in: 'cookie', name: 'teamflow.session_token' },
       },
     },

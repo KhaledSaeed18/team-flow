@@ -9,6 +9,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import type { Deps, RequestContext } from './context.ts';
 import { generateOpenApi, referencePage } from './openapi.ts';
 import { router } from './routers/index.ts';
+import { authenticateToken } from './tokens.ts';
 import { uploadAttachment } from './upload.ts';
 
 export interface AppOptions {
@@ -88,6 +89,7 @@ export function createApp(deps: Deps, options: AppOptions) {
     requestId: id,
     headers,
     session: await deps.auth.api.getSession({ headers }),
+    token: null,
   });
 
   app.use('/rpc/*', async (c, next) => {
@@ -99,10 +101,26 @@ export function createApp(deps: Deps, options: AppOptions) {
     await next();
   });
 
+  // The public API also takes personal access tokens. The SPA's `/rpc` stays cookie-only.
   app.use('/api/v1/*', async (c, next) => {
+    const auth = await authenticateToken(deps, c.req.raw.headers);
+    if (auth.kind === 'invalid') {
+      return c.json(
+        { code: 'UNAUTHORIZED', message: 'This token is invalid, expired or revoked.' },
+        401,
+      );
+    }
+    if (
+      auth.kind === 'ok' &&
+      auth.grant.access === 'read' &&
+      !['GET', 'HEAD'].includes(c.req.method)
+    ) {
+      return c.json({ code: 'FORBIDDEN', message: 'This token is read-only.' }, 403);
+    }
+    const base = await context(c.req.raw.headers, c.get('requestId'));
     const { matched, response } = await rest.handle(c.req.raw, {
       prefix: '/api/v1',
-      context: await context(c.req.raw.headers, c.get('requestId')),
+      context: auth.kind === 'ok' ? { ...base, session: auth.session, token: auth.grant } : base,
     });
     if (matched) return c.newResponse(response.body, response);
     await next();
