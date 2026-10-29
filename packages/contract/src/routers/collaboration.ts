@@ -2,6 +2,19 @@ import { z } from 'zod';
 import { base } from '../base.ts';
 import { Id, Timestamp } from '../schemas.ts';
 
+export const REACTIONS = ['thumbsup', 'tada', 'heart', 'smile', 'eyes', 'rocket'] as const;
+export const Reaction = z.enum(REACTIONS);
+export type Reaction = z.infer<typeof Reaction>;
+
+export const ReactionSummary = z.object({
+  reaction: Reaction,
+  count: z.number().int().positive(),
+  /** Whether the caller is among them. */
+  mine: z.boolean(),
+  /** Who reacted, in order. */
+  names: z.array(z.string()),
+});
+
 export const Comment = z.object({
   id: Id,
   taskId: Id,
@@ -12,6 +25,7 @@ export const Comment = z.object({
   authorImage: z.string().nullable(),
   createdAt: Timestamp,
   editedAt: Timestamp.nullable(),
+  reactions: z.array(ReactionSummary),
 });
 export type Comment = z.infer<typeof Comment>;
 
@@ -77,6 +91,16 @@ export const comments = {
     })
     .input(z.object({ id: Id }))
     .output(z.object({ id: Id })),
+
+  react: base
+    .route({
+      method: 'PUT',
+      path: '/comments/{commentId}/reactions/{reaction}',
+      summary: 'Add or remove your reaction',
+      tags: ['Comments'],
+    })
+    .input(z.object({ commentId: Id, reaction: Reaction, on: z.boolean() }))
+    .output(Comment),
 };
 
 export const notifications = {
