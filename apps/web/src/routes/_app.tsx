@@ -7,7 +7,7 @@ import { CommandPalette } from '../features/command/command-palette.tsx';
 import { ShortcutsDialog } from '../features/command/shortcuts-dialog.tsx';
 import { orpc } from '../lib/api.ts';
 import { authClient } from '../lib/auth.ts';
-import { CREATE_TASK_EVENT } from '../lib/events.ts';
+import { requestCreateTask } from '../lib/events.ts';
 import { useChannel } from '../lib/realtime.ts';
 import { loadMe, meQuery } from '../lib/session.ts';
 import { useShortcuts } from '../lib/shortcuts.ts';
@@ -63,9 +63,7 @@ function AppShell() {
       'g p': () => params.key && navigate({ to: '/p/$key/backlog', params: { key: params.key } }),
       c: () => {
         if (!params.key) return;
-        void navigate({ to: '/p/$key', params: { key: params.key } }).then(() =>
-          window.dispatchEvent(new CustomEvent(CREATE_TASK_EVENT)),
-        );
+        void navigate({ to: '/p/$key', params: { key: params.key } }).then(requestCreateTask);
       },
     },
     !overlayOpen,

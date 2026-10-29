@@ -82,4 +82,54 @@ test.describe('working on tasks', () => {
         .getByRole('button', { name: /^Labels:.*Security/ }),
     ).toBeVisible();
   });
+
+  test('c from another view still opens quick add on the board', async ({ page }) => {
+    await page.goto('/p/RF/list');
+    await page.getByRole('grid').waitFor();
+    await page.keyboard.press('c');
+    await expect(page.getByLabel('New task title')).toBeFocused();
+  });
+
+  test('letters typed in an open list pick an option, not a shortcut', async ({ page }) => {
+    await page.goto('/p/RF?task=RF-9');
+    const panel = page.getByRole('complementary', { name: /RF-9/ });
+    await panel.getByRole('button', { name: /Assignee/ }).click();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await page.keyboard.press('c');
+    await page.keyboard.press('g');
+    await page.keyboard.press('l');
+    await expect(page).toHaveURL(/\/p\/RF\?task=RF-9/);
+    await expect(page.getByLabel('New task title')).toHaveCount(0);
+    await page.keyboard.press('Escape');
+  });
+
+  test('Escape in the comment box keeps the draft; the next Escape closes the panel', async ({
+    page,
+  }) => {
+    await page.goto('/p/RF?task=RF-9');
+    const panel = page.getByRole('complementary', { name: /RF-9/ });
+    const box = panel.getByLabel('Write a comment');
+    await box.fill('Half a thought');
+    await box.press('Escape');
+    await expect(panel).toBeVisible();
+    await expect(box).toHaveValue('Half a thought');
+    await page.keyboard.press('Escape');
+    await expect(panel).toBeHidden();
+  });
+
+  test('an emptied title is not saved and comes back', async ({ page }) => {
+    await page.goto('/p/RF?task=RF-9');
+    const title = page.getByRole('complementary', { name: /RF-9/ }).getByLabel('Title');
+    const before = await title.inputValue();
+    await title.fill('');
+    await title.press('Tab');
+    await expect(title).toHaveValue(before);
+    await title.fill('Renamed, then thought better of it');
+    await title.press('Escape');
+    await expect(title).toHaveValue(before);
+    await page.reload();
+    await expect(page.getByRole('complementary', { name: /RF-9/ }).getByLabel('Title')).toHaveValue(
+      before,
+    );
+  });
 });

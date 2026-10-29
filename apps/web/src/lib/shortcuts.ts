@@ -7,15 +7,28 @@ import { useEffect, useRef } from 'react';
 
 export const isMac = typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.platform);
 
-const typing = (target: EventTarget | null) => {
+/** Keys go to a field the user is typing in. */
+export const isTyping = (target: EventTarget | null) => {
   const el = target as HTMLElement | null;
-  if (!el) return false;
+  if (!el?.getAttribute) return false;
   return (
     el.isContentEditable ||
     ['INPUT', 'TEXTAREA', 'SELECT'].includes(el.tagName) ||
     el.getAttribute('role') === 'textbox'
   );
 };
+
+/**
+ * Keys belong to the focused control: a field, or an open list or menu, where letters jump to an option (typing "c"
+ * in an assignee list must not create a task).
+ */
+const typing = (target: EventTarget | null) =>
+  isTyping(target) ||
+  Boolean(
+    (target as HTMLElement | null)?.closest?.(
+      '[role="listbox"], [role="menu"], [role="combobox"], [role="dialog"], [role="tree"]',
+    ),
+  );
 
 function matchesChord(event: KeyboardEvent, chord: string) {
   const parts = chord.toLowerCase().split('+');

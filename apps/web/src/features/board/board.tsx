@@ -6,7 +6,7 @@ import { Button } from '@teamflow/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { DropIndicator, GridList, Input, TextField, useDragAndDrop } from 'react-aria-components';
 import { orpc } from '../../lib/api.ts';
-import { CREATE_TASK_EVENT } from '../../lib/events.ts';
+import { CREATE_TASK_EVENT, takeCreateRequest } from '../../lib/events.ts';
 import {
   byRank,
   type Placement,
@@ -219,7 +219,12 @@ function QuickAdd({
   const [open, setOpen] = useState(false);
   useEffect(() => {
     if (!listen) return;
-    const onCreate = () => setOpen(true);
+    // A request made before this board mounted (the shortcut navigated here) still opens it.
+    if (takeCreateRequest()) setOpen(true);
+    const onCreate = () => {
+      takeCreateRequest();
+      setOpen(true);
+    };
     window.addEventListener(CREATE_TASK_EVENT, onCreate);
     return () => window.removeEventListener(CREATE_TASK_EVENT, onCreate);
   }, [listen]);
