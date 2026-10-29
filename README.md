@@ -10,6 +10,10 @@ the keyboard as well as the mouse, and the whole stack runs on one Postgres data
 > **v2 is under active development** on the `dev` branch. The original NestJS + Prisma REST API is preserved at tag
 > [`v1.0.0`](https://github.com/KhaledSaeed18/team-flow/tree/v1.0.0).
 
+<p align="center">
+  <img src="docs/screenshots/board-task.png" alt="The Rover Firmware board for the active sprint, with a task open beside it" width="100%" />
+</p>
+
 ## What works today
 
 - Sign up with an emailed code, workspaces, invitations and roles (owner, admin, member, guest)
@@ -18,7 +22,19 @@ the keyboard as well as the mouse, and the whole stack runs on one Postgres data
 - A task panel with inline editing and a history built from a field-level activity log
 - Live updates and presence: see who is on the board and which task they have open; moves appear for everyone
   within a second
+- Sprints with planning, carry-over and a report (burndown, velocity, cycle time)
+- Comments with @mentions, an inbox, live notification toasts and email through a job queue
+- Full-text search, a ⌘K command palette and keyboard shortcuts everywhere
 - A typed public API (`/api/v1`) with an OpenAPI document and reference at `/api/docs`
+
+## A closer look
+
+|                                                                                                     |                                                                                    |
+| --------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- |
+| ![Sprint report with burndown and velocity](docs/screenshots/sprint-report.png)                     | ![Planning view with the active sprint and backlog](docs/screenshots/planning.png) |
+| **Sprint report.** Burndown, scope change, velocity and cycle time, replayed from the activity log. | **Planning.** Drag work between sprints and the backlog, with the keyboard too.    |
+| ![Command palette searching for a misspelt task](docs/screenshots/command-palette.png)              | ![A task with comments in the dark theme](docs/screenshots/dark-task.png)          |
+| **⌘K.** Typo-tolerant search across tasks, projects and actions.                                    | **Comments and mentions**, in the dark theme.                                      |
 
 ## Stack
 

@@ -23,10 +23,13 @@ type Status = Project['statuses'][number];
 
 export function Board({
   project,
+  sprintId = null,
   viewersByTask,
   onOpenTask,
 }: {
   project: Project;
+  /** Show only this sprint's tasks; `null` shows the whole project. */
+  sprintId?: string | null;
   viewersByTask: Map<string, PresenceMember[]>;
   onOpenTask: (task: Task) => void;
 }) {
@@ -45,10 +48,13 @@ export function Board({
 
   const columns = useMemo(() => {
     const byStatus = new Map<string, Task[]>(project.statuses.map((s) => [s.id, []]));
-    for (const task of tasks.data ?? []) byStatus.get(task.statusId)?.push(task);
+    for (const task of tasks.data ?? []) {
+      if (sprintId && task.sprintId !== sprintId) continue;
+      byStatus.get(task.statusId)?.push(task);
+    }
     for (const list of byStatus.values()) list.sort(byRank);
     return byStatus;
-  }, [tasks.data, project.statuses]);
+  }, [tasks.data, project.statuses, sprintId]);
 
   return (
     <div className="flex h-full gap-3 overflow-x-auto p-4" aria-busy={tasks.isPending}>
@@ -60,6 +66,7 @@ export function Board({
           tasks={columns.get(status.id) ?? []}
           lookups={lookups}
           viewersByTask={viewersByTask}
+          sprintId={sprintId}
           onMove={(id, place) => move.mutate({ id, place })}
           onOpenTask={onOpenTask}
         />
@@ -74,6 +81,7 @@ interface ColumnProps {
   tasks: Task[];
   lookups: CardLookups;
   viewersByTask: Map<string, PresenceMember[]>;
+  sprintId: string | null;
   onMove: (id: string, place: Placement) => void;
   onOpenTask: (task: Task) => void;
 }
@@ -84,6 +92,7 @@ function Column({
   tasks,
   lookups,
   viewersByTask,
+  sprintId,
   onMove,
   onOpenTask,
 }: ColumnProps) {
@@ -174,6 +183,7 @@ function Column({
       <QuickAdd
         project={project}
         statusId={status.id}
+        sprintId={sprintId}
         listen={status.category === 'unstarted' && isFirstUnstarted}
       />
     </section>
@@ -183,10 +193,12 @@ function Column({
 function QuickAdd({
   project,
   statusId,
+  sprintId,
   listen,
 }: {
   project: Project;
   statusId: string;
+  sprintId: string | null;
   listen: boolean;
 }) {
   const [open, setOpen] = useState(false);
@@ -218,7 +230,7 @@ function QuickAdd({
       onSubmit={(event) => {
         event.preventDefault();
         if (!title.trim()) return;
-        create.mutate({ id: crypto.randomUUID(), title: title.trim(), statusId });
+        create.mutate({ id: crypto.randomUUID(), title: title.trim(), statusId, sprintId });
         setTitle('');
       }}
     >

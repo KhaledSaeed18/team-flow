@@ -99,8 +99,12 @@ export function useCreateTask(project: Project) {
   const queryKey = tasksQuery(project.id).queryKey;
 
   return useMutation({
-    mutationFn: (input: { id: string; title: string; statusId: string }) =>
-      client.tasks.create({ ...input, projectId: project.id }),
+    mutationFn: (input: {
+      id: string;
+      title: string;
+      statusId: string;
+      sprintId?: string | null;
+    }) => client.tasks.create({ ...input, projectId: project.id }),
     onMutate: async (input) => {
       await queryClient.cancelQueries({ queryKey });
       const previous = queryClient.getQueryData(queryKey) ?? [];
@@ -117,7 +121,7 @@ export function useCreateTask(project: Project) {
         estimate: null,
         assigneeMemberId: null,
         parentTaskId: null,
-        sprintId: null,
+        sprintId: input.sprintId ?? null,
         dueDate: null,
         rank: rankFor(previous, input.id, { statusId: input.statusId }),
         labelIds: [],

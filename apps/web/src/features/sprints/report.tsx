@@ -132,7 +132,7 @@ export function SprintReport({ sprintId }: { sprintId: string }) {
           <h3 id="velocity-title" className="font-medium text-sm">
             Velocity{' '}
             <span className="font-normal text-ink-muted">
-              · {Math.round(velocity * 10) / 10} points per sprint
+              averaging {Math.round(velocity * 10) / 10} points per sprint
             </span>
           </h3>
           <Legend
