@@ -1,4 +1,5 @@
 export * from './attachments.ts';
+export * from './audit.ts';
 export * from './collaboration.ts';
 export * from './digests.ts';
 export * from './documents.ts';
