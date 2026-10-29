@@ -12,18 +12,22 @@ Thanks for taking the time to contribute! Here's everything you need to know.
    git clone https://github.com/KhaledSaeed18/team-flow.git
    cd teamflow
 ```
+
 3. Install dependencies
 ```bash
    pnpm install
 ```
+
 4. Copy the environment file and configure it
 ```bash
    cp .env.example .env
 ```
+
 5. Run database migrations
 ```bash
    pnpm prisma:migrate
 ```
+
 6. Start the development server
 ```bash
    pnpm start:dev
@@ -35,14 +39,14 @@ Thanks for taking the time to contribute! Here's everything you need to know.
 
 Always branch off `main`. Use the following naming convention:
 
-| Prefix | When to use |
-| ------ | ----------- |
-| `feat/` | New feature |
-| `fix/` | Bug fix |
-| `chore/` | Maintenance, dependencies, config |
-| `docs/` | Documentation only |
+| Prefix      | When to use                             |
+| ----------- | --------------------------------------- |
+| `feat/`     | New feature                             |
+| `fix/`      | Bug fix                                 |
+| `chore/`    | Maintenance, dependencies, config       |
+| `docs/`     | Documentation only                      |
 | `refactor/` | Code change that isn't a fix or feature |
-| `test/` | Adding or updating tests |
+| `test/`     | Adding or updating tests                |
 
 **Examples**
 

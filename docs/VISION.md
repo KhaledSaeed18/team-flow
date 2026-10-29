@@ -21,18 +21,18 @@ The interesting engineering in a planning tool is not CRUD. It is:
 
 ## Product scope
 
-| Area | v2 capability |
-|---|---|
-| Workspaces | Organizations, invitations, roles (owner / admin / member / guest), teams |
-| Projects | Project keys (`TF-42`), custom workflows per project, archive/restore |
-| Work items | Tasks with sub-tasks, relations (blocks / relates / duplicates), estimates, priority, labels, due dates |
-| Views | Board, list (virtualized table), backlog, calendar, saved filters |
-| Planning | Cycles/sprints with carry-over, scope change tracking, burndown and velocity |
+| Area          | v2 capability                                                                                             |
+| ------------- | --------------------------------------------------------------------------------------------------------- |
+| Workspaces    | Organizations, invitations, roles (owner / admin / member / guest), teams                                 |
+| Projects      | Project keys (`TF-42`), custom workflows per project, archive/restore                                     |
+| Work items    | Tasks with sub-tasks, relations (blocks / relates / duplicates), estimates, priority, labels, due dates   |
+| Views         | Board, list (virtualized table), backlog, calendar, saved filters                                         |
+| Planning      | Cycles/sprints with carry-over, scope change tracking, burndown and velocity                              |
 | Collaboration | Live board updates, presence, collaborative rich-text descriptions, comments with @mentions and reactions |
-| Notifications | In-app inbox, real-time toasts, batched email digests |
-| Search | Full-text search across tasks and comments, command palette (`⌘K`), keyboard shortcuts everywhere |
-| Integrations | GitHub: link PRs and commits to tasks, auto-transition on merge; outgoing webhooks |
-| Platform | Public, documented API (OpenAPI), personal access tokens, audit log |
+| Notifications | In-app inbox, real-time toasts, batched email digests                                                     |
+| Search        | Full-text search across tasks and comments, command palette (`⌘K`), keyboard shortcuts everywhere         |
+| Integrations  | GitHub: link PRs and commits to tasks, auto-transition on merge; outgoing webhooks                        |
+| Platform      | Public, documented API (OpenAPI), personal access tokens, audit log                                       |
 
 ## Explicitly out of scope
 

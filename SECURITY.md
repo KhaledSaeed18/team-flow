@@ -16,9 +16,9 @@ Please include the following in your report:
 - Potential impact or attack scenario
 - Any suggested fix (optional but appreciated)
 
-You can expect an initial response within **48 hours** and a resolution 
-update within **7 days**. If the vulnerability is confirmed, we will work 
-on a fix and credit you in the release notes (unless you prefer to remain 
+You can expect an initial response within **48 hours** and a resolution
+update within **7 days**. If the vulnerability is confirmed, we will work
+on a fix and credit you in the release notes (unless you prefer to remain
 anonymous).
 
-We appreciate responsible disclosure and thank you for helping keep  TeamFlow secure.
+We appreciate responsible disclosure and thank you for helping keep TeamFlow secure.
