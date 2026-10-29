@@ -13,6 +13,8 @@ export const TaskHit = z.object({
   projectColor: z.string(),
   statusName: z.string(),
   statusCategory: StatusCategory,
+  /** When a comment matched, its opening words. */
+  commentExcerpt: z.string().nullable(),
 });
 export type TaskHit = z.infer<typeof TaskHit>;
 
@@ -21,7 +23,7 @@ export const search = {
     .route({
       method: 'GET',
       path: '/search/tasks',
-      summary: 'Search tasks by text or identifier',
+      summary: 'Search tasks by text, identifier or what was said in comments',
       tags: ['Search'],
     })
     .input(
