@@ -63,4 +63,23 @@ test.describe('working on tasks', () => {
     await page.reload();
     await expect(column(page, 'Todo')).toContainText('Calibrate the bumper switches');
   });
+
+  test('closing the label picker with Escape keeps the labels just picked', async ({ page }) => {
+    await page.goto('/p/RF?task=RF-9');
+    const panel = page.getByRole('complementary', { name: /RF-9/ });
+    const trigger = panel
+      .locator('dd')
+      .filter({ has: page.getByRole('button') })
+      .nth(3);
+    await trigger.getByRole('button').click();
+    await page.getByRole('option', { name: 'Security' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('listbox', { name: 'Labels' })).toBeHidden();
+    await page.reload();
+    await expect(
+      page
+        .getByRole('complementary', { name: /RF-9/ })
+        .getByRole('button', { name: /^Labels:.*Security/ }),
+    ).toBeVisible();
+  });
 });
