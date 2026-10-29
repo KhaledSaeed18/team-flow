@@ -55,6 +55,14 @@ export function useLiveProject(project: Project) {
         });
         void queryClient.invalidateQueries({ queryKey: tasksKey });
         return;
+      case 'comment.created':
+      case 'comment.updated':
+      case 'comment.deleted':
+        if (taskId)
+          void queryClient.invalidateQueries({
+            queryKey: orpc.comments.list.key({ input: { taskId } }),
+          });
+        return;
       case 'sprint.changed':
       case 'sprint.carried_over':
         void queryClient.invalidateQueries({ queryKey: orpc.sprints.key() });
