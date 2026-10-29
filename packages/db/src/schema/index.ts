@@ -1,6 +1,7 @@
 export * from './attachments.ts';
 export * from './auth.ts';
 export * from './collaboration.ts';
+export * from './digests.ts';
 export * from './documents.ts';
 export * from './projects.ts';
 export * from './sprints.ts';
