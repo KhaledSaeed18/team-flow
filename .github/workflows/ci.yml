@@ -95,6 +95,12 @@ jobs:
           --health-interval 2s
           --health-timeout 3s
           --health-retries 30
+      storage:
+        image: rustfs/rustfs:latest
+        env:
+          RUSTFS_ACCESS_KEY: teamflow
+          RUSTFS_SECRET_KEY: teamflow-secret
+        ports: ["9100:9000"]
     env:
       E2E_DATABASE_URL: postgres://teamflow:teamflow@localhost:5442/teamflow_e2e
     steps:
@@ -107,6 +113,8 @@ jobs:
           node-version: 24
       - name: Install
         run: bun install --frozen-lockfile
+      - name: Wait for storage
+        run: timeout 60 bash -c 'until curl -s -o /dev/null localhost:9100; do sleep 1; done'
       - name: Install Chromium
         working-directory: apps/web
         run: bunx playwright install --with-deps chromium
