@@ -15,7 +15,7 @@ const VERB: Record<Notification['kind'], string> = {
 };
 
 /** "Ada assigned you RF-12", "Linus mentioned you in RF-3". */
-export const describe = (n: Notification) =>
+export const summarize = (n: Notification) =>
   `${n.actorName ?? 'Someone'} ${VERB[n.kind]} ${n.data.identifier ?? 'a task'}`;
 
 /** `RF-12` → the task's project key and the URL that opens it. */
@@ -38,7 +38,7 @@ export function useInbox() {
     await queryClient.invalidateQueries({ queryKey: orpc.notifications.key() });
     const latest = queryClient.getQueryData(inboxQuery().queryKey)?.items[0];
     if (latest && !latest.readAt) {
-      toast({ title: describe(latest), description: latest.data.excerpt ?? latest.data.title });
+      toast({ title: summarize(latest), description: latest.data.excerpt ?? latest.data.title });
     }
   });
 
