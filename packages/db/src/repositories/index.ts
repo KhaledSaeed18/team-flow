@@ -9,4 +9,5 @@ export * from './relations.ts';
 export * from './search.ts';
 export * from './sprints.ts';
 export * from './tasks.ts';
+export * from './views.ts';
 export * from './workflow.ts';
