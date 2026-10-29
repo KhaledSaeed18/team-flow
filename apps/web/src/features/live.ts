@@ -28,9 +28,14 @@ export function useLiveProject(project: Project) {
         if (current && current.version >= task.version) return tasks;
         return current ? tasks.map((t) => (t.id === task.id ? task : t)) : [...tasks, task];
       });
-    } catch {
-      // Deleted or no longer visible: drop it from the board.
-      queryClient.setQueryData(tasksKey, (tasks) => tasks?.filter((t) => t.id !== taskId));
+    } catch (error) {
+      // Deleted or no longer visible: drop it from the board. Any other failure (a blip, a timeout) says nothing
+      // about the task, so refetch the list later instead of hiding a task that still exists.
+      if ((error as { code?: string }).code === 'NOT_FOUND') {
+        queryClient.setQueryData(tasksKey, (tasks) => tasks?.filter((t) => t.id !== taskId));
+      } else {
+        void queryClient.invalidateQueries({ queryKey: tasksKey });
+      }
     }
     void queryClient.invalidateQueries({
       queryKey: orpc.tasks.history.key({ input: { id: taskId } }),
@@ -98,15 +103,7 @@ export function useLiveProject(project: Project) {
 
   useChannel(projectChannel(project.id), onEvent);
 
-  // Anything could have happened while the socket was down: refetch rather than guess.
-  useEffect(
-    () =>
-      realtime.onReconnect(() => {
-        void queryClient.invalidateQueries({ queryKey: tasksKey });
-        void queryClient.invalidateQueries({
-          queryKey: orpc.projects.get.key({ input: { id: project.id } }),
-        });
-      }),
-    [queryClient, tasksKey, project.id],
-  );
+  // Anything could have happened while the socket was down: comments, links, files, labels, sprints, views and
+  // the inbox as much as tasks. Refetch everything on screen rather than guess (inactive queries only go stale).
+  useEffect(() => realtime.onReconnect(() => void queryClient.invalidateQueries()), [queryClient]);
 }
