@@ -8,4 +8,5 @@ export * from './components/menu.tsx';
 export * from './components/notice.tsx';
 export * from './components/select.tsx';
 export * from './components/spinner.tsx';
+export * from './components/toast.tsx';
 export * from './components/tooltip.tsx';

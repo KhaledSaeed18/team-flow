@@ -1,6 +1,6 @@
 import type { QueryClient } from '@tanstack/react-query';
 import { createRootRouteWithContext, Outlet, useNavigate, useRouter } from '@tanstack/react-router';
-import { Button } from '@teamflow/ui';
+import { Button, Toaster } from '@teamflow/ui';
 import { RouterProvider as AriaRouterProvider } from 'react-aria-components';
 
 export interface RouterContext {
@@ -22,6 +22,7 @@ function Root() {
       useHref={(to) => router.buildLocation({ to }).href}
     >
       <Outlet />
+      <Toaster />
     </AriaRouterProvider>
   );
 }
