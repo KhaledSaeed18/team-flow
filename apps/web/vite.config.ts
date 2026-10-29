@@ -14,6 +14,7 @@ export default defineConfig({
       '/api': { target: api, changeOrigin: false },
       '/rpc': { target: api, changeOrigin: false },
       '/ws': { target: api.replace(/^http/, 'ws'), ws: true, changeOrigin: false },
+      '/collab': { target: api.replace(/^http/, 'ws'), ws: true, changeOrigin: false },
     },
   },
 });

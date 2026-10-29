@@ -1,5 +1,6 @@
 import { Tag as TagIcon, X } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
+import { can } from '@teamflow/auth/permissions';
 import { PRIORITIES, type Priority } from '@teamflow/domain';
 import { Avatar, Button, popover, Select, SelectItem } from '@teamflow/ui';
 import { type ReactNode, useEffect, useState } from 'react';
@@ -17,9 +18,11 @@ import {
   TextField,
 } from 'react-aria-components';
 import { orpc } from '../../lib/api.ts';
+import { meQuery } from '../../lib/session.ts';
 import { PRIORITY_LABEL, PriorityIcon } from '../board/priority-icon.tsx';
 import { type Project, type Task, tasksQuery, useUpdateTask } from '../tasks.ts';
 import { Comments } from './comments.tsx';
+import { DescriptionEditor } from './description-editor.tsx';
 import { History } from './history.tsx';
 
 const NONE = '__none__';
@@ -82,6 +85,10 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
   const update = useUpdateTask(project.id);
   const members = useQuery(orpc.members.list.queryOptions());
   const labels = useQuery(orpc.labels.list.queryOptions({ input: { projectId: project.id } }));
+  const me = useQuery(meQuery());
+  const role =
+    me.data?.organizations.find((o) => o.id === me.data?.activeOrganizationId)?.role ?? 'guest';
+  const canEdit = can(role, { task: ['update'] });
   const save = (patch: Parameters<typeof update.mutate>[0]['patch']) =>
     update.mutate({ id: task.id, patch });
 
@@ -94,13 +101,11 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
           onCommit={(title) => title.trim() && save({ title: title.trim() })}
           className="font-semibold text-lg leading-snug"
         />
-        <CommitField
-          label="Description"
-          value={task.description}
-          multiline
-          placeholder="Add a description…"
-          onCommit={(description) => save({ description })}
-          className="min-h-24 text-sm leading-relaxed"
+        <DescriptionEditor
+          key={task.id}
+          taskId={task.id}
+          userName={me.data?.user.name ?? 'Someone'}
+          readOnly={!canEdit}
         />
       </div>
 
