@@ -66,7 +66,9 @@ jobs:
 
   commits:
     name: Conventional commits
-    if: github.event_name == 'pull_request'
+    # Every change is linted when it enters dev. A release PR into main replays that history, which also holds
+    # commits from before these rules (v1-era Dependabot messages), so it is not linted again.
+    if: github.event_name == 'pull_request' && github.base_ref != 'main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
