@@ -530,6 +530,28 @@ async function main() {
     );
   }
 
+  // Due dates around today, so the calendar has a month to show: a few overdue, most in the next three weeks.
+  const iso = (offset: number) =>
+    new Date(today.getTime() + offset * DAY).toISOString().slice(0, 10);
+  for (const [index, offset] of [
+    [0, -3],
+    [3, -1],
+    [5, 0],
+    [7, 1],
+    [9, 2],
+    [12, 4],
+    [14, 6],
+    [17, 8],
+    [19, 10],
+    [21, 13],
+    [23, 15],
+    [25, 20],
+  ] as const) {
+    const id = tasks[index]?.id;
+    const task = id ? await findTask(scope, id) : null;
+    if (task) await updateTask(scope, task.id, task.version, { dueDate: iso(offset) }, at(47, 9));
+  }
+
   console.info('Seeded Northwind Robotics. Sign in as', DEMO_EMAIL, '/', DEMO_PASSWORD);
   await close();
 }
