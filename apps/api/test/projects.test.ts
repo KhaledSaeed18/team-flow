@@ -164,3 +164,22 @@ describe('projects', () => {
     });
   });
 });
+
+describe('search', () => {
+  test('finds tasks by words and identifiers, only in the caller’s organization', async () => {
+    const h = await createHarness();
+    const ada = await h.owner('Ada');
+    const project = await ada.client.projects.create({ key: 'SRC', name: 'Search' });
+    const task = await ada.client.tasks.create({
+      projectId: project.id,
+      title: 'Lidar driver timeouts',
+    });
+    expect((await ada.client.search.tasks({ q: 'lidar time' })).map((t) => t.identifier)).toEqual([
+      task.identifier,
+    ]);
+    expect((await ada.client.search.tasks({ q: task.identifier }))[0]?.id).toBe(task.id);
+    const mallory = await h.owner('Mallory');
+    expect(await mallory.client.search.tasks({ q: 'lidar' })).toEqual([]);
+    await h.destroy();
+  });
+});
