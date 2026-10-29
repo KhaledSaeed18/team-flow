@@ -25,6 +25,10 @@
     "check": "biome check . && turbo run typecheck test"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
+    "@commitlint/cli": "^21.2.4",
+    "@commitlint/config-conventional": "^21.2.4",
+    "lefthook": "^2.2.2",
     "turbo": "^2.11.10",
     "typescript": "catalog:"
   }
