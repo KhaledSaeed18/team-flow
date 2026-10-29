@@ -23,7 +23,10 @@
     "lint:fix": "biome check --write .",
     "format": "biome format --write .",
     "check": "biome check . && turbo run typecheck test",
-    "prepare": "lefthook install"
+    "prepare": "lefthook install",
+    "infra:up": "docker compose up -d --wait",
+    "infra:down": "docker compose down",
+    "infra:reset": "docker compose down -v && docker compose up -d --wait"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
