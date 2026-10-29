@@ -96,7 +96,36 @@ export async function createHarness() {
     return { ...u, organizationId: String(org.id) };
   }
 
-  return { app, db: database.db, emails, clock, visitor, user, owner, destroy: database.destroy };
+  type Signed = Awaited<ReturnType<typeof user>>;
+
+  /** Invite a new user into `inviter`'s active organization with `role`, accept, and make it their active org. */
+  async function join(
+    inviter: Signed & { organizationId: string },
+    name: string,
+    role: 'admin' | 'member' | 'guest',
+  ) {
+    const u = await user(name);
+    const invitation = await inviter.authPost('/organization/invite-member', {
+      email: u.email,
+      role,
+      organizationId: inviter.organizationId,
+    });
+    await u.authPost('/organization/accept-invitation', { invitationId: invitation.id });
+    await u.authPost('/organization/set-active', { organizationId: inviter.organizationId });
+    return { ...u, organizationId: inviter.organizationId };
+  }
+
+  return {
+    app,
+    db: database.db,
+    emails,
+    clock,
+    visitor,
+    user,
+    owner,
+    join,
+    destroy: database.destroy,
+  };
 }
 
 export type Harness = Awaited<ReturnType<typeof createHarness>>;
