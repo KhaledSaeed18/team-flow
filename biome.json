@@ -93,5 +93,10 @@
     "formatter": {
       "expand": "auto"
     }
+  },
+  "css": {
+    "parser": {
+      "tailwindDirectives": true
+    }
   }
 }

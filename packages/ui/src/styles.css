@@ -1,0 +1,92 @@
+@import "tailwindcss";
+@import "@fontsource-variable/schibsted-grotesk";
+
+/*
+ * TeamFlow design tokens.
+ *
+ * A cool whiteboard canvas, white index cards, slate ink. The one loud colour is marigold, and it is reserved
+ * for focus and selection — in a keyboard-first tool, where you are is the most important thing on screen.
+ */
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --font-sans: "Schibsted Grotesk Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-canvas: #eef1f4;
+  --color-lane: #e4e8ed;
+  --color-surface: #ffffff;
+  --color-raised: #f7f9fb;
+  --color-line: #d5dbe2;
+  --color-line-strong: #b9c2cc;
+  --color-ink: #1b2430;
+  --color-ink-muted: #5b6878;
+  --color-ink-faint: #8a96a3;
+  --color-marigold: #e8a317;
+  --color-marigold-soft: #fbedc9;
+  --color-danger: #c2412d;
+  --color-danger-soft: #f8e1dc;
+  --color-success: #2f855a;
+
+  --radius-control: 6px;
+  --radius-card: 8px;
+  --radius-lane: 12px;
+
+  --text-2xs: 0.6875rem;
+  --text-2xs--line-height: 1rem;
+
+  --shadow-lifted: 0 10px 24px -8px rgb(27 36 48 / 0.28), 0 2px 6px -2px rgb(27 36 48 / 0.18);
+}
+
+.dark {
+  --color-canvas: #141920;
+  --color-lane: #1a2029;
+  --color-surface: #212833;
+  --color-raised: #28303c;
+  --color-line: #313a47;
+  --color-line-strong: #46515f;
+  --color-ink: #e6ebf0;
+  --color-ink-muted: #a3aebb;
+  --color-ink-faint: #6f7b89;
+  --color-marigold: #f2b632;
+  --color-marigold-soft: #3d3218;
+  --color-danger: #f0816e;
+  --color-danger-soft: #3d2420;
+  --color-success: #68c391;
+}
+
+@layer base {
+  html {
+    font-family: var(--font-sans);
+    font-feature-settings:
+      "tnum" 1,
+      "ss01" 1;
+    color: var(--color-ink);
+    background: var(--color-canvas);
+    -webkit-font-smoothing: antialiased;
+  }
+
+  ::selection {
+    background: var(--color-marigold-soft);
+  }
+}
+
+/* The marigold ring: every focusable thing uses it, nothing else may. */
+@utility focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  &[data-focus-visible] {
+    outline-color: var(--color-marigold);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component transitions */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must override component transitions */
+    transition-duration: 0.01ms !important;
+  }
+}
