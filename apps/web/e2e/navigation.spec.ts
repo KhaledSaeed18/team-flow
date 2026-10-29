@@ -40,3 +40,17 @@ test.describe('getting around', () => {
     await expect(page.getByText('Maya Chen mentioned you in RF-13')).toBeVisible();
   });
 });
+
+test('the list view sorts by any column and opens a task from the keyboard', async ({ page }) => {
+  await page.goto('/p/RF/list?closed=true');
+  const table = page.getByRole('grid', { name: 'Rover Firmware tasks' });
+  await table.getByRole('columnheader', { name: /Priority/ }).click();
+  await expect(page).toHaveURL(/sort=priority/);
+  await expect(table.getByRole('row').nth(1)).toContainText('Urgent');
+
+  await page.getByLabel('Filter tasks').fill('slip');
+  await expect(table.getByRole('row')).toHaveCount(2);
+  await table.getByRole('row').nth(1).focus();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/task=RF-17/);
+});
