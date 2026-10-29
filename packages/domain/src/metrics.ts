@@ -141,6 +141,44 @@ export function burndown(
   return { committed, days, scopeAdded, scopeRemoved };
 }
 
+export interface FlowPoint {
+  /** End of the day (exclusive bound), UTC. */
+  at: Date;
+  /** Tasks in the sprint not yet started (backlog or to-do statuses). */
+  todo: number;
+  inProgress: number;
+  done: number;
+}
+
+/**
+ * Cumulative flow: for each day of the sprint, how many of its tasks sit in each stage. Bands that widen show
+ * work piling up; a flat "done" band shows nothing finishing. Canceled and deleted tasks are left out, as in the
+ * burndown.
+ */
+export function cumulativeFlow(
+  sprintId: string,
+  changes: readonly TaskChange[],
+  { startsAt, endsAt, now }: { startsAt: Date; endsAt: Date; now: Date },
+): FlowPoint[] {
+  const sorted = [...changes].sort(byTime);
+  const span = Math.max(1, Math.ceil((endsAt.getTime() - startsAt.getTime()) / DAY));
+  const last = Math.min(endsAt.getTime(), now.getTime());
+  const points: FlowPoint[] = [];
+  for (let i = 0; i <= span; i++) {
+    const at = new Date(Math.min(startsAt.getTime() + i * DAY, endsAt.getTime()));
+    if (at.getTime() > last + DAY) break;
+    const point: FlowPoint = { at, todo: 0, inProgress: 0, done: 0 };
+    for (const state of stateAt(sorted, new Date(Math.min(at.getTime(), last))).values()) {
+      if (state.deleted || state.sprintId !== sprintId || state.category === 'canceled') continue;
+      if (state.category === 'completed') point.done++;
+      else if (state.category === 'started') point.inProgress++;
+      else point.todo++;
+    }
+    points.push(point);
+  }
+  return points;
+}
+
 export interface SprintOutcome {
   sprintId: string;
   committedPoints: number;
