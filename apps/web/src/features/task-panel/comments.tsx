@@ -163,6 +163,8 @@ function Composer({ taskId, members }: { taskId: string; members: Member[] }) {
       event.preventDefault();
       submit();
     }
+    // Leave the box with the draft intact; the next Escape closes the panel.
+    if (event.key === 'Escape') event.currentTarget.blur();
   };
 
   return (

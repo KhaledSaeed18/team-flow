@@ -76,6 +76,8 @@ export function WorkflowEditor({ project, canEdit }: { project: Project; canEdit
       <GridList
         aria-label="Workflow statuses"
         items={project.statuses}
+        // Rows hold text fields: Tab moves between controls so arrow keys can move the caret.
+        keyboardNavigationBehavior="tab"
         dragAndDropHooks={dragAndDropHooks}
         className="flex flex-col divide-y divide-line overflow-hidden rounded-card border border-line bg-surface outline-none"
       >
