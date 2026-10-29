@@ -317,4 +317,84 @@ describe('realtime gateway', () => {
     isolated.heartbeat();
     expect(JSON.parse(published.at(-1) ?? '{}').members).toHaveLength(0);
   });
+
+  test('the org channel carries workspace-wide events; personal events go only to their recipients', async () => {
+    const ada = await h.owner('Ivy', 'ivy-org');
+    const linus = await h.join(ada, 'Ned', 'member');
+    const members = await ada.client.members.list();
+    const linusId = members.find((m) => m.name === 'Ned')?.id ?? '';
+    const adaSocket = await connect(url, ada.cookie());
+    const linusSocket = await connect(url, linus.cookie());
+    for (const socket of [adaSocket, linusSocket]) {
+      await socket.next('ready');
+      socket.send({ type: 'subscribe', channel: 'org' });
+      await socket.next('subscribed');
+      socket.send({ type: 'subscribe', channel: 'me' });
+      await socket.next('subscribed');
+    }
+    const publish = (topic: string, payload: Record<string, unknown>) =>
+      gateway.publish({
+        id: crypto.randomUUID(),
+        organizationId: ada.organizationId,
+        topic,
+        payload,
+        at: new Date().toISOString(),
+      });
+
+    publish('label.changed', { labelId: crypto.randomUUID(), projectId: null });
+    publish('task.updated', { projectId: crypto.randomUUID(), taskId: crypto.randomUUID() });
+    publish('project.created', { projectId: crypto.randomUUID() });
+    publish('notifications.created', {
+      recipientMemberIds: [linusId],
+      taskId: crypto.randomUUID(),
+    });
+
+    const topics = async (socket: Awaited<ReturnType<typeof connect>>) =>
+      (await socket.drain('event')).map((m) =>
+        m.type === 'event' ? `${m.channel}:${m.event.topic}` : '',
+      );
+    expect(await topics(adaSocket)).toEqual(['org:label.changed', 'org:project.created']);
+    expect(await topics(linusSocket)).toEqual([
+      'org:label.changed',
+      'org:project.created',
+      'me:notifications.created',
+    ]);
+    adaSocket.close();
+    linusSocket.close();
+  });
+
+  test('a removed member is disconnected with 4403 once sockets are re-checked', async () => {
+    const ada = await h.owner('Kim', 'kim-org');
+    const grace = await h.join(ada, 'Pat', 'member');
+    const socket = await connect(url, grace.cookie());
+    await socket.next('ready');
+    socket.send({ type: 'subscribe', channel: 'org' });
+    await socket.next('subscribed');
+
+    const member = (await ada.client.members.list()).find((m) => m.name === 'Pat');
+    await ada.authPost('/organization/remove-member', { memberIdOrEmail: member?.id });
+    await gateway.revalidate({ organizationId: ada.organizationId });
+    expect(await socket.closed).toBe(4403);
+  });
+
+  test('a socket that closes while subscribing leaves no presence behind', async () => {
+    const ada = await h.owner('Zoe', 'zoe-org');
+    const project = await ada.client.projects.create({ key: 'GH', name: 'Ghost' });
+    const channel = `project:${project.id}` as const;
+    const ghost = await connect(url, ada.cookie());
+    await ghost.next('ready');
+    // Subscribe and presence are queued; the socket closes before the subscribe's database check returns.
+    ghost.send({ type: 'subscribe', channel });
+    ghost.send({ type: 'presence', channel, state: { taskId: null } });
+    ghost.close();
+    await ghost.closed;
+
+    const watcher = await connect(url, ada.cookie());
+    await watcher.next('ready');
+    watcher.send({ type: 'subscribe', channel });
+    await watcher.next('subscribed');
+    const present = await watcher.next('presence', (m) => m.channel === channel);
+    expect(present.members).toEqual([]);
+    watcher.close();
+  });
 });
