@@ -268,6 +268,7 @@ export interface CreateTaskInput {
   estimate?: number | null | undefined;
   assigneeMemberId?: string | null | undefined;
   parentTaskId?: string | null | undefined;
+  sprintId?: string | null | undefined;
   dueDate?: string | null | undefined;
   labelIds?: string[] | undefined;
 }
@@ -313,6 +314,7 @@ export function createTask(scope: Scope, input: CreateTaskInput, now: Date) {
         estimate: input.estimate ?? null,
         assigneeMemberId: input.assigneeMemberId ?? null,
         parentTaskId: input.parentTaskId ?? null,
+        sprintId: input.sprintId ?? null,
         dueDate: input.dueDate ?? null,
         rank: await rankFor(tx, status.id, {}),
         createdByMemberId: tx.memberId,
@@ -327,7 +329,12 @@ export function createTask(scope: Scope, input: CreateTaskInput, now: Date) {
       kind: 'task.created',
       projectId: task.projectId,
       taskId: task.id,
-      changes: [{ field: 'status', from: null, to: { id: status.id, category: status.category } }],
+      // The initial values metrics replay from (docs/ADR-0007).
+      changes: [
+        { field: 'status', from: null, to: { id: status.id, category: status.category } },
+        { field: 'sprintId', from: null, to: task.sprintId },
+        { field: 'estimate', from: null, to: task.estimate },
+      ],
     });
     await emit(tx, 'task.created', {
       taskId: task.id,
@@ -345,6 +352,7 @@ export interface TaskPatch {
   estimate?: number | null;
   assigneeMemberId?: string | null;
   parentTaskId?: string | null;
+  sprintId?: string | null;
   dueDate?: string | null;
   statusId?: string;
   labelIds?: string[];
@@ -357,6 +365,7 @@ const TRACKED = [
   'estimate',
   'assigneeMemberId',
   'parentTaskId',
+  'sprintId',
   'dueDate',
 ] as const;
 
