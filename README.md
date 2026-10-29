@@ -66,6 +66,7 @@ http://localhost:8035.
 ```bash
 bun run db:seed      # optional: a demo workspace with six weeks of history
 bun run check        # biome, typecheck and every test suite — what CI runs
+bun run --cwd apps/web test:e2e   # Playwright journeys against a fresh, seeded stack
 ```
 
 The seed signs you in as `demo@teamflow.dev` with the password `teamflow-demo`.
