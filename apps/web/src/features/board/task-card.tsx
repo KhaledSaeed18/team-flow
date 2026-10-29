@@ -12,6 +12,8 @@ type Label = Outputs['labels']['list'][number];
 export interface CardLookups {
   members: Map<string, Member>;
   labels: Map<string, Label>;
+  /** Sub-task progress by parent task id. */
+  progress: Map<string, { done: number; total: number }>;
 }
 
 export function TaskCard({
@@ -75,7 +77,11 @@ export function TaskCard({
         </Button>
       </div>
 
-      {(labels.length > 0 || assignee || task.priority !== 'none' || task.estimate !== null) && (
+      {(labels.length > 0 ||
+        assignee ||
+        task.priority !== 'none' ||
+        task.estimate !== null ||
+        lookups.progress.has(task.id)) && (
         <div className="mt-2.5 flex items-center gap-2">
           <PriorityIcon priority={task.priority} />
           {labels.map((label) => (
@@ -89,6 +95,11 @@ export function TaskCard({
             </span>
           ))}
           <span className="flex-1" />
+          {lookups.progress.get(task.id) && (
+            <span className="text-2xs text-ink-faint" title="Sub-tasks done">
+              {lookups.progress.get(task.id)?.done}/{lookups.progress.get(task.id)?.total}
+            </span>
+          )}
           {task.estimate !== null && (
             <span className="text-2xs text-ink-faint" title="Estimate">
               {task.estimate}

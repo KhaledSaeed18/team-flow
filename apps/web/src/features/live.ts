@@ -55,6 +55,12 @@ export function useLiveProject(project: Project) {
         });
         void queryClient.invalidateQueries({ queryKey: tasksKey });
         return;
+      case 'task.relations.changed':
+        if (taskId)
+          void queryClient.invalidateQueries({
+            queryKey: orpc.relations.list.key({ input: { taskId } }),
+          });
+        return;
       case 'comment.created':
       case 'comment.updated':
       case 'comment.deleted':
