@@ -37,6 +37,8 @@ interface Item {
   id: string;
   label: string;
   hint?: string;
+  /** A second line, e.g. the comment a search matched. */
+  detail?: string | null;
   icon: ReactNode;
   shortcut?: string;
   run: () => void;
@@ -150,6 +152,7 @@ export function CommandPalette({
           id: `task-${t.id}`,
           label: t.title,
           hint: `${t.identifier}, ${t.statusName}`,
+          detail: t.commentExcerpt && `In a comment: “${t.commentExcerpt}”`,
           icon: (
             <span className="size-2 rounded-full" style={{ backgroundColor: t.projectColor }} />
           ),
@@ -242,7 +245,12 @@ export function CommandPalette({
                         >
                           {item.icon}
                         </span>
-                        <span className="flex-1 truncate">{item.label}</span>
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate">{item.label}</span>
+                          {item.detail && (
+                            <span className="truncate text-ink-faint text-xs">{item.detail}</span>
+                          )}
+                        </span>
                         {item.hint && <span className="text-ink-faint text-xs">{item.hint}</span>}
                         {item.shortcut && (
                           <span className="flex gap-0.5">
