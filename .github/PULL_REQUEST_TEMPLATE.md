@@ -1,51 +1,18 @@
-# What does this PR do?
+## What
 
-<!-- A clear and concise description of the changes and why they were made -->
+<!-- The change, in a few bullets. -->
 
-Closes #<!-- issue number -->
+## Why
 
----
+<!-- The problem it solves. Link the issue or ADR. -->
 
-## Type of Change
+## How it was tested
 
-<!-- Check all that apply -->
-
-- [ ] `feat` — New feature
-- [ ] `fix` — Bug fix
-- [ ] `refactor` — Code change, no feature or fix
-- [ ] `chore` — Maintenance, dependencies, config
-- [ ] `docs` — Documentation only
-- [ ] `test` — Adding or updating tests
-
----
-
-## Changes Made
-
-<!-- List the key changes in this PR -->
-
--
--
--
-
----
-
-## How to Test
-
-<!-- Steps to verify the changes work as expected -->
-
-1.
-2.
-3.
-
----
+<!-- Unit / integration / manual steps. -->
 
 ## Checklist
 
-- [ ] Code follows the project structure and style guidelines
-- [ ] No `any` types introduced
-- [ ] Prisma schema updated and migration generated (if applicable)
-- [ ] `.env.example` updated (if new env variables were added)
-- [ ] All existing tests pass (`pnpm test`)
-- [ ] New tests added for new functionality
-- [ ] PR is focused — one feature or fix only
-- [ ] Branch follows naming convention (`feat/`, `fix/`, etc.)
+- [ ] `bun run check` passes
+- [ ] Tenant-owned data goes through `Scope`; no `organizationId` taken from input
+- [ ] New behaviour has tests
+- [ ] Docs or ADRs updated if a rule or decision changed
