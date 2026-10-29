@@ -1,6 +1,8 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
+import { eq, sql } from 'drizzle-orm';
 import { newId } from '../ids.ts';
 import { members, organizations, users } from '../schema/auth.ts';
+import { activity } from '../schema/tasks.ts';
 import { createScope, type Scope } from '../scope.ts';
 import { createTestDatabase, type TestDatabase } from '../testing.ts';
 import { createProject } from './projects.ts';
@@ -144,6 +146,32 @@ describe('sprints', () => {
     await expect(
       completeSprint(scope, active.id, active.version, foreign.id, day(5)),
     ).rejects.toBeInstanceOf(InvalidReferenceError);
+  });
+
+  test('a history that never recorded an estimate is seeded from the task', async () => {
+    const p = await createProject(scope, { key: 'GAP', name: 'Gap' });
+    const sprint = await createSprint(scope, {
+      projectId: p.project.id,
+      name: 'S',
+      startsAt: day(0),
+      endsAt: day(5),
+    });
+    const task = await createTask(
+      scope,
+      { projectId: p.project.id, title: 'Old', estimate: 8, sprintId: sprint.id },
+      day(-1),
+    );
+    if (!task) throw new Error('setup failed');
+    // Simulate history written before creation recorded the estimate.
+    await t.db
+      .update(activity)
+      .set({
+        changes: sql`(select jsonb_agg(c) from jsonb_array_elements(${activity.changes}) c where c->>'field' <> 'estimate')`,
+      })
+      .where(eq(activity.taskId, task.id));
+
+    const changes = await sprintChanges(scope, sprint.id);
+    expect(changes.find((c) => c.field === 'estimate')).toMatchObject({ taskId: task.id, to: 8 });
   });
 
   test("a task's sprint must belong to the task's project", async () => {
