@@ -18,7 +18,8 @@ import { Route as AuthResetPasswordRouteImport } from './routes/_auth/reset-pass
 import { Route as AuthSignInRouteImport } from './routes/_auth/sign-in'
 import { Route as AuthSignUpRouteImport } from './routes/_auth/sign-up'
 import { Route as AuthVerifyRouteImport } from './routes/_auth/verify'
-import { Route as AppPKeyRouteImport } from './routes/_app/p/$key'
+import { Route as AppPKeyRouteRouteImport } from './routes/_app/p/$key/route'
+import { Route as AppPKeyIndexRouteImport } from './routes/_app/p/$key/index'
 
 const AppRoute = AppRouteImport.update({
   id: '/_app',
@@ -63,10 +64,15 @@ const AuthVerifyRoute = AuthVerifyRouteImport.update({
   path: '/verify',
   getParentRoute: () => AuthRoute,
 } as any)
-const AppPKeyRoute = AppPKeyRouteImport.update({
+const AppPKeyRouteRoute = AppPKeyRouteRouteImport.update({
   id: '/p/$key',
   path: '/p/$key',
   getParentRoute: () => AppRoute,
+} as any)
+const AppPKeyIndexRoute = AppPKeyIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AppPKeyRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -77,7 +83,8 @@ export interface FileRoutesByFullPath {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/verify': typeof AuthVerifyRoute
-  '/p/$key': typeof AppPKeyRoute
+  '/p/$key': typeof AppPKeyRouteRouteWithChildren
+  '/p/$key/': typeof AppPKeyIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof AppIndexRoute
@@ -87,7 +94,7 @@ export interface FileRoutesByTo {
   '/sign-in': typeof AuthSignInRoute
   '/sign-up': typeof AuthSignUpRoute
   '/verify': typeof AuthVerifyRoute
-  '/p/$key': typeof AppPKeyRoute
+  '/p/$key': typeof AppPKeyIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -100,7 +107,8 @@ export interface FileRoutesById {
   '/_auth/sign-up': typeof AuthSignUpRoute
   '/_auth/verify': typeof AuthVerifyRoute
   '/_app/': typeof AppIndexRoute
-  '/_app/p/$key': typeof AppPKeyRoute
+  '/_app/p/$key': typeof AppPKeyRouteRouteWithChildren
+  '/_app/p/$key/': typeof AppPKeyIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -113,6 +121,7 @@ export interface FileRouteTypes {
     | '/sign-up'
     | '/verify'
     | '/p/$key'
+    | '/p/$key/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -135,6 +144,7 @@ export interface FileRouteTypes {
     | '/_auth/verify'
     | '/_app/'
     | '/_app/p/$key'
+    | '/_app/p/$key/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -212,20 +222,39 @@ declare module '@tanstack/react-router' {
       id: '/_app/p/$key'
       path: '/p/$key'
       fullPath: '/p/$key'
-      preLoaderRoute: typeof AppPKeyRouteImport
+      preLoaderRoute: typeof AppPKeyRouteRouteImport
       parentRoute: typeof AppRoute
+    }
+    '/_app/p/$key/': {
+      id: '/_app/p/$key/'
+      path: '/'
+      fullPath: '/p/$key/'
+      preLoaderRoute: typeof AppPKeyIndexRouteImport
+      parentRoute: typeof AppPKeyRouteRoute
     }
   }
 }
 
+interface AppPKeyRouteRouteChildren {
+  AppPKeyIndexRoute: typeof AppPKeyIndexRoute
+}
+
+const AppPKeyRouteRouteChildren: AppPKeyRouteRouteChildren = {
+  AppPKeyIndexRoute: AppPKeyIndexRoute,
+}
+
+const AppPKeyRouteRouteWithChildren = AppPKeyRouteRoute._addFileChildren(
+  AppPKeyRouteRouteChildren,
+)
+
 interface AppRouteChildren {
   AppIndexRoute: typeof AppIndexRoute
-  AppPKeyRoute: typeof AppPKeyRoute
+  AppPKeyRouteRoute: typeof AppPKeyRouteRouteWithChildren
 }
 
 const AppRouteChildren: AppRouteChildren = {
   AppIndexRoute: AppIndexRoute,
-  AppPKeyRoute: AppPKeyRoute,
+  AppPKeyRouteRoute: AppPKeyRouteRouteWithChildren,
 }
 
 const AppRouteWithChildren = AppRoute._addFileChildren(AppRouteChildren)

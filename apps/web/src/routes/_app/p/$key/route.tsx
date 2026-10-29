@@ -1,5 +1,5 @@
 import { createFileRoute, notFound, Outlet } from '@tanstack/react-router';
-import { orpc } from '../../../lib/api.ts';
+import { orpc } from '../../../../lib/api.ts';
 
 /** A project, addressed by its key (`/p/TF`). Loads the project with its workflow for every view below. */
 export const Route = createFileRoute('/_app/p/$key')({
