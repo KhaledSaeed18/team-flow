@@ -15,6 +15,7 @@ export const search = {
       projectColor: hit.project_color,
       statusName: hit.status_name,
       statusCategory: hit.status_category as StatusCategory,
+      commentExcerpt: hit.comment_excerpt,
     })),
   ),
 };
