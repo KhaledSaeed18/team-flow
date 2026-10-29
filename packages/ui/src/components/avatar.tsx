@@ -43,9 +43,11 @@ export interface AvatarProps extends VariantProps<typeof avatar> {
   name: string;
   src?: string | null;
   className?: string;
+  /** The name is already visible next to it: hide the avatar from assistive technology. */
+  decorative?: boolean;
 }
 
-export function Avatar({ name, src, size, className }: AvatarProps) {
+export function Avatar({ name, src, size, className, decorative = false }: AvatarProps) {
   return (
     <span
       className={avatar({ size, className })}
@@ -57,7 +59,7 @@ export function Avatar({ name, src, size, className }: AvatarProps) {
       ) : (
         <span aria-hidden>{initials(name)}</span>
       )}
-      <span className="sr-only">{name}</span>
+      {!decorative && <span className="sr-only">{name}</span>}
     </span>
   );
 }
