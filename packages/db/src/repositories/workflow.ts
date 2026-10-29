@@ -8,7 +8,7 @@ import { and, asc, eq, isNull, sql } from 'drizzle-orm';
 import { projects, workflowStatuses } from '../schema/projects.ts';
 import { activity, tasks } from '../schema/tasks.ts';
 import { inTransaction, type Scope } from '../scope.ts';
-import { emit } from './events.ts';
+import { emit, recordActivity } from './events.ts';
 import { InvalidReferenceError } from './tasks.ts';
 
 export type StatusRow = typeof workflowStatuses.$inferSelect;
@@ -85,6 +85,11 @@ export function createStatus(
         rank: rankAfter(statuses, input.afterId),
       })
       .returning();
+    await recordActivity(tx, {
+      kind: 'workflow.status_created',
+      projectId: input.projectId,
+      changes: [{ field: 'status', from: null, to: input.name }],
+    });
     await emit(tx, 'workflow.changed', { projectId: input.projectId });
     return status ?? null;
   });
@@ -141,6 +146,17 @@ export function updateStatus(
         and(eq(workflowStatuses.organizationId, tx.organizationId), eq(workflowStatuses.id, id)),
       )
       .returning();
+    // Reordering alone is housekeeping; renames, recolors and type changes are worth an audit line.
+    const changes = (['name', 'color', 'category'] as const)
+      .filter((field) => fields[field] !== undefined && fields[field] !== current[field])
+      .map((field) => ({ field, from: current[field], to: fields[field] ?? null }));
+    if (changes.length > 0) {
+      await recordActivity(tx, {
+        kind: 'workflow.status_updated',
+        projectId: current.projectId,
+        changes: [{ field: 'status', from: current.name, to: current.name }, ...changes],
+      });
+    }
     await emit(tx, 'workflow.changed', { projectId: current.projectId });
     return status ?? null;
   });
@@ -197,6 +213,14 @@ export function deleteStatus(scope: Scope, id: string, moveTasksTo: string, now:
       .where(
         and(eq(workflowStatuses.organizationId, tx.organizationId), eq(workflowStatuses.id, id)),
       );
+    await recordActivity(tx, {
+      kind: 'workflow.status_deleted',
+      projectId: current.projectId,
+      changes: [
+        { field: 'status', from: current.name, to: null },
+        { field: 'movedTo', from: null, to: target.name },
+      ],
+    });
     await emit(tx, 'workflow.changed', { projectId: current.projectId, movedTo: target.id });
     return current;
   });
