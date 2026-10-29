@@ -21,6 +21,8 @@ const RECONNECT_MAX_MS = 15_000;
 class RealtimeConnection {
   private socket: WebSocket | null = null;
   private attempts = 0;
+  /** Reconnecting once after a 4403, to tell a replaced session from lost access. */
+  private recovering = false;
   private status: Status = 'closed';
   private readonly statusListeners = new Set<() => void>();
   private readonly channels = new Map<Channel, { refs: number; listeners: Set<EventListener> }>();
@@ -104,15 +106,25 @@ class RealtimeConnection {
       this.receive(JSON.parse(String(event.data)) as ServerMessage),
     );
     socket.addEventListener('close', (event) => {
+      const wasReady = this.connectionId !== null;
       clearInterval(this.heartbeat);
       this.socket = null;
       this.connectionId = null;
       this.setStatus('closed');
       for (const [channel] of this.members) this.setMembers(channel, []);
-      // Access was revoked (removed from the workspace, or signed out elsewhere). Reconnecting would only be refused
-      // again; reloading lets the app show where the person stands now.
-      if (event.code === 4403) {
+      // 4403: the server no longer accepts this socket's session. That can mean access really ended, or only that
+      // this device's session was replaced (changing the password does that). Reconnect once, with the current
+      // cookie; if that is refused too, reload so the app shows where the person stands now.
+      const refusedAgain = this.recovering && (event.code === 4403 || !wasReady);
+      if (refusedAgain) {
         window.location.reload();
+        return;
+      }
+      if (event.code === 4403) {
+        this.recovering = true;
+        // Counts as a reconnect, so listeners refetch whatever was missed meanwhile.
+        this.attempts++;
+        this.ensureOpen();
         return;
       }
       if (this.channels.size === 0) return;
@@ -127,6 +139,7 @@ class RealtimeConnection {
   private receive(message: ServerMessage) {
     switch (message.type) {
       case 'ready': {
+        this.recovering = false;
         const reconnected = this.attempts > 0;
         this.attempts = 0;
         this.connectionId = message.connectionId;

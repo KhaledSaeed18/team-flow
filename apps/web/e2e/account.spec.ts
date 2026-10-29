@@ -39,8 +39,8 @@ test('rename yourself, sign out another device, and change your password', async
   await expect(sessions.getByRole('listitem')).toHaveCount(2);
   await sessions.getByRole('button', { name: 'Sign out of all other devices' }).click();
   await expect(sessions.getByRole('listitem')).toHaveCount(1);
-  await phone.page.reload();
-  await expect(phone.page).toHaveURL(/\/sign-in/);
+  // The signed-out device notices on its own: its live connection is refused and the app returns to sign-in.
+  await expect(phone.page).toHaveURL(/\/sign-in/, { timeout: 15_000 });
 
   const password = page.getByRole('region', { name: 'Password' });
   await password.getByLabel('Current password').fill('not my password');
