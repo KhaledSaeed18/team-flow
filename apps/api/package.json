@@ -7,7 +7,8 @@
     "dev": "bun --env-file=../../.env --watch src/server.ts",
     "start": "bun --env-file=../../.env src/server.ts",
     "typecheck": "tsc --noEmit",
-    "test": "bun test"
+    "test": "bun test",
+    "seed": "bun --env-file=../../.env scripts/seed.ts"
   },
   "devDependencies": {
     "@orpc/client": "^1.16.1",

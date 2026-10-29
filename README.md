@@ -48,8 +48,11 @@ Open http://localhost:5173 and create an account. Emails (verification codes, in
 http://localhost:8035.
 
 ```bash
+bun run db:seed      # optional: a demo workspace with six weeks of history
 bun run check        # biome, typecheck and every test suite — what CI runs
 ```
+
+The seed signs you in as `demo@teamflow.dev` with the password `teamflow-demo`.
 
 ## Documentation
 

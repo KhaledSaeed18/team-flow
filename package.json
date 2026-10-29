@@ -29,7 +29,8 @@
     "infra:reset": "docker compose down -v && docker compose up -d --wait",
     "db:generate": "bun run --cwd packages/db generate",
     "db:migrate": "bun run --cwd packages/db migrate",
-    "db:studio": "bun run --cwd packages/db studio"
+    "db:studio": "bun run --cwd packages/db studio",
+    "db:seed": "bun run --cwd apps/api seed"
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
