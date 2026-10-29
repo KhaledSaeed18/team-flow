@@ -27,3 +27,19 @@ export async function saveTaskDocument(
       set: { state, updatedAt: new Date() },
     });
 }
+
+/**
+ * Store a first version of a document unless one exists, and return whichever is stored. Seeding is then done once:
+ * every later load, on any node, starts from the same state instead of seeding again.
+ */
+export async function seedTaskDocument(
+  scope: Scope,
+  taskId: string,
+  state: Uint8Array,
+): Promise<Uint8Array> {
+  await scope.db
+    .insert(taskDocuments)
+    .values({ organizationId: scope.organizationId, taskId, state })
+    .onConflictDoNothing({ target: [taskDocuments.organizationId, taskDocuments.taskId] });
+  return (await loadTaskDocument(scope, taskId)) ?? state;
+}
