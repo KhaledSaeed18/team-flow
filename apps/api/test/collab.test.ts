@@ -44,6 +44,7 @@ describe('collaborative descriptions', () => {
   let base: string;
   let ada: Awaited<ReturnType<Harness['owner']>>;
   let project: { id: string };
+  let collab: ReturnType<typeof createCollab>;
 
   const open = (cookie: string, taskId: string) => {
     const doc = new Y.Doc();
@@ -62,7 +63,7 @@ describe('collaborative descriptions', () => {
 
   beforeAll(async () => {
     h = await createHarness();
-    const collab = createCollab({
+    collab = createCollab({
       db: h.db,
       auth: h.auth,
       clock: h.clock,
@@ -175,5 +176,75 @@ describe('collaborative descriptions', () => {
       headers: { upgrade: 'websocket' },
     });
     expect(anonymous.status).toBe(401);
+  });
+
+  test('a reconnecting editor does not see a seeded description twice', async () => {
+    const task = await ada.client.tasks.create({
+      projectId: project.id,
+      title: 'Reconnect',
+      description: 'Only once',
+    });
+    const first = open(ada.cookie(), task.id);
+    await first.synced;
+    // The seed is stored straight away, before anyone edits.
+    const scope = createScope(h.db, ada.organizationId, null);
+    expect(await loadTaskDocument(scope, task.id)).not.toBeNull();
+    // Everyone leaves, so the room is dropped; the same local document then reconnects to a new room.
+    const left = new Promise<void>((resolve) =>
+      first.provider.once('connection-close', () => resolve()),
+    );
+    first.provider.disconnect();
+    await left;
+    const resynced = new Promise<void>((resolve) =>
+      first.provider.once('sync', (synced: boolean) => synced && resolve()),
+    );
+    first.provider.connect();
+    await resynced;
+    expect(plainText(first.doc)).toBe('Only once');
+    first.close();
+  });
+
+  test('a description replaced through the API reaches open editors and the stored document', async () => {
+    const task = await ada.client.tasks.create({
+      projectId: project.id,
+      title: 'External',
+      description: 'Old words',
+    });
+    const editor = open(ada.cookie(), task.id);
+    await editor.synced;
+    await collab.replaceDescription(ada.organizationId, task.id, 'New words\nfrom a script');
+    await until(editor.doc, () => plainText(editor.doc).includes('New words'));
+    expect(plainText(editor.doc)).toBe('New words\nfrom a script');
+    editor.close();
+
+    // With nobody connected, the stored document is rewritten instead.
+    await eventually(
+      async () => {
+        await collab.replaceDescription(ada.organizationId, task.id, 'Third version');
+        const later = open(ada.cookie(), task.id);
+        await later.synced;
+        const text = plainText(later.doc);
+        later.close();
+        return text;
+      },
+      (text) => text === 'Third version',
+    );
+  });
+
+  test('a member removed from the workspace is disconnected', async () => {
+    const task = await ada.client.tasks.create({ projectId: project.id, title: 'Revoked' });
+    const pat = await h.join(ada, 'Pat', 'member');
+    const socket = open(pat.cookie(), task.id);
+    await socket.synced;
+    const closed = new Promise<number>((resolve) =>
+      socket.provider.once('connection-close', (event: CloseEvent | null) =>
+        resolve(event?.code ?? 0),
+      ),
+    );
+    const member = (await ada.client.members.list()).find((m) => m.name === 'Pat');
+    await ada.authPost('/organization/remove-member', { memberIdOrEmail: member?.id });
+    await collab.revalidate();
+    expect(await closed).toBe(4403);
+    socket.close();
   });
 });
