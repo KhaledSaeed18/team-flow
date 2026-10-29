@@ -45,7 +45,7 @@ export function rankFor(tasks: readonly Task[], movingId: string, place: Placeme
   return rankBetween(low, high);
 }
 
-const describe = (error: unknown) =>
+const explain = (error: unknown) =>
   (error as { code?: string }).code === 'CONFLICT'
     ? 'Someone changed this task at the same time. The board has been refreshed.'
     : 'The change was not saved. Check your connection and try again.';
@@ -87,7 +87,7 @@ export function useMoveTask(projectId: string) {
     },
     onError: (error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
-      toast({ title: 'Move not saved', description: describe(error), tone: 'danger' });
+      toast({ title: 'Move not saved', description: explain(error), tone: 'danger' });
       void queryClient.invalidateQueries({ queryKey });
     },
   });
@@ -202,7 +202,7 @@ export function useUpdateTask(projectId: string) {
     },
     onError: (error, _variables, context) => {
       if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
-      toast({ title: 'Change not saved', description: describe(error), tone: 'danger' });
+      toast({ title: 'Change not saved', description: explain(error), tone: 'danger' });
       void queryClient.invalidateQueries({ queryKey });
     },
   });

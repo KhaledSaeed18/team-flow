@@ -22,7 +22,7 @@ function ago(date: Date) {
 }
 
 /** One readable sentence per change, from the field-level activity log. */
-function describe(entry: Entry, project: Project, members: Map<string, Member>): string[] {
+function narrate(entry: Entry, project: Project, members: Map<string, Member>): string[] {
   const statusName = (value: unknown) =>
     project.statuses.find((s) => s.id === (value as { id?: string } | null)?.id)?.name ??
     'a removed status';
@@ -63,7 +63,7 @@ export function History({ taskId, project }: { taskId: string; project: Project 
   return (
     <ol className="flex flex-col gap-3">
       {history.data?.flatMap((entry) =>
-        describe(entry, project, byId).map((sentence) => {
+        narrate(entry, project, byId).map((sentence) => {
           const actor = entry.actorMemberId ? byId.get(entry.actorMemberId) : undefined;
           return (
             <li key={`${entry.id}:${sentence}`} className="flex items-start gap-2 text-xs">

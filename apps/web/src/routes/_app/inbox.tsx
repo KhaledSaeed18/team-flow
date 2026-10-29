@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { Avatar, Button } from '@teamflow/ui';
-import { describe, inboxQuery, linkFor } from '../../features/inbox/inbox.ts';
+import { inboxQuery, linkFor, summarize } from '../../features/inbox/inbox.ts';
 import { orpc } from '../../lib/api.ts';
 
 export const Route = createFileRoute('/_app/inbox')({ component: Inbox });
@@ -59,7 +59,7 @@ function Inbox() {
                 <Avatar name={n.actorName ?? 'TeamFlow'} src={n.actorImage} size="sm" decorative />
                 <span className="min-w-0 flex-1">
                   <span className={`block text-sm ${n.readAt ? 'text-ink-muted' : 'font-medium'}`}>
-                    {describe(n)}
+                    {summarize(n)}
                     {!n.readAt && <span className="sr-only"> (unread)</span>}
                   </span>
                   <span className="block truncate text-ink-muted text-xs">
