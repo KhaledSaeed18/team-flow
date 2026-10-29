@@ -1,5 +1,6 @@
-import { Plus } from '@phosphor-icons/react';
+import { ChartLine, Plus } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
+import { Link } from '@tanstack/react-router';
 import { isClosed } from '@teamflow/domain';
 import { Avatar, Button, Dialog, Select, SelectItem, TextField } from '@teamflow/ui';
 import { useMemo, useState } from 'react';
@@ -85,20 +86,29 @@ export function Backlog({
             onDrop={(taskId) => moveTo(taskId, sprint.id)}
             onOpenTask={onOpenTask}
             actions={
-              sprint.status === 'planned' ? (
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  isPending={actions.start.isPending}
-                  onPress={() => actions.start.mutate({ id: sprint.id, version: sprint.version })}
+              <>
+                <Link
+                  to="/p/$key/sprints/$sprintId"
+                  params={{ key: project.key, sprintId: sprint.id }}
+                  className="focus-ring inline-flex h-7 items-center gap-1.5 rounded-control px-2 text-ink-muted text-xs outline-none hover:bg-lane hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold"
                 >
-                  Start sprint
-                </Button>
-              ) : (
-                <Button size="sm" variant="primary" onPress={() => setCompleting(sprint)}>
-                  Complete sprint
-                </Button>
-              )
+                  <ChartLine aria-hidden /> Report
+                </Link>
+                {sprint.status === 'planned' ? (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    isPending={actions.start.isPending}
+                    onPress={() => actions.start.mutate({ id: sprint.id, version: sprint.version })}
+                  >
+                    Start sprint
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="primary" onPress={() => setCompleting(sprint)}>
+                    Complete sprint
+                  </Button>
+                )}
+              </>
             }
           />
         );
