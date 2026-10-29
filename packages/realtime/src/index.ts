@@ -9,7 +9,12 @@ import { z } from 'zod';
 
 const Uuid = z.uuid();
 
-export const Channel = z.union([z.literal('org'), z.templateLiteral(['project:', Uuid])]);
+/** `me` is the socket's own member: notifications and anything else addressed to one person. */
+export const Channel = z.union([
+  z.literal('org'),
+  z.literal('me'),
+  z.templateLiteral(['project:', Uuid]),
+]);
 export type Channel = z.infer<typeof Channel>;
 
 export const projectChannel = (projectId: string): Channel => `project:${projectId}`;

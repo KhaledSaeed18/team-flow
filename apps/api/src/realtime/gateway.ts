@@ -67,7 +67,8 @@ export function createGateway({
   now = Date.now,
 }: GatewayOptions) {
   let server: Server<SocketData> | null = null;
-  const topicOf = (organizationId: string, channel: Channel) => `${organizationId}:${channel}`;
+  const topicOf = (organizationId: string, channel: Channel, memberId?: string) =>
+    channel === 'me' ? `${organizationId}:member:${memberId}` : `${organizationId}:${channel}`;
 
   /** topic → connectionId → entry. Local entries never expire; remote ones need a heartbeat. */
   const presence = new Map<
@@ -112,7 +113,7 @@ export function createGateway({
   ): Promise<'ok' | 'FORBIDDEN' | 'NOT_FOUND'> {
     const membership = await findMembership(db, ws.data.organizationId, ws.data.userId);
     if (!membership) return 'FORBIDDEN';
-    if (channel === 'org') return 'ok';
+    if (channel === 'org' || channel === 'me') return 'ok';
     const projectId = channel.slice('project:'.length);
     const scope = createScope(db, ws.data.organizationId, membership.id);
     return (await findProject(scope, projectId)) ? 'ok' : 'NOT_FOUND';
@@ -130,7 +131,7 @@ export function createGateway({
           if (verdict === 'FORBIDDEN') ws.close(4403, 'membership revoked');
           return;
         }
-        ws.subscribe(topicOf(ws.data.organizationId, message.channel));
+        ws.subscribe(topicOf(ws.data.organizationId, message.channel, ws.data.memberId));
         ws.data.channels.add(message.channel);
         send(ws, { type: 'subscribed', channel: message.channel });
         // Show the newcomer who is already here.
@@ -145,11 +146,11 @@ export function createGateway({
       case 'unsubscribe':
         if (!ws.data.channels.delete(message.channel)) return;
         setPresence(ws, message.channel, null);
-        ws.unsubscribe(topicOf(ws.data.organizationId, message.channel));
+        ws.unsubscribe(topicOf(ws.data.organizationId, message.channel, ws.data.memberId));
         return;
       case 'presence':
-        // Presence is only accepted on channels the socket was authorized for.
-        if (!ws.data.channels.has(message.channel)) {
+        // Presence is only accepted on shared channels the socket was authorized for.
+        if (message.channel === 'me' || !ws.data.channels.has(message.channel)) {
           send(ws, { type: 'error', code: 'FORBIDDEN', channel: message.channel });
           return;
         }
@@ -225,6 +226,21 @@ export function createGateway({
       deliver('org');
       const projectId = event.payload.projectId;
       if (typeof projectId === 'string') deliver(`project:${projectId}`);
+      // Personal events go to each recipient's own `me` channel, which is keyed by member id server-side.
+      const recipients = event.payload.recipientMemberIds;
+      if (Array.isArray(recipients)) {
+        for (const memberId of recipients) {
+          if (typeof memberId !== 'string') continue;
+          server.publish(
+            `${organizationId}:member:${memberId}`,
+            JSON.stringify({
+              type: 'event',
+              channel: 'me',
+              event: domainEvent,
+            } satisfies ServerMessage),
+          );
+        }
+      }
     },
 
     /** Apply a presence change from another node. */

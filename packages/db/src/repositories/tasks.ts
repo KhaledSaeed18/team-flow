@@ -10,6 +10,7 @@ import { StaleWriteError } from '../errors.ts';
 import { labels, projects, workflowStatuses } from '../schema/projects.ts';
 import { activity, type FieldChange, taskLabels, tasks } from '../schema/tasks.ts';
 import { inTransaction, type Scope } from '../scope.ts';
+import { notifyAssigned } from './collaboration.ts';
 import { diff, emit, recordActivity } from './events.ts';
 
 export type TaskRow = typeof tasks.$inferSelect;
@@ -348,6 +349,7 @@ export function createTask(scope: Scope, input: CreateTaskInput, now: Date) {
       projectId: task.projectId,
       version: task.version,
     });
+    await notifyAssigned(tx, task.id, task.assigneeMemberId);
     return { ...task, labelIds: [...new Set(input.labelIds ?? [])].sort() };
   });
 }
@@ -465,6 +467,9 @@ async function applyChange(
     projectId: updated.projectId,
     version: updated.version,
   });
+  if (updated.assigneeMemberId !== current.assigneeMemberId) {
+    await notifyAssigned(tx, updated.id, updated.assigneeMemberId);
+  }
   return { ...updated, labelIds };
 }
 
