@@ -1,5 +1,12 @@
 import { useQuery } from '@tanstack/react-query';
-import { comparePriority, isClosed, type Priority } from '@teamflow/domain';
+import type { LIST_SORTS } from '@teamflow/contract';
+import {
+  comparePriority,
+  isClosed,
+  matchesFilter,
+  type Priority,
+  type TaskFilter,
+} from '@teamflow/domain';
 import { Avatar } from '@teamflow/ui';
 import { useMemo } from 'react';
 import {
@@ -19,15 +26,7 @@ import { PRIORITY_LABEL, PriorityIcon } from '../board/priority-icon.tsx';
 import { sprintsQuery } from '../sprints/queries.ts';
 import { type Project, type Task, tasksQuery } from '../tasks.ts';
 
-export type SortColumn =
-  | 'identifier'
-  | 'title'
-  | 'status'
-  | 'priority'
-  | 'assignee'
-  | 'estimate'
-  | 'sprint'
-  | 'updated';
+export type SortColumn = (typeof LIST_SORTS)[number];
 
 const updatedFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 'numeric' });
 
@@ -37,15 +36,16 @@ const updatedFormat = new Intl.DateTimeFormat(undefined, { month: 'short', day: 
  */
 export function TaskTable({
   project,
-  query,
-  showClosed,
+  filter,
+  memberId,
   sort,
   onSortChange,
   onOpenTask,
 }: {
   project: Project;
-  query: string;
-  showClosed: boolean;
+  filter: TaskFilter;
+  /** The viewer, for the `me` assignee filter. */
+  memberId: string | null;
   sort: SortDescriptor;
   onSortChange: (sort: SortDescriptor) => void;
   onOpenTask: (task: Task) => void;
@@ -68,12 +68,8 @@ export function TaskTable({
   );
 
   const rows = useMemo(() => {
-    const needle = query.trim().toLowerCase();
-    const filtered = (tasks.data ?? []).filter((t) => {
-      const status = statusById.get(t.statusId);
-      if (!showClosed && status && isClosed(status.category)) return false;
-      return !needle || `${t.identifier} ${t.title}`.toLowerCase().includes(needle);
-    });
+    const context = { memberId, categoryOf: (id: string) => statusById.get(id)?.category };
+    const filtered = (tasks.data ?? []).filter((t) => matchesFilter(t, filter, context));
     const value = (t: Task): string | number => {
       switch (sort.column as SortColumn) {
         case 'identifier':
@@ -102,7 +98,7 @@ export function TaskTable({
       const y = value(b);
       return (x < y ? -1 : x > y ? 1 : b.number - a.number) * direction;
     });
-  }, [tasks.data, query, showClosed, sort, statusById, memberById, sprintById]);
+  }, [tasks.data, filter, memberId, sort, statusById, memberById, sprintById]);
 
   const open = (key: Key) => {
     const task = rows.find((t) => t.id === key);
@@ -150,7 +146,7 @@ export function TaskTable({
           dependencies={[statusById, memberById, sprintById]}
           renderEmptyState={() => (
             <p className="p-10 text-center text-ink-muted text-sm">
-              {query ? `No tasks match “${query}”.` : 'No tasks to show.'}
+              {(tasks.data ?? []).length > 0 ? 'No tasks match these filters.' : 'No tasks yet.'}
             </p>
           )}
         >
