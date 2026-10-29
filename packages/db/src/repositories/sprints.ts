@@ -133,17 +133,50 @@ export async function sprintChanges(scope: Scope, sprintId: string): Promise<Tas
     .orderBy(asc(activity.createdAt), asc(activity.id));
 
   const changes: TaskChange[] = [];
+  const firstSeen = new Map<string, Date>();
+  const seeded = new Map<string, Set<string>>();
+  const firstFrom = new Map<string, Map<string, unknown>>();
   for (const row of rows) {
     if (!row.taskId) continue;
+    if (!firstSeen.has(row.taskId)) firstSeen.set(row.taskId, row.at);
     if (row.kind === 'task.deleted')
       changes.push({ taskId: row.taskId, at: row.at, field: 'deleted', to: true });
     for (const change of row.changes) {
-      if (change.field === 'status' || change.field === 'sprintId' || change.field === 'estimate') {
-        changes.push({ taskId: row.taskId, at: row.at, field: change.field, to: change.to });
+      if (change.field !== 'status' && change.field !== 'sprintId' && change.field !== 'estimate')
+        continue;
+      const fields = seeded.get(row.taskId) ?? new Set();
+      if (!fields.has(change.field)) {
+        fields.add(change.field);
+        seeded.set(row.taskId, fields);
+        const froms = firstFrom.get(row.taskId) ?? new Map();
+        froms.set(change.field, change.from);
+        firstFrom.set(row.taskId, froms);
       }
+      changes.push({ taskId: row.taskId, at: row.at, field: change.field, to: change.to });
     }
   }
-  return changes;
+
+  // Histories written before creation recorded every field (or imported without it) start with a gap. Seed the
+  // estimate from the first change's "from", or else from the task's current value, at the task's first entry.
+  const current = await scope.db
+    .select({ id: tasks.id, estimate: tasks.estimate })
+    .from(tasks)
+    .where(and(eq(tasks.organizationId, scope.organizationId), inArray(tasks.id, ids)));
+  const seeds: TaskChange[] = [];
+  for (const task of current) {
+    const at = firstSeen.get(task.id);
+    if (!at) continue;
+    const firstEstimate = firstFrom.get(task.id)?.get('estimate');
+    if (firstEstimate === null) continue; // the history starts with an explicit "no estimate"
+    seeds.push({
+      taskId: task.id,
+      at,
+      field: 'estimate',
+      to: firstEstimate === undefined ? task.estimate : firstEstimate,
+    });
+  }
+  // Seeds go first so a recorded value at the same instant wins.
+  return [...seeds, ...changes].sort((a, b) => a.at.getTime() - b.at.getTime());
 }
 
 /**
