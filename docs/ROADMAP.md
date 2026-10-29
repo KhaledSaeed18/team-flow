@@ -8,13 +8,13 @@ Work lands as small pull requests into `dev`; `main` receives releases.
 | M0 Foundation                      | Done                                              |
 | M1 Data, identity and workspaces   | Done                                              |
 | M2 Projects, workflows and tasks   | Done                                              |
-| M3 Web app shell                   | Done (list view moves to M8 with saved views)     |
+| M3 Web app shell                   | Done (list view shipped with M8)                  |
 | M4 Real-time                       | Done                                              |
 | M5 Planning and insight            | Done                                              |
 | M6 Collaboration and notifications | Done except email digests                         |
 | M7 Collaborative documents         | Done                                              |
 | M8 Search and keyboard             | Done                                              |
-| M9 Integrations and API            | Planned                                           |
+| M9 Public API                      | Done                                              |
 | M10 Ship                           | E2E and seed done; site next; deployment deferred |
 
 ## M0 — Foundation
@@ -78,10 +78,14 @@ integration tests against a real database.
 
 - Postgres full-text search, command palette, shortcut layer, list filters and private or shared saved views.
 
-## M9 — Integrations and API
+## M9 — Public API
 
-- GitHub App: link PRs/commits by task key, auto-transition on merge.
-- Personal access tokens, outgoing webhooks with signed payloads and retries.
+- Personal access tokens: hashed at rest, read-only or read-write, optional expiry, scoped to one workspace,
+  accepted only on the REST API (`/api/v1`), and never able to manage tokens themselves.
+- The OpenAPI document and Scalar reference describe bearer-token auth.
+
+Out of scope for now, so the project stays fully local: the GitHub App (linking PRs by task key) and outgoing
+webhooks.
 
 ## M10 — Ship
 
