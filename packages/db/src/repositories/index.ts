@@ -1,3 +1,4 @@
+export * from './attachments.ts';
 export * from './collaboration.ts';
 export * from './documents.ts';
 export * from './events.ts';

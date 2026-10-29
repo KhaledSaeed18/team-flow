@@ -3,6 +3,7 @@ import type {
   InferContractRouterInputs,
   InferContractRouterOutputs,
 } from '@orpc/contract';
+import { attachments } from './routers/attachments.ts';
 import { comments, notifications } from './routers/collaboration.ts';
 import { labels } from './routers/labels.ts';
 import { me } from './routers/me.ts';
@@ -26,6 +27,7 @@ export const contract = {
   notifications,
   search,
   relations,
+  attachments,
 };
 
 export type Contract = typeof contract;
@@ -34,6 +36,7 @@ export type Inputs = InferContractRouterInputs<Contract>;
 export type Outputs = InferContractRouterOutputs<Contract>;
 
 export { base } from './base.ts';
+export * from './routers/attachments.ts';
 export * from './routers/collaboration.ts';
 export * from './routers/labels.ts';
 export * from './routers/members.ts';

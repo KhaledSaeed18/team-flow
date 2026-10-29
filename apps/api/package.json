@@ -29,6 +29,7 @@
     "@teamflow/domain": "workspace:*",
     "@teamflow/email": "workspace:*",
     "@teamflow/realtime": "workspace:*",
+    "aws4fetch": "^1.0.20",
     "hono": "^4.13.14",
     "lib0": "^0.2.119",
     "pg-boss": "^12.38.0",

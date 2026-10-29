@@ -9,6 +9,7 @@ import { secureHeaders } from 'hono/secure-headers';
 import type { Deps, RequestContext } from './context.ts';
 import { generateOpenApi, referencePage } from './openapi.ts';
 import { router } from './routers/index.ts';
+import { uploadAttachment } from './upload.ts';
 
 export interface AppOptions {
   apiUrl: string;
@@ -79,6 +80,8 @@ export function createApp(deps: Deps, options: AppOptions) {
   const spec = generateOpenApi(options.apiUrl);
   app.get('/api/openapi.json', async (c) => c.json(await spec));
   app.get('/api/docs', (c) => c.html(referencePage('/api/openapi.json')));
+
+  app.post('/api/tasks/:taskId/attachments', uploadAttachment(deps));
 
   const context = async (headers: Headers, id: string): Promise<RequestContext> => ({
     ...deps,

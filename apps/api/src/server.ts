@@ -10,6 +10,7 @@ import { readEnv } from './env.ts';
 import { createLogger } from './logger.ts';
 import { createGateway, type SocketData } from './realtime/gateway.ts';
 import { listen, presenceNotifier } from './realtime/listen.ts';
+import { createS3Storage } from './storage.ts';
 
 const env = readEnv();
 const logger = createLogger(env.LOG_LEVEL);
@@ -45,8 +46,16 @@ const auth = createAuth({
   },
 });
 
+const storage = await createS3Storage({
+  endpoint: env.S3_ENDPOINT,
+  region: env.S3_REGION,
+  bucket: env.S3_BUCKET,
+  accessKeyId: env.S3_ACCESS_KEY_ID,
+  secretAccessKey: env.S3_SECRET_ACCESS_KEY,
+});
+
 const app = createApp(
-  { db: database.db, auth, clock: systemClock, logger },
+  { db: database.db, auth, clock: systemClock, logger, storage },
   { apiUrl: env.API_URL, webUrl: env.WEB_URL },
 );
 

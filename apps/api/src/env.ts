@@ -9,6 +9,11 @@ const Env = z.object({
   DATABASE_URL: z.url(),
   DATABASE_POOL_MAX: z.coerce.number().int().positive().default(10),
   BETTER_AUTH_SECRET: z.string().min(32),
+  S3_ENDPOINT: z.url().default('http://localhost:9100'),
+  S3_REGION: z.string().default('us-east-1'),
+  S3_BUCKET: z.string().default('teamflow-attachments'),
+  S3_ACCESS_KEY_ID: z.string().default('teamflow'),
+  S3_SECRET_ACCESS_KEY: z.string().default('teamflow-secret'),
   GITHUB_CLIENT_ID: z.string().optional(),
   GITHUB_CLIENT_SECRET: z.string().optional(),
 });

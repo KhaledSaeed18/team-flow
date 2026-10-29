@@ -22,6 +22,7 @@ import { orpc } from '../../lib/api.ts';
 import { meQuery } from '../../lib/session.ts';
 import { PRIORITY_LABEL, PriorityIcon } from '../board/priority-icon.tsx';
 import { type Project, type Task, tasksQuery, useUpdateTask } from '../tasks.ts';
+import { Attachments } from './attachments.tsx';
 import { Comments } from './comments.tsx';
 import { DescriptionEditor } from './description-editor.tsx';
 import { History } from './history.tsx';
@@ -211,6 +212,11 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
       <section aria-label="Linked tasks" className="border-line border-t px-5 py-4">
         <h2 className="mb-2 font-medium text-ink-muted text-xs">Linked tasks</h2>
         <Relations task={task} canEdit={canEdit} onOpen={openTask} />
+      </section>
+
+      <section aria-label="Attachments" className="border-line border-t px-5 py-4">
+        <h2 className="mb-2 font-medium text-ink-muted text-xs">Attachments</h2>
+        <Attachments taskId={task.id} canEdit={canEdit} />
       </section>
 
       <section aria-label="Comments" className="border-line border-t px-5 py-4">
