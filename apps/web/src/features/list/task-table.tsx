@@ -108,7 +108,7 @@ export function TaskTable({
   const header =
     'sticky top-0 z-10 h-9 cursor-default border-line border-b bg-canvas px-3 text-left font-medium text-ink-muted text-xs outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold data-[focus-visible]:-outline-offset-2';
   const cell =
-    'truncate px-3 text-sm outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold data-[focus-visible]:-outline-offset-2';
+    'truncate px-3 text-sm leading-10 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold data-[focus-visible]:-outline-offset-2';
   const sortable = (id: SortColumn, label: string, width?: number) => (
     <Column id={id} allowsSorting isRowHeader={id === 'title'} width={width} className={header}>
       {({ sortDirection }) => (
