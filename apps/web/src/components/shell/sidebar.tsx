@@ -82,6 +82,34 @@ export function Sidebar({ me, onCreateProject }: { me: Me; onCreateProject: () =
           <p className="px-2 py-1 text-ink-faint text-xs">No projects yet.</p>
         )}
       </div>
+      {can(role, { project: ['archive'] }) && <ArchivedProjects />}
     </nav>
+  );
+}
+
+/** Archived projects, out of the way but reachable, so they can be restored from their settings. */
+function ArchivedProjects() {
+  const all = useQuery(orpc.projects.list.queryOptions({ input: { includeArchived: true } }));
+  const archived = (all.data ?? []).filter((p) => p.archivedAt);
+  if (archived.length === 0) return null;
+  return (
+    <details className="group mt-auto">
+      <summary className="cursor-default list-none rounded-control px-2 py-1 font-medium text-ink-muted text-xs outline-none hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold">
+        Archived ({archived.length})
+      </summary>
+      <div className="mt-0.5 flex flex-col gap-0.5">
+        {archived.map((project) => (
+          <Link
+            key={project.id}
+            to="/p/$key/settings"
+            params={{ key: project.key }}
+            className="focus-ring flex items-center gap-2 rounded-control px-2 py-1.5 text-ink-faint text-sm outline-none hover:bg-lane hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold"
+          >
+            <span className="flex-1 truncate">{project.name}</span>
+            <span className="text-2xs">{project.key}</span>
+          </Link>
+        ))}
+      </div>
+    </details>
   );
 }

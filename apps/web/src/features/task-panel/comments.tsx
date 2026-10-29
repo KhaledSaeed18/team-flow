@@ -1,9 +1,10 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import type { Outputs } from '@teamflow/contract';
 import { Avatar, Button, toast } from '@teamflow/ui';
-import { type KeyboardEvent, useId, useMemo, useRef, useState } from 'react';
+import { type KeyboardEvent, type ReactNode, useId, useMemo, useRef, useState } from 'react';
 import { orpc } from '../../lib/api.ts';
 import { meQuery } from '../../lib/session.ts';
+import { findMentions } from './mentions.ts';
 import { Reactions } from './reactions.tsx';
 
 type Member = Outputs['members']['list'][number];
@@ -18,26 +19,22 @@ const time = new Intl.DateTimeFormat(undefined, {
 
 /** Render `@Name` tokens for mentioned members as emphasised text. */
 function Body({ comment, members }: { comment: Comment; members: Member[] }) {
-  const names = members.filter((m) => comment.mentions.includes(m.id)).map((m) => `@${m.name}`);
-  if (names.length === 0) return <>{comment.body}</>;
-  const pattern = new RegExp(
-    `(${names.map((n) => n.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`,
-    'g',
-  );
-  return (
-    <>
-      {comment.body.split(pattern).map((part, i) =>
-        names.includes(part) ? (
-          // biome-ignore lint/suspicious/noArrayIndexKey: split parts have no identity beyond position
-          <strong key={i} className="font-medium text-ink">
-            {part}
-          </strong>
-        ) : (
-          part
-        ),
-      )}
-    </>
-  );
+  const mentioned = members.filter((m) => comment.mentions.includes(m.id));
+  const found = findMentions(comment.body, mentioned);
+  if (found.length === 0) return <>{comment.body}</>;
+  const parts: ReactNode[] = [];
+  let at = 0;
+  for (const mention of found) {
+    parts.push(comment.body.slice(at, mention.start));
+    parts.push(
+      <strong key={mention.start} className="font-medium text-ink">
+        {comment.body.slice(mention.start, mention.end)}
+      </strong>,
+    );
+    at = mention.end;
+  }
+  parts.push(comment.body.slice(at));
+  return <>{parts}</>;
 }
 
 export function Comments({ taskId }: { taskId: string }) {
@@ -132,8 +129,9 @@ function Composer({ taskId, members }: { taskId: string; members: Member[] }) {
 
   const submit = () => {
     const text = body.trim();
-    if (!text) return;
-    const mentions = members.filter((m) => text.includes(`@${m.name}`)).map((m) => m.id);
+    // One post at a time: a second ⌘Enter while the first is on its way would post the comment twice.
+    if (!text || post.isPending) return;
+    const mentions = [...new Set(findMentions(text, members).map((m) => m.member.id))];
     post.mutate({ taskId, body: text, mentions });
   };
 

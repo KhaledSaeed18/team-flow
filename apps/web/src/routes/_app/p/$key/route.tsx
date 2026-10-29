@@ -10,15 +10,23 @@ import { TaskPanel } from '../../../../features/task-panel/task-panel.tsx';
 import { tasksQuery } from '../../../../features/tasks.ts';
 import { orpc } from '../../../../lib/api.ts';
 import { usePresence, useRealtimeStatus } from '../../../../lib/realtime.ts';
+import { lenient } from '../../../../lib/search.ts';
 
 /** A project, addressed by its key (`/p/TF`). Loads the project with its workflow for every view below. */
 export const Route = createFileRoute('/_app/p/$key')({
-  validateSearch: z.object({ task: z.string().optional() }),
+  validateSearch: lenient(z.object({ task: z.string().max(40).optional() })),
   loader: async ({ context, params }) => {
     const projects = await context.queryClient.ensureQueryData(
       orpc.projects.list.queryOptions({ input: {} }),
     );
-    const summary = projects.find((p) => p.key === params.key);
+    // Archived projects stay reachable by their address, so they can be read and restored.
+    const summary =
+      projects.find((p) => p.key === params.key) ??
+      (
+        await context.queryClient.ensureQueryData(
+          orpc.projects.list.queryOptions({ input: { includeArchived: true } }),
+        )
+      ).find((p) => p.key === params.key);
     if (!summary) throw notFound();
     return context.queryClient.ensureQueryData(
       orpc.projects.get.queryOptions({ input: { id: summary.id } }),

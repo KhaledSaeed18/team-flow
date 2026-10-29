@@ -6,12 +6,13 @@ import { Board } from '../../../../features/board/board.tsx';
 import { useProjectView } from '../../../../features/project-context.tsx';
 import { sprintsQuery } from '../../../../features/sprints/queries.ts';
 import { tasksQuery } from '../../../../features/tasks.ts';
+import { lenient } from '../../../../lib/search.ts';
 
 const ALL = 'all';
 
 export const Route = createFileRoute('/_app/p/$key/')({
   /** `sprint`: a sprint id, `all`, or absent for "the active sprint if there is one". */
-  validateSearch: z.object({ sprint: z.string().optional() }),
+  validateSearch: lenient(z.object({ sprint: z.string().max(64).optional() })),
   loader: async ({ context, parentMatchPromise }) => {
     const parent = await parentMatchPromise;
     if (!parent.loaderData) return;

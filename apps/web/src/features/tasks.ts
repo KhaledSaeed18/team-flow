@@ -1,4 +1,4 @@
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { type QueryClient, useMutation, useQueryClient } from '@tanstack/react-query';
 import type { Outputs } from '@teamflow/contract';
 import { type Rank, rankBetween } from '@teamflow/domain';
 import { toast } from '@teamflow/ui';
@@ -45,6 +45,46 @@ export function rankFor(tasks: readonly Task[], movingId: string, place: Placeme
   return rankBetween(low, high);
 }
 
+const writesScope = (projectId: string) => ({ id: `project-${projectId}-writes` });
+
+type QueuedWrite = { id: string; patch?: TaskPatch; place?: Placement };
+
+/**
+ * A confirmed task, with the edits still queued behind it laid back on top. Without this the server's copy would
+ * wipe a later edit's optimistic change until that edit is confirmed too.
+ */
+function withQueued(
+  queryClient: QueryClient,
+  projectId: string,
+  task: Task,
+  tasks: readonly Task[],
+  done: unknown,
+): Task {
+  const queued = queryClient
+    .getMutationCache()
+    .findAll({ status: 'pending' })
+    .filter((m) => m.options.scope?.id === writesScope(projectId).id && m.state.variables !== done)
+    .map((m) => m.state.variables as QueuedWrite | undefined);
+  let merged = task;
+  for (const write of queued) {
+    if (write?.id !== task.id) continue;
+    if (write.patch) merged = { ...merged, ...write.patch };
+    if (write.place) {
+      const place = write.place;
+      merged = { ...merged, statusId: place.statusId, rank: rankFor(tasks, task.id, place) };
+    }
+  }
+  return merged;
+}
+
+/** Put back the fields one failed write changed, keeping the task's current version and everything else. */
+function revert(task: Task, before: Task | undefined, fields: readonly (keyof Task)[]): Task {
+  if (!before) return task;
+  const restored: Partial<Task> = {};
+  for (const field of fields) Object.assign(restored, { [field]: before[field] });
+  return { ...task, ...restored };
+}
+
 const explain = (error: unknown) =>
   (error as { code?: string }).code === 'CONFLICT'
     ? 'Someone changed this task at the same time. The board has been refreshed.'
@@ -62,7 +102,7 @@ export function useMoveTask(projectId: string) {
 
   return useMutation({
     mutationKey: ['tasks', 'move'],
-    scope: { id: `project-${projectId}-writes` },
+    scope: writesScope(projectId),
     mutationFn: ({ id, place }: { id: string; place: Placement }) => {
       const task = current(id);
       if (!task) throw new Error('task not in cache');
@@ -80,13 +120,18 @@ export function useMoveTask(projectId: string) {
       }
       return { previous };
     },
-    onSuccess: (task) => {
+    onSuccess: (task, variables) => {
       queryClient.setQueryData(queryKey, (tasks) =>
-        tasks?.map((t) => (t.id === task.id ? task : t)),
+        tasks?.map((t) =>
+          t.id === task.id ? withQueued(queryClient, projectId, task, tasks, variables) : t,
+        ),
       );
     },
-    onError: (error, _variables, context) => {
-      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+    onError: (error, { id }, context) => {
+      const before = context?.previous?.find((t) => t.id === id);
+      queryClient.setQueryData(queryKey, (tasks) =>
+        tasks?.map((t) => (t.id === id ? revert(t, before, ['statusId', 'rank']) : t)),
+      );
       toast({ title: 'Move not saved', description: explain(error), tone: 'danger' });
       void queryClient.invalidateQueries({ queryKey });
     },
@@ -99,6 +144,8 @@ export function useCreateTask(project: Project) {
   const queryKey = tasksQuery(project.id).queryKey;
 
   return useMutation({
+    // In the same queue as moves and edits: a card dragged right after quick add moves once it exists.
+    scope: writesScope(project.id),
     mutationFn: (input: {
       id: string;
       title: string;
@@ -179,7 +226,7 @@ export function useUpdateTask(projectId: string) {
 
   return useMutation({
     mutationKey: ['tasks', 'update'],
-    scope: { id: `project-${projectId}-writes` },
+    scope: writesScope(projectId),
     mutationFn: ({ id, patch }: { id: string; patch: TaskPatch }) => {
       const task = current(id);
       if (!task) throw new Error('task not in cache');
@@ -193,16 +240,23 @@ export function useUpdateTask(projectId: string) {
       );
       return { previous };
     },
-    onSuccess: (task) => {
+    onSuccess: (task, variables) => {
       queryClient.setQueryData(queryKey, (tasks) =>
-        tasks?.map((t) => (t.id === task.id ? task : t)),
+        tasks?.map((t) =>
+          t.id === task.id ? withQueued(queryClient, projectId, task, tasks, variables) : t,
+        ),
       );
       void queryClient.invalidateQueries({
         queryKey: orpc.tasks.history.key({ input: { id: task.id } }),
       });
     },
-    onError: (error, _variables, context) => {
-      if (context?.previous) queryClient.setQueryData(queryKey, context.previous);
+    onError: (error, { id, patch }, context) => {
+      const before = context?.previous?.find((t) => t.id === id);
+      queryClient.setQueryData(queryKey, (tasks) =>
+        tasks?.map((t) =>
+          t.id === id ? revert(t, before, Object.keys(patch) as (keyof Task)[]) : t,
+        ),
+      );
       toast({ title: 'Change not saved', description: explain(error), tone: 'danger' });
       void queryClient.invalidateQueries({ queryKey });
     },

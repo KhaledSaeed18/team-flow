@@ -198,13 +198,7 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
           </NumberField>
         </Property>
         <Property label="Due date">
-          <input
-            type="date"
-            aria-label="Due date"
-            value={task.dueDate ?? ''}
-            onChange={(event) => save({ dueDate: event.target.value || null })}
-            className="h-9 rounded-control border border-line bg-surface px-2.5 text-sm outline-none focus-visible:outline-2 focus-visible:outline-marigold"
-          />
+          <DueDate value={task.dueDate} onChange={(dueDate) => save({ dueDate })} />
         </Property>
       </dl>
 
@@ -233,6 +227,42 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
         <History taskId={task.id} project={project} />
       </section>
     </div>
+  );
+}
+
+/**
+ * A date field that saves complete dates only. Typing a year fires a change per digit (0002, 0020, 0202, 2026),
+ * and each one would otherwise be saved, recorded in history and broadcast.
+ */
+function DueDate({
+  value,
+  onChange,
+}: {
+  value: string | null;
+  onChange: (value: string | null) => void;
+}) {
+  const [draft, setDraft] = useState(value ?? '');
+  useEffect(() => setDraft(value ?? ''), [value]);
+  const settle = (next: string) => {
+    if (next === (value ?? '')) return;
+    if (next === '') onChange(null);
+    else if (Number(next.slice(0, 4)) >= 1900) onChange(next);
+  };
+  return (
+    <input
+      type="date"
+      aria-label="Due date"
+      value={draft}
+      onChange={(event) => {
+        setDraft(event.target.value);
+        settle(event.target.value);
+      }}
+      onBlur={() => {
+        // A half-typed year is not a date anyone meant: show the saved one again.
+        if (draft !== '' && Number(draft.slice(0, 4)) < 1900) setDraft(value ?? '');
+      }}
+      className="h-9 rounded-control border border-line bg-surface px-2.5 text-sm outline-none focus-visible:outline-2 focus-visible:outline-marigold"
+    />
   );
 }
 
