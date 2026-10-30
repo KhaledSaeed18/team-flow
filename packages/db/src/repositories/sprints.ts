@@ -1,6 +1,6 @@
 import { burndown, type TaskChange } from '@teamflow/domain';
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import { StaleWriteError } from '../errors.ts';
+import { SprintStateError, StaleWriteError } from '../errors.ts';
 import { workflowStatuses } from '../schema/projects.ts';
 import { sprints } from '../schema/sprints.ts';
 import { activity, tasks } from '../schema/tasks.ts';
@@ -11,9 +11,7 @@ import { InvalidReferenceError } from './tasks.ts';
 export type SprintRow = typeof sprints.$inferSelect;
 
 /** Raised when a sprint is asked to do something its status does not allow. */
-export class SprintStateError extends Error {
-  override name = 'SprintStateError';
-}
+export { SprintStateError };
 
 const inOrg = (scope: Scope) => eq(sprints.organizationId, scope.organizationId);
 

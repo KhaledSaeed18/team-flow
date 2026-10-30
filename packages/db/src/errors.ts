@@ -33,3 +33,8 @@ export function concurrencyFailure(error: unknown): boolean {
   const code = (cause as { code?: string })?.code;
   return code === '40P01' || code === '40001';
 }
+
+/** A sprint is in the wrong state for the change (completed sprints are closed, …). */
+export class SprintStateError extends Error {
+  override name = 'SprintStateError';
+}
