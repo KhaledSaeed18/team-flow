@@ -74,7 +74,7 @@ function Email() {
   if (!workspace) return null;
   return (
     <Section id="email" title="Email">
-      <div className="flex items-end justify-between gap-4 rounded-card border border-line bg-surface p-4">
+      <div className="flex items-center justify-between gap-4 rounded-card border border-line bg-surface p-4">
         <p className="text-ink-muted text-sm">
           A summary of what is unread in <strong className="text-ink">{workspace}</strong>:
           mentions, assignments and comments on your work. Sent only when there is something new.
