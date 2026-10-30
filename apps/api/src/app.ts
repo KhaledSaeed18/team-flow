@@ -33,6 +33,8 @@ const ACCESS_PATHS = new Set([
   '/revoke-other-sessions',
   '/sign-out',
   '/change-password',
+  '/reset-password',
+  '/email-otp/reset-password',
 ]);
 
 type Env = { Variables: { requestId: string } };
