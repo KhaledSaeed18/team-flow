@@ -15,6 +15,8 @@ type Entry = { kind: string; changes: Change[]; actor?: 'gone' };
 type Plan = (result: Body) => Entry | Entry[] | null;
 
 const text = (value: unknown) => (typeof value === 'string' ? value : null);
+/** A role as Better Auth accepts it: a string, or a list of one (anything longer is refused before this runs). */
+const roleOf = (value: unknown) => (Array.isArray(value) ? text(value[0]) : text(value));
 
 /**
  * Better Auth owns membership, invitations and the workspace record, so their audit lines are written here, around
@@ -102,7 +104,7 @@ const PLANNERS: Record<string, Planner> = {
           kind: 'member.invited',
           changes: [
             { field: 'email', from: null, to: email },
-            { field: 'role', from: null, to: text(body.role) },
+            { field: 'role', from: null, to: roleOf(body.role) },
           ],
         },
       ],
@@ -144,7 +146,7 @@ const PLANNERS: Record<string, Planner> = {
         kind: 'member.role_changed',
         changes: [
           { field: 'member', from: before.name, to: before.name },
-          { field: 'role', from: before.role, to: text(body.role) },
+          { field: 'role', from: before.role, to: roleOf(body.role) },
         ],
       }),
     };

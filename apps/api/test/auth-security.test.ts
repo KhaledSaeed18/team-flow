@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import { CLIENT_IP_HEADER, createAuth } from '@teamflow/auth';
 import { createTestDatabase, type TestDatabase } from '@teamflow/db/testing';
-import { withClientIp } from '../src/client-ip.ts';
+import { plainAddress, withClientIp } from '../src/client-ip.ts';
 import { createHarness, type Harness } from './harness.ts';
 
 describe('sign-in rate limit', () => {
@@ -36,6 +36,12 @@ describe('sign-in rate limit', () => {
       statuses.push((await auth.handler(withClientIp(forged, '192.0.2.10'))).status);
     }
     expect(statuses.slice(-2)).toEqual([429, 429]);
+  });
+
+  test('IPv4 is recorded as IPv4, not as a masked IPv6 address', () => {
+    expect(plainAddress('::1')).toBe('127.0.0.1');
+    expect(plainAddress('::ffff:203.0.113.5')).toBe('203.0.113.5');
+    expect(plainAddress('2001:db8::1')).toBe('2001:db8::1');
   });
 
   test('the client cannot set the address header itself', () => {
@@ -108,5 +114,20 @@ describe('roles', () => {
     );
     expect((await ada.client.members.list()).find((m) => m.name === 'Pat')?.role).toBe('member');
     void pat;
+  });
+
+  test('a one-item role list is accepted, and audited with its role', async () => {
+    const owner = await h.owner('Ola', 'ola-org');
+    await h.join(owner, 'Ray', 'member');
+    const member = (await owner.client.members.list()).find((m) => m.name === 'Ray');
+    await owner.authPost('/organization/update-member-role', {
+      memberId: member?.id,
+      role: ['admin'],
+    });
+    const [line] = (await owner.client.audit.list({ limit: 1 })).entries;
+    expect(line).toMatchObject({
+      kind: 'member.role_changed',
+      changes: [{ field: 'member' }, { field: 'role', from: 'member', to: 'admin' }],
+    });
   });
 });
