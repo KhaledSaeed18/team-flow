@@ -24,6 +24,9 @@ test('a guest can read everything and comment, but is offered nothing they canno
   await expect(panel.getByRole('combobox', { name: 'Write a comment' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Add task' })).toHaveCount(0);
 
+  await page.goto('/p/RF/calendar');
+  await expect(page.getByRole('button', { name: /^Reschedule / }).first()).toBeDisabled();
+
   await page.goto('/p/RF/backlog');
   await expect(page.getByRole('heading', { name: 'Planning' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'New sprint' })).toHaveCount(0);
