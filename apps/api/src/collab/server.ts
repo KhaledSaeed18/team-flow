@@ -47,6 +47,8 @@ export interface CollabData {
   readOnly: boolean;
   /** The cookie the socket authenticated with, to re-check access while it stays open. */
   cookie: string;
+  /** Set when the socket closes, which can happen while its document is still loading. */
+  closed?: boolean;
 }
 
 type Socket = ServerWebSocket<CollabData>;
@@ -279,6 +281,12 @@ export function createCollab({
         } finally {
           current.pending--;
         }
+        // Closed while the document loaded: never join the room (it would never leave), and let the room go if
+        // this socket was the reason it stayed.
+        if (ws.data.closed) {
+          await close(ws);
+          return;
+        }
         current.sockets.set(ws, new Set());
         ws.send(
           encode((e) => {
@@ -332,6 +340,7 @@ export function createCollab({
       },
 
       close(ws: Socket) {
+        ws.data.closed = true;
         void close(ws);
       },
     },
