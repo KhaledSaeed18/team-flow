@@ -25,7 +25,7 @@ function Inbox() {
   const items = inbox.data?.items ?? [];
 
   return (
-    <main className="mx-auto w-full max-w-2xl p-8">
+    <main className="w-full p-4">
       <div className="flex items-center justify-between">
         <h1 className="font-semibold text-xl">Inbox</h1>
         {(inbox.data?.unread ?? 0) > 0 && (

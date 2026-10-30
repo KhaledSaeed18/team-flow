@@ -31,7 +31,7 @@ function AuditLog() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-3xl p-8">
+    <main className="w-full p-4">
       <h1 className="font-semibold text-xl">Audit log</h1>
       <p className="mt-1 text-ink-muted text-sm">
         Who changed what in this workspace: people, projects, workflows, labels, sprints and API

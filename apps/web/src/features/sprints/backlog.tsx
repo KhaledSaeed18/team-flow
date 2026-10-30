@@ -63,7 +63,7 @@ export function Backlog({
   const points = (list: Task[]) => list.reduce((sum, t) => sum + (t.estimate ?? 0), 0);
 
   return (
-    <div className="mx-auto flex max-w-4xl flex-col gap-6 p-6">
+    <div className="flex w-full flex-col gap-6 p-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-base">Planning</h2>
         <Button variant="secondary" onPress={() => setCreating(true)}>

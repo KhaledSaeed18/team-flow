@@ -71,7 +71,9 @@ function AppShell() {
   return (
     <div className="flex h-dvh overflow-hidden">
       <Sidebar me={me} onCreateProject={() => setCreating(true)} />
-      <div className="flex min-w-0 flex-1 flex-col">
+      {/* Workspace pages (inbox, members, audit log, account) scroll here; project views fill it exactly and
+          scroll inside their own panes. */}
+      <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
         <Outlet />
       </div>
       <CreateProjectDialog isOpen={creating} onOpenChange={setCreating} />

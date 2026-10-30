@@ -29,7 +29,7 @@ export function ApiTokens({ workspace }: { workspace: string }) {
   const [secret, setSecret] = useState<string | null>(null);
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 rounded-card border border-line bg-surface p-4">
       <p className="text-ink-muted text-sm">
         Tokens act as you in <strong className="text-ink">{workspace}</strong> on the{' '}
         <a href="/api/docs" className="underline">
@@ -38,7 +38,7 @@ export function ApiTokens({ workspace }: { workspace: string }) {
         . Send one as <code className="text-xs">Authorization: Bearer tf_…</code>.
       </p>
       {(tokens.data ?? []).length > 0 && (
-        <ul className="divide-y divide-line rounded-card border border-line bg-surface">
+        <ul className="-mx-4 divide-y divide-line border-line border-y">
           {(tokens.data ?? []).map((token) => (
             <li key={token.id} className="flex items-center gap-3 px-4 py-3">
               <Key aria-hidden className="shrink-0 text-ink-faint" />
