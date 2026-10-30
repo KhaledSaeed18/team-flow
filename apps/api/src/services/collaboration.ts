@@ -18,6 +18,7 @@ import {
 import type { DigestFrequency } from '@teamflow/domain';
 import { forbidden, notFound } from '../errors.ts';
 import { type Actor, authorize } from './actor.ts';
+import { writableTask } from './projects-access.ts';
 
 async function visibleTask(actor: Actor, taskId: string) {
   const task = await findTask(actor.scope, taskId);
@@ -69,6 +70,9 @@ export const commentsService = {
   /** Anyone who may comment may react, guests included. */
   async react(actor: Actor, input: { commentId: string; reaction: Reaction; on: boolean }) {
     authorize(actor, { comment: ['create'] });
+    const target = await findComment(actor.scope, input.commentId);
+    if (!target) throw notFound('Comment not found.');
+    await writableTask(actor, target.taskId);
     const comment = await setReaction(actor.scope, { ...input, memberId: actor.member.id });
     if (!comment) throw notFound('Comment not found.');
     return commentWithAuthor(actor, comment.taskId, comment.id);
@@ -81,6 +85,7 @@ export const commentsService = {
   ) {
     await visibleTask(actor, input.taskId);
     authorize(actor, { comment: ['create'] });
+    await writableTask(actor, input.taskId);
     const comment = await createComment(actor.scope, input, now);
     if (!comment) throw notFound('Task not found.');
     return commentWithAuthor(actor, input.taskId, comment.id);
@@ -91,6 +96,7 @@ export const commentsService = {
     if (!comment) throw notFound('Comment not found.');
     // Only the author edits their words; moderators may delete but not rewrite them.
     if (comment.authorMemberId !== actor.member.id) throw forbidden();
+    await writableTask(actor, comment.taskId);
     const updated = await updateComment(actor.scope, id, input, now);
     if (!updated) throw notFound('Comment not found.');
     return commentWithAuthor(actor, updated.taskId, id);
@@ -101,6 +107,7 @@ export const commentsService = {
     if (!comment) throw notFound('Comment not found.');
     const own = comment.authorMemberId === actor.member.id;
     if (!own && !can(actor.member.role, { comment: ['moderate'] })) throw forbidden();
+    await writableTask(actor, comment.taskId);
     await deleteComment(actor.scope, id, now);
     return { id };
   },
