@@ -247,4 +247,32 @@ describe('collaborative descriptions', () => {
     expect(await closed).toBe(4403);
     socket.close();
   });
+
+  test('a socket that closes while its document loads never joins the room', async () => {
+    const task = await ada.client.tasks.create({ projectId: project.id, title: 'Gone early' });
+    const userId = (await ada.client.me.get()).user.id;
+    const membership = await findMembership(h.db, ada.organizationId, userId);
+    if (!membership) throw new Error('no membership');
+    const sent: unknown[] = [];
+    const ws = {
+      data: {
+        kind: 'collab' as const,
+        organizationId: ada.organizationId,
+        memberId: membership.id,
+        userId,
+        taskId: task.id,
+        readOnly: false,
+        cookie: ada.cookie(),
+      },
+      send: (message: unknown) => sent.push(message),
+      close: () => {},
+    } as unknown as Parameters<typeof collab.websocket.open>[0];
+
+    const opening = collab.websocket.open(ws);
+    collab.websocket.close(ws);
+    await opening;
+    // A later change to the live document would reach it if it had joined.
+    await collab.replaceDescription(ada.organizationId, task.id, 'After it left');
+    expect(sent).toEqual([]);
+  });
 });

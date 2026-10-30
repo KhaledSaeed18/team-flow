@@ -275,7 +275,10 @@ export function createGateway({
             session?.user.id === ws.data.userId
               ? await findMembership(db, ws.data.organizationId, ws.data.userId)
               : null;
-          if (!member && !ws.data.closed) ws.close(4403, 'access revoked');
+          // Removed and invited back is a new membership: this socket's personal channel belongs to the old one.
+          if ((!member || member.id !== ws.data.memberId) && !ws.data.closed) {
+            ws.close(4403, 'access revoked');
+          }
         } catch (error) {
           logger.warn(
             { err: error, connectionId: ws.data.connectionId },
