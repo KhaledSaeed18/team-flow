@@ -7,6 +7,7 @@ import pino from 'pino';
 import { z } from 'zod';
 import { DIGEST_QUEUE, runDigests } from './digest.ts';
 import { deliverEmails } from './email.ts';
+import { REBALANCE_QUEUE, runRebalance } from './rebalance.ts';
 import { createRelayLoop } from './relay.ts';
 
 const env = z
@@ -82,6 +83,13 @@ await boss.work(DIGEST_QUEUE, async () => {
       boss.send(EMAIL_QUEUE, message, { retryLimit: 5, retryDelay: 60, retryBackoff: true }),
   });
   if (sent > 0) logger.info({ sent }, 'digests enqueued');
+});
+// Rank rebalancing: a nightly pass over columns whose keys grew too long (ADR-0008).
+await boss.createQueue(REBALANCE_QUEUE);
+await boss.schedule(REBALANCE_QUEUE, '30 3 * * *');
+await boss.work(REBALANCE_QUEUE, async () => {
+  const moved = await runRebalance(database.db);
+  if (moved > 0) logger.info({ moved }, 'ranks rebalanced');
 });
 logger.info('worker started');
 
