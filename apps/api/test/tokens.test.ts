@@ -104,4 +104,19 @@ describe('personal access tokens', () => {
     });
     expect((await rest(secret, '/me')).status).toBe(401);
   });
+
+  test('query flags read "false" as false', async () => {
+    const { secret } = await ada.client.tokens.create({ name: 'Flags' });
+    const old = await ada.client.projects.create({ key: 'OLDF', name: 'Old flags' });
+    await ada.client.projects.archive({ id: old.id, version: old.version });
+    const keys = async (query: string) =>
+      ((await (await rest(secret, `/projects${query}`)).json()) as { key: string }[]).map(
+        (p) => p.key,
+      );
+
+    expect(await keys('')).not.toContain('OLDF');
+    expect(await keys('?includeArchived=false')).not.toContain('OLDF');
+    expect(await keys('?includeArchived=true')).toContain('OLDF');
+    expect((await rest(secret, '/projects?includeArchived=maybe')).status).toBe(400);
+  });
 });

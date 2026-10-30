@@ -1,7 +1,7 @@
 import { DigestFrequency } from '@teamflow/domain';
 import { z } from 'zod';
 import { base } from '../base.ts';
-import { Id, Timestamp } from '../schemas.ts';
+import { Flag, Id, Timestamp } from '../schemas.ts';
 
 export const REACTIONS = ['thumbsup', 'tada', 'heart', 'smile', 'eyes', 'rocket'] as const;
 export const Reaction = z.enum(REACTIONS);
@@ -112,9 +112,7 @@ export const notifications = {
       summary: 'Your notifications, newest first',
       tags: ['Notifications'],
     })
-    .input(
-      z.object({ unreadOnly: z.coerce.boolean().default(false) }).default({ unreadOnly: false }),
-    )
+    .input(z.object({ unreadOnly: Flag.default(false) }).default({ unreadOnly: false }))
     .output(z.object({ items: z.array(Notification), unread: z.number().int() })),
 
   markRead: base

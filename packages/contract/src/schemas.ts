@@ -3,6 +3,12 @@ import { z } from 'zod';
 export const Id = z.uuid();
 export const Timestamp = z.coerce.date();
 
+/**
+ * A yes/no input that may arrive as a real boolean (RPC) or as a query string (REST). `z.coerce.boolean()` would
+ * read the string "false" as true; this accepts `true`/`false`, `1`/`0`, `yes`/`no` and `on`/`off`.
+ */
+export const Flag = z.union([z.boolean(), z.stringbool()]);
+
 export const Role = z.enum(['owner', 'admin', 'member', 'guest']);
 export type Role = z.infer<typeof Role>;
 

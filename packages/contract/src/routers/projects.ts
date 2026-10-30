@@ -1,7 +1,7 @@
 import { ProjectKey, StatusCategory } from '@teamflow/domain';
 import { z } from 'zod';
 import { base } from '../base.ts';
-import { Color, Id, Timestamp, Version } from '../schemas.ts';
+import { Color, Flag, Id, Timestamp, Version } from '../schemas.ts';
 
 export const WorkflowStatus = z.object({
   id: Id,
@@ -36,11 +36,7 @@ const tags = ['Projects'];
 export const projects = {
   list: base
     .route({ method: 'GET', path: '/projects', summary: 'List projects', tags })
-    .input(
-      z
-        .object({ includeArchived: z.coerce.boolean().default(false) })
-        .default({ includeArchived: false }),
-    )
+    .input(z.object({ includeArchived: Flag.default(false) }).default({ includeArchived: false }))
     .output(z.array(Project)),
 
   get: base
