@@ -87,15 +87,15 @@ export function WorkflowEditor({ project, canEdit }: { project: Project; canEdit
             textValue={status.name}
             className="flex items-center gap-3 px-3 py-2 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold data-[focus-visible]:-outline-offset-2"
           >
-            {canEdit && (
-              <AriaButton
-                slot="drag"
-                aria-label={`Reorder ${status.name}`}
-                className="rounded-[4px] p-0.5 text-ink-faint outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold"
-              >
-                <DotsSixVertical />
-              </AriaButton>
-            )}
+            {/* Always rendered (React Aria expects a handle on every draggable row); disabled when read-only. */}
+            <AriaButton
+              slot="drag"
+              isDisabled={!canEdit}
+              aria-label={`Reorder ${status.name}`}
+              className="rounded-[4px] p-0.5 text-ink-faint outline-none data-[disabled]:invisible data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold"
+            >
+              <DotsSixVertical />
+            </AriaButton>
             <ColorDot
               color={status.color}
               label={`Color for ${status.name}`}

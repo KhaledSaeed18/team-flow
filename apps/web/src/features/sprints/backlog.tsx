@@ -51,6 +51,10 @@ export function Backlog({
     [project.statuses],
   );
   const open = (sprints.data ?? []).filter((s) => s.status !== 'completed');
+  // Newest first: the report of a finished sprint is where its history lives.
+  const finished = (sprints.data ?? [])
+    .filter((s) => s.status === 'completed')
+    .sort((a, b) => (b.completedAt?.getTime() ?? 0) - (a.completedAt?.getTime() ?? 0));
   const sections = useMemo(() => {
     const bySprint = new Map<string, Task[]>();
     for (const task of tasks.data ?? []) {
@@ -137,6 +141,32 @@ export function Backlog({
         onDrop={(taskId) => moveTo(taskId, null)}
         onOpenTask={onOpenTask}
       />
+
+      {finished.length > 0 && (
+        <section aria-labelledby="completed-sprints">
+          <h3 id="completed-sprints" className="px-1 pb-2 font-semibold text-sm">
+            Completed sprints
+          </h3>
+          <ul className="divide-y divide-line rounded-card border border-line bg-surface">
+            {finished.map((sprint) => (
+              <li key={sprint.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                <span className="flex-1 truncate">{sprint.name}</span>
+                <span className="text-ink-faint text-xs">
+                  {sprint.completedPoints ?? 0} of {sprint.committedPoints ?? 0} points
+                </span>
+                <Link
+                  to="/p/$key/sprints/$sprintId"
+                  params={{ key: project.key, sprintId: sprint.id }}
+                  aria-label={`Report for ${sprint.name}`}
+                  className="focus-ring inline-flex h-7 items-center gap-1.5 rounded-control px-2 text-ink-muted text-xs outline-none hover:bg-lane hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold"
+                >
+                  <ChartLine aria-hidden /> Report
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <NewSprintDialog
         isOpen={creating}

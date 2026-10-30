@@ -1,16 +1,17 @@
 import { Dialog, Kbd } from '@teamflow/ui';
 import { shortcutKeys } from '../../lib/shortcuts.ts';
 
-export const SHORTCUTS: { combo: string; label: string }[] = [
-  { combo: 'mod+k', label: 'Open the command menu' },
-  { combo: '/', label: 'Search' },
-  { combo: 'c', label: 'Create a task' },
-  { combo: 'g b', label: 'Go to the board' },
-  { combo: 'g l', label: 'Go to the list' },
-  { combo: 'g c', label: 'Go to the calendar' },
-  { combo: 'g p', label: 'Go to planning' },
-  { combo: 'g i', label: 'Go to the inbox' },
-  { combo: '?', label: 'Show keyboard shortcuts' },
+/** `project`: only inside a project, where there is a board to go to or create a task on. */
+export const SHORTCUTS: { combo: string; label: string; where: 'anywhere' | 'project' }[] = [
+  { combo: 'mod+k', label: 'Open the command menu', where: 'anywhere' },
+  { combo: '/', label: 'Search', where: 'anywhere' },
+  { combo: 'g i', label: 'Go to the inbox', where: 'anywhere' },
+  { combo: '?', label: 'Show keyboard shortcuts', where: 'anywhere' },
+  { combo: 'c', label: 'Create a task', where: 'project' },
+  { combo: 'g b', label: 'Go to the board', where: 'project' },
+  { combo: 'g l', label: 'Go to the list', where: 'project' },
+  { combo: 'g c', label: 'Go to the calendar', where: 'project' },
+  { combo: 'g p', label: 'Go to planning', where: 'project' },
 ];
 
 const ON_A_CARD: { keys: string[]; label: string }[] = [
@@ -41,7 +42,15 @@ export function ShortcutsDialog({
     <Dialog isOpen={isOpen} onOpenChange={onOpenChange} title="Keyboard shortcuts" width="md">
       <h3 className="font-medium text-ink-muted text-xs">Anywhere</h3>
       <ul className="mt-1 divide-y divide-line">
-        {SHORTCUTS.map((s) => row(shortcutKeys(s.combo), s.label))}
+        {SHORTCUTS.filter((s) => s.where === 'anywhere').map((s) =>
+          row(shortcutKeys(s.combo), s.label),
+        )}
+      </ul>
+      <h3 className="mt-4 font-medium text-ink-muted text-xs">In a project</h3>
+      <ul className="mt-1 divide-y divide-line">
+        {SHORTCUTS.filter((s) => s.where === 'project').map((s) =>
+          row(shortcutKeys(s.combo), s.label),
+        )}
       </ul>
       <h3 className="mt-4 font-medium text-ink-muted text-xs">On the board</h3>
       <ul className="mt-1 divide-y divide-line">{ON_A_CARD.map((s) => row(s.keys, s.label))}</ul>
