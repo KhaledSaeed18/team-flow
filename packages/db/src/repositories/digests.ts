@@ -1,5 +1,5 @@
 import { DIGEST_LOOKBACK_MS, type DigestFrequency } from '@teamflow/domain';
-import { and, desc, eq, gt, isNull, sql } from 'drizzle-orm';
+import { and, desc, eq, gt, isNull, lte, sql } from 'drizzle-orm';
 import type { Executor } from '../client.ts';
 import { members, organizations, users } from '../schema/auth.ts';
 import { notifications } from '../schema/collaboration.ts';
@@ -72,17 +72,22 @@ export function digestCandidates(db: Executor, now: Date) {
             and ${notifications.recipientMemberId} = ${members.id}
             and ${notifications.readAt} is null
             and ${notifications.createdAt} > greatest(coalesce(${digestSettings.lastSentAt}, '-infinity'::timestamptz), ${floor.toISOString()}::timestamptz)
+            and ${notifications.createdAt} <= ${now.toISOString()}::timestamptz
         )`,
       ),
     );
 }
 
-/** Unread notifications for one member since `since`, newest first, with who caused them. */
+/**
+ * Unread notifications for one member in `(since, until]`, newest first, with who caused them. The upper bound is
+ * the time the digest is recorded as sent, so anything newer waits for the next digest instead of being in both.
+ */
 export function digestItems(
   db: Executor,
   organizationId: string,
   memberId: string,
   since: Date,
+  until: Date,
   limit = 25,
 ) {
   return db
@@ -107,6 +112,7 @@ export function digestItems(
         eq(notifications.recipientMemberId, memberId),
         isNull(notifications.readAt),
         gt(notifications.createdAt, since),
+        lte(notifications.createdAt, until),
       ),
     )
     .orderBy(desc(notifications.createdAt), desc(notifications.id))

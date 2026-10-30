@@ -3,6 +3,7 @@ import {
   createAttachment,
   deleteAttachment,
   findAttachment,
+  findProject,
   findTask,
   listAttachments,
   newId,
@@ -10,6 +11,7 @@ import {
 import { AppError, notFound } from '../errors.ts';
 import type { Storage } from '../storage.ts';
 import { type Actor, authorize } from './actor.ts';
+import { writableProject } from './projects-access.ts';
 
 /** A safe display name: no path, no control characters, bounded length. */
 export const cleanFileName = (name: string) =>
@@ -27,13 +29,16 @@ const mayRemoveOwn = (actor: Actor, uploaderMemberId: string | null) =>
 export function attachmentsService(storage: Storage) {
   return {
     async list(actor: Actor, taskId: string) {
-      if (!(await findTask(actor.scope, taskId))) throw notFound('Task not found.');
+      const task = await findTask(actor.scope, taskId);
+      if (!task) throw notFound('Task not found.');
       const rows = await listAttachments(actor.scope, taskId);
-      const deleteAny = can(actor.member.role, { task: ['delete'] });
+      // Nothing in an archived project can be removed, so nobody is offered the button.
+      const archived = Boolean((await findProject(actor.scope, task.projectId))?.archivedAt);
+      const deleteAny = !archived && can(actor.member.role, { task: ['delete'] });
       return rows.map(({ storageKey, uploaderMemberId, ...row }) => ({
         ...row,
         url: storage.url(storageKey, row.fileName),
-        canDelete: deleteAny || mayRemoveOwn(actor, uploaderMemberId),
+        canDelete: deleteAny || (!archived && mayRemoveOwn(actor, uploaderMemberId)),
       }));
     },
 
@@ -45,6 +50,7 @@ export function attachmentsService(storage: Storage) {
       const task = await findTask(actor.scope, input.taskId);
       if (!task) throw notFound('Task not found.');
       authorize(actor, { task: ['update'] });
+      await writableProject(actor, task.projectId);
       if (input.body.byteLength === 0) throw new AppError('BAD_REQUEST', 'The file is empty.');
 
       const fileName = cleanFileName(input.fileName);
@@ -77,6 +83,7 @@ export function attachmentsService(storage: Storage) {
       const task = await findTask(actor.scope, attachment.taskId);
       if (!task) throw notFound('Attachment not found.');
       if (!mayRemoveOwn(actor, attachment.uploaderMemberId)) authorize(actor, { task: ['delete'] });
+      await writableProject(actor, task.projectId);
       await deleteAttachment(actor.scope, id, task.projectId, now);
       await storage.remove(attachment.storageKey).catch(() => {});
       return { id };

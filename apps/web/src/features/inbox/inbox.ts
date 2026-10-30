@@ -25,13 +25,15 @@ export function linkFor(n: Notification): { key: string; task: string } | null {
   return identifier && key ? { key, task: identifier } : null;
 }
 
+/** The inbox and its unread count. Safe to call from any number of components. */
+export const useInbox = () => useQuery(inboxQuery());
+
 /**
  * Keep the inbox live for this tab: new notifications arrive on the personal channel, refresh the inbox and
- * announce themselves with a toast.
+ * announce themselves with a toast. Call once per tab (the app shell), or every caller would toast.
  */
-export function useInbox() {
+export function useLiveInbox() {
   const queryClient = useQueryClient();
-  const inbox = useQuery(inboxQuery());
 
   useChannel('me', async (event) => {
     if (event.topic !== 'notifications.created') return;
@@ -41,6 +43,4 @@ export function useInbox() {
       toast({ title: summarize(latest), description: latest.data.excerpt ?? latest.data.title });
     }
   });
-
-  return inbox;
 }

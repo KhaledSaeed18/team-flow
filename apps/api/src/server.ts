@@ -5,6 +5,7 @@ import { EMAIL_QUEUE } from '@teamflow/email';
 import type { Server, ServerWebSocket } from 'bun';
 import { PgBoss } from 'pg-boss';
 import { createApp } from './app.ts';
+import { withClientIp } from './client-ip.ts';
 import { type CollabData, createCollab } from './collab/server.ts';
 import { readEnv } from './env.ts';
 import { createLogger } from './logger.ts';
@@ -95,7 +96,7 @@ const server = Bun.serve<SocketData | CollabData>({
     const { pathname } = new URL(request.url);
     if (pathname === '/ws') return gateway.upgrade(request, bunServer as Server<SocketData>);
     if (collab.matches(pathname)) return collab.upgrade(request, bunServer as Server<CollabData>);
-    return app.fetch(request, bunServer);
+    return app.fetch(withClientIp(request, bunServer.requestIP(request)?.address), bunServer);
   },
   websocket: {
     idleTimeout: 60,

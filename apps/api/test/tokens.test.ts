@@ -104,4 +104,41 @@ describe('personal access tokens', () => {
     });
     expect((await rest(secret, '/me')).status).toBe(401);
   });
+
+  test('a refused token answers in the same error shape as every other API error', async () => {
+    const response = await rest('tf_not-a-real-token', '/me');
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      defined: true,
+      code: 'UNAUTHORIZED',
+      status: 401,
+      message: 'This token is invalid, expired or revoked.',
+    });
+  });
+
+  test('query flags read "false" as false', async () => {
+    const { secret } = await ada.client.tokens.create({ name: 'Flags' });
+    const old = await ada.client.projects.create({ key: 'OLDF', name: 'Old flags' });
+    await ada.client.projects.archive({ id: old.id, version: old.version });
+    const keys = async (query: string) =>
+      ((await (await rest(secret, `/projects${query}`)).json()) as { key: string }[]).map(
+        (p) => p.key,
+      );
+
+    expect(await keys('')).not.toContain('OLDF');
+    expect(await keys('?includeArchived=false')).not.toContain('OLDF');
+    expect(await keys('?includeArchived=true')).toContain('OLDF');
+    expect((await rest(secret, '/projects?includeArchived=maybe')).status).toBe(400);
+  });
+
+  test('/me through a token shows only the workspace the token is for', async () => {
+    const { secret } = await ada.client.tokens.create({ name: 'Me' });
+    await ada.authPost('/organization/create', { name: 'Elsewhere', slug: 'ada-elsewhere' });
+    await ada.authPost('/organization/set-active', { organizationId: ada.organizationId });
+    expect((await ada.client.me.get()).organizations).toHaveLength(2);
+    const viaToken = (await (await rest(secret, '/me')).json()) as {
+      organizations: { id: string }[];
+    };
+    expect(viaToken.organizations.map((o) => o.id)).toEqual([ada.organizationId]);
+  });
 });

@@ -22,6 +22,16 @@ test.describe('project settings', () => {
     await expect(column(page, 'QA')).toBeVisible();
   });
 
+  test('a rename the server refuses puts the saved name back', async ({ page }) => {
+    await page.goto('/p/FC/settings');
+    const todo = page.getByRole('textbox', { name: 'Name of Todo' });
+    // Another status already has this name.
+    await todo.fill('Done');
+    await todo.press('Enter');
+    await expect(page.getByText('Status not changed')).toBeVisible();
+    await expect(todo).toHaveValue('Todo');
+  });
+
   test('the last done-type status cannot be deleted', async ({ page }) => {
     await page.goto('/p/FC/settings');
     await page.getByRole('button', { name: 'Delete Done' }).click();
@@ -41,4 +51,14 @@ test.describe('project settings', () => {
       .click();
     await expect(page.getByRole('option', { name: 'Field test' })).toBeVisible();
   });
+});
+
+test('removing a member asks first, and Cancel keeps them', async ({ page }) => {
+  await page.goto('/settings/members');
+  await page.getByRole('button', { name: 'Remove Omar Haddad' }).click();
+  const dialog = page.getByRole('dialog', { name: 'Remove Omar Haddad?' });
+  await expect(dialog).toContainText('lose access to every project');
+  await dialog.getByRole('button', { name: 'Cancel' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(page.getByRole('button', { name: 'Remove Omar Haddad' })).toBeVisible();
 });

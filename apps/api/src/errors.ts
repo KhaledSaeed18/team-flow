@@ -1,9 +1,11 @@
 import { ORPCError } from '@orpc/server';
 import {
   checkViolation,
+  concurrencyFailure,
   foreignKeyViolation,
   InvalidReferenceError,
   InvalidWorkflowError,
+  invalidText,
   SprintStateError,
   StaleWriteError,
 } from '@teamflow/db';
@@ -64,6 +66,18 @@ export function toTransportError(error: unknown): unknown {
   }
   if (error instanceof InvalidWorkflowError) {
     return new ORPCError('INVALID_WORKFLOW', { status: 422, message: error.message });
+  }
+  // A transaction Postgres aborted to resolve a deadlock is a conflict to retry, not a server fault.
+  if (concurrencyFailure(error)) {
+    return new ORPCError('CONFLICT', {
+      message: 'This was changed by someone else at the same moment. Try again.',
+    });
+  }
+  if (invalidText(error)) {
+    return new ORPCError('BAD_REQUEST', {
+      status: 400,
+      message: 'That text contains a character that cannot be stored.',
+    });
   }
   if (foreignKeyViolation(error)) {
     return new ORPCError('INVALID_REFERENCE', {

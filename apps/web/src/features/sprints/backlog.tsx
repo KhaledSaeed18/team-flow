@@ -1,10 +1,17 @@
-import { ChartLine, Plus } from '@phosphor-icons/react';
+import { ChartLine, DotsSixVertical, Plus } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { isClosed } from '@teamflow/domain';
 import { Avatar, Button, Dialog, Select, SelectItem, TextField } from '@teamflow/ui';
 import { useMemo, useState } from 'react';
-import { Form, GridList, GridListItem, useDragAndDrop } from 'react-aria-components';
+import {
+  Button as AriaButton,
+  Form,
+  GridList,
+  GridListItem,
+  useDragAndDrop,
+} from 'react-aria-components';
+import { useProjectAccess } from '../../lib/access.ts';
 import { orpc } from '../../lib/api.ts';
 import { PriorityIcon } from '../board/priority-icon.tsx';
 import { type Project, type Task, tasksQuery, useUpdateTask } from '../tasks.ts';
@@ -37,12 +44,17 @@ export function Backlog({
   const actions = useSprintActions(project.id);
   const [creating, setCreating] = useState(false);
   const [completing, setCompleting] = useState<Sprint | null>(null);
+  const access = useProjectAccess(project);
 
   const closedStatus = useMemo(
     () => new Set(project.statuses.filter((s) => isClosed(s.category)).map((s) => s.id)),
     [project.statuses],
   );
   const open = (sprints.data ?? []).filter((s) => s.status !== 'completed');
+  // Newest first: the report of a finished sprint is where its history lives.
+  const finished = (sprints.data ?? [])
+    .filter((s) => s.status === 'completed')
+    .sort((a, b) => (b.completedAt?.getTime() ?? 0) - (a.completedAt?.getTime() ?? 0));
   const sections = useMemo(() => {
     const bySprint = new Map<string, Task[]>();
     for (const task of tasks.data ?? []) {
@@ -66,9 +78,11 @@ export function Backlog({
     <div className="flex w-full flex-col gap-6 p-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-base">Planning</h2>
-        <Button variant="secondary" onPress={() => setCreating(true)}>
-          <Plus /> New sprint
-        </Button>
+        {access.createSprints && (
+          <Button variant="secondary" onPress={() => setCreating(true)}>
+            <Plus /> New sprint
+          </Button>
+        )}
       </div>
 
       {open.map((sprint) => {
@@ -83,6 +97,7 @@ export function Backlog({
             tasks={list}
             closedStatus={closedStatus}
             memberById={memberById}
+            canMove={access.editTasks}
             onDrop={(taskId) => moveTo(taskId, sprint.id)}
             onOpenTask={onOpenTask}
             actions={
@@ -94,7 +109,7 @@ export function Backlog({
                 >
                   <ChartLine aria-hidden /> Report
                 </Link>
-                {sprint.status === 'planned' ? (
+                {!access.planSprints ? null : sprint.status === 'planned' ? (
                   <Button
                     size="sm"
                     variant="secondary"
@@ -122,9 +137,36 @@ export function Backlog({
         tasks={sections.get(BACKLOG) ?? []}
         closedStatus={closedStatus}
         memberById={memberById}
+        canMove={access.editTasks}
         onDrop={(taskId) => moveTo(taskId, null)}
         onOpenTask={onOpenTask}
       />
+
+      {finished.length > 0 && (
+        <section aria-labelledby="completed-sprints">
+          <h3 id="completed-sprints" className="px-1 pb-2 font-semibold text-sm">
+            Completed sprints
+          </h3>
+          <ul className="divide-y divide-line rounded-card border border-line bg-surface">
+            {finished.map((sprint) => (
+              <li key={sprint.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+                <span className="flex-1 truncate">{sprint.name}</span>
+                <span className="text-ink-faint text-xs">
+                  {sprint.completedPoints ?? 0} of {sprint.committedPoints ?? 0} points
+                </span>
+                <Link
+                  to="/p/$key/sprints/$sprintId"
+                  params={{ key: project.key, sprintId: sprint.id }}
+                  aria-label={`Report for ${sprint.name}`}
+                  className="focus-ring inline-flex h-7 items-center gap-1.5 rounded-control px-2 text-ink-muted text-xs outline-none hover:bg-lane hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold"
+                >
+                  <ChartLine aria-hidden /> Report
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <NewSprintDialog
         isOpen={creating}
@@ -161,6 +203,8 @@ interface SectionProps {
   tasks: Task[];
   closedStatus: Set<string>;
   memberById: Map<string, MemberLike>;
+  /** Guests and archived projects see the plan but cannot move work around it. */
+  canMove: boolean;
   onDrop: (taskId: string) => void;
   onOpenTask: (task: Task) => void;
   actions?: React.ReactNode;
@@ -174,11 +218,13 @@ function Section({
   tasks,
   closedStatus,
   memberById,
+  canMove,
   onDrop,
   onOpenTask,
   actions,
 }: SectionProps) {
   const { dragAndDropHooks } = useDragAndDrop<Task>({
+    isDisabled: !canMove,
     getItems: (keys) =>
       [...keys].flatMap((key) => {
         const task = tasks.find((t) => t.id === key);
@@ -248,6 +294,15 @@ function Section({
                 } ${isDragging ? 'opacity-40' : ''}`
               }
             >
+              {/* The handle is what keyboard and screen reader users pick the row up with. */}
+              <AriaButton
+                isDisabled={!canMove}
+                slot="drag"
+                aria-label={`Move ${task.identifier}`}
+                className="-mx-1 rounded-[4px] p-0.5 text-ink-faint outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold"
+              >
+                <DotsSixVertical />
+              </AriaButton>
               <span className="w-4">
                 <PriorityIcon priority={task.priority} />
               </span>

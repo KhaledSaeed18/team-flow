@@ -125,9 +125,10 @@ function Profile() {
     <Section id="profile" title="Profile">
       <Form
         onSubmit={onSubmit}
-        className="flex flex-wrap items-end gap-4 rounded-card border border-line bg-surface p-4 sm:flex-nowrap"
+        // Top-aligned: a validation message under a field must not move the Save button out from under a click.
+        className="flex flex-wrap items-start gap-4 rounded-card border border-line bg-surface p-4 sm:flex-nowrap"
       >
-        <Avatar name={me.user.name} src={me.user.image} size="lg" />
+        <Avatar name={me.user.name} src={me.user.image} size="lg" className="mt-5" />
         <TextField
           name="name"
           label="Name"
@@ -137,7 +138,7 @@ function Profile() {
           className="min-w-48 flex-1"
         />
         <TextField label="Email" value={me.user.email} isReadOnly className="min-w-48 flex-1" />
-        <Button type="submit" isPending={pending}>
+        <Button type="submit" isPending={pending} className="mt-6.5">
           Save
         </Button>
       </Form>

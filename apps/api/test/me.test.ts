@@ -59,6 +59,38 @@ describe('platform routes', () => {
     expect(Object.keys(spec.paths)).toContain('/me');
   });
 
+  test('the OpenAPI document reads cleanly: no safe-integer bounds, described errors', async () => {
+    const text = await (await h.app.request('/api/openapi.json')).text();
+    expect(text).not.toContain(String(Number.MIN_SAFE_INTEGER));
+    expect(text).not.toContain(String(Number.MAX_SAFE_INTEGER));
+    const spec = JSON.parse(text) as {
+      paths: Record<string, Record<string, { responses: Record<string, { description: string }> }>>;
+    };
+    const move = spec.paths['/tasks/{id}/move']?.post;
+    expect(move?.responses['409']?.description).toContain(
+      '`CONFLICT`: This was changed by someone else. Reload and try again.',
+    );
+    expect(move?.responses['409']?.description).toContain('`SPRINT_STATE`');
+    for (const [status, response] of Object.entries(move?.responses ?? {})) {
+      if (status !== '200') expect(response.description).not.toBe(status);
+    }
+  });
+
+  test('a project key is located among your own workspaces only', async () => {
+    const kim = await h.owner('Kim', 'kim-locate');
+    await kim.client.projects.create({ key: 'LOC', name: 'Located' });
+    const lee = await h.join(kim, 'Lee', 'member');
+    // Lee also has a workspace of their own, which is active now.
+    await lee.authPost('/organization/create', { name: 'Lee home', slug: 'lee-home' });
+
+    expect(await lee.client.me.locateProject({ key: 'LOC' })).toEqual({
+      organizations: [{ id: kim.organizationId, name: "Kim's org" }],
+    });
+    // Someone outside Kim's workspace learns nothing, even about a key that exists there.
+    const stranger = await h.owner('Sam', 'sam-locate');
+    expect(await stranger.client.me.locateProject({ key: 'LOC' })).toEqual({ organizations: [] });
+  });
+
   test('unknown routes are JSON 404s', async () => {
     const response = await h.app.request('/nope');
     expect(response.status).toBe(404);

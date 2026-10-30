@@ -377,6 +377,27 @@ describe('realtime gateway', () => {
     expect(await socket.closed).toBe(4403);
   });
 
+  test('a member removed and invited back is reconnected, not left on the old membership', async () => {
+    const ada = await h.owner('Rex', 'rex-org');
+    const pat = await h.join(ada, 'Rae', 'member');
+    const socket = await connect(url, pat.cookie());
+    await socket.next('ready');
+
+    const member = (await ada.client.members.list()).find((m) => m.name === 'Rae');
+    await ada.authPost('/organization/remove-member', { memberIdOrEmail: member?.id });
+    const invitation = await ada.authPost('/organization/invite-member', {
+      email: pat.email,
+      role: 'member',
+      organizationId: ada.organizationId,
+    });
+    await pat.authPost('/organization/accept-invitation', { invitationId: invitation.id });
+    await pat.authPost('/organization/set-active', { organizationId: ada.organizationId });
+
+    // The old socket's personal channel is keyed by the old member id: it must reconnect as the new member.
+    await gateway.revalidate({ organizationId: ada.organizationId });
+    expect(await socket.closed).toBe(4403);
+  });
+
   test('a socket that closes while subscribing leaves no presence behind', async () => {
     const ada = await h.owner('Zoe', 'zoe-org');
     const project = await ada.client.projects.create({ key: 'GH', name: 'Ghost' });

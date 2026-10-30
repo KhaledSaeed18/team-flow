@@ -1,6 +1,6 @@
 import { burndown, type TaskChange } from '@teamflow/domain';
 import { and, asc, desc, eq, inArray, isNull, sql } from 'drizzle-orm';
-import { StaleWriteError } from '../errors.ts';
+import { SprintStateError, StaleWriteError } from '../errors.ts';
 import { workflowStatuses } from '../schema/projects.ts';
 import { sprints } from '../schema/sprints.ts';
 import { activity, tasks } from '../schema/tasks.ts';
@@ -11,9 +11,7 @@ import { InvalidReferenceError } from './tasks.ts';
 export type SprintRow = typeof sprints.$inferSelect;
 
 /** Raised when a sprint is asked to do something its status does not allow. */
-export class SprintStateError extends Error {
-  override name = 'SprintStateError';
-}
+export { SprintStateError };
 
 const inOrg = (scope: Scope) => eq(sprints.organizationId, scope.organizationId);
 
@@ -71,14 +69,21 @@ async function lockSprint(tx: Scope, id: string, expectedVersion: number) {
   return current;
 }
 
-async function save(tx: Scope, current: SprintRow, patch: Partial<SprintRow>, kind: string) {
+/** `at`: when it happened, from the caller's clock, so the history line matches the sprint's own dates. */
+async function save(
+  tx: Scope,
+  current: SprintRow,
+  patch: Partial<SprintRow>,
+  kind: string,
+  at?: Date,
+) {
   const [sprint] = await tx.db
     .update(sprints)
     .set({ ...patch, version: sql`${sprints.version} + 1` })
     .where(and(inOrg(tx), eq(sprints.id, current.id)))
     .returning();
   if (!sprint) throw new Error('update returned no row');
-  await recordActivity(tx, { kind, projectId: sprint.projectId });
+  await recordActivity(tx, { kind, projectId: sprint.projectId, ...(at ? { at } : {}) });
   await emit(tx, 'sprint.changed', {
     sprintId: sprint.id,
     projectId: sprint.projectId,
@@ -113,7 +118,7 @@ export function startSprint(scope: Scope, id: string, expectedVersion: number, n
     if (!current) return null;
     if (current.status !== 'planned')
       throw new SprintStateError('Only a planned sprint can be started.');
-    return save(tx, current, { status: 'active', startedAt: now }, 'sprint.started');
+    return save(tx, current, { status: 'active', startedAt: now }, 'sprint.started', now);
   });
 }
 
@@ -200,13 +205,19 @@ export function completeSprint(
   now: Date,
 ) {
   return inTransaction(scope, async (tx) => {
+    // Both sprints are locked before any task, and in id order, the same order a task write takes them in.
+    const early =
+      carryOverTo && carryOverTo < id
+        ? await findSprint(tx, carryOverTo, { lock: true })
+        : undefined;
     const current = await lockSprint(tx, id, expectedVersion);
     if (!current) return null;
     if (current.status !== 'active')
       throw new SprintStateError('Only the active sprint can be completed.');
     if (carryOverTo) {
       // Locked, so it cannot be started or completed while unfinished work is moved into it.
-      const target = await findSprint(tx, carryOverTo, { lock: true });
+      const target =
+        early !== undefined ? early : await findSprint(tx, carryOverTo, { lock: true });
       if (!target || target.projectId !== current.projectId || target.status !== 'planned') {
         throw new InvalidReferenceError(
           'Unfinished work can only move to a planned sprint of this project.',
@@ -277,6 +288,7 @@ export function completeSprint(
       current,
       { status: 'completed', completedAt: now, committedPoints, completedPoints },
       'sprint.completed',
+      now,
     );
   });
 }

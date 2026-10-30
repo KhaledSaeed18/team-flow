@@ -19,8 +19,15 @@ window.addEventListener('pageshow', () => {
  * body parse error, so the request's own signal is the reliable test.
  */
 const expected = (error: unknown, signal: AbortSignal | undefined) => {
-  const { name, code } = error as { name?: string; code?: string };
-  return leaving || signal?.aborted || name === 'AbortError' || code === 'UNAUTHORIZED';
+  const { name, code, defined } = error as { name?: string; code?: string; defined?: boolean };
+  // Errors the contract declares (a taken name, a stale version, …) are shown by the screen that caused them.
+  return (
+    leaving ||
+    signal?.aborted ||
+    name === 'AbortError' ||
+    code === 'UNAUTHORIZED' ||
+    defined === true
+  );
 };
 
 const link = new RPCLink({

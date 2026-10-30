@@ -12,6 +12,7 @@ import {
 } from '@phosphor-icons/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { can } from '@teamflow/auth/permissions';
 import { Kbd } from '@teamflow/ui';
 import { type ReactNode, useDeferredValue, useMemo, useState } from 'react';
 import {
@@ -27,6 +28,7 @@ import {
   ModalOverlay,
   SearchField,
 } from 'react-aria-components';
+import { useRole } from '../../lib/access.ts';
 import { orpc } from '../../lib/api.ts';
 import { authClient } from '../../lib/auth.ts';
 import { resetSession } from '../../lib/session.ts';
@@ -71,6 +73,7 @@ export function CommandPalette({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const theme = useTheme();
+  const mayCreateProject = can(useRole(), { project: ['create'] });
   const [query, setQuery] = useState('');
   const deferred = useDeferredValue(query.trim());
   const projects = useQuery(orpc.projects.list.queryOptions({ input: {} }));
@@ -87,7 +90,9 @@ export function CommandPalette({
 
   const groups = useMemo<Group[]>(() => {
     const actions: Item[] = [
-      { id: 'new-project', label: 'New project', icon: <Plus />, run: onCreateProject },
+      ...(mayCreateProject
+        ? [{ id: 'new-project', label: 'New project', icon: <Plus />, run: onCreateProject }]
+        : []),
       {
         id: 'inbox',
         label: 'Go to inbox',
@@ -179,6 +184,7 @@ export function CommandPalette({
       },
     ].filter((g) => g.items.length > 0);
   }, [
+    mayCreateProject,
     projects.data,
     tasks.data,
     deferred,
@@ -208,6 +214,7 @@ export function CommandPalette({
               className="border-line border-b"
             >
               <Input
+                maxLength={200}
                 placeholder="Search tasks, projects and actions…"
                 className="h-12 w-full bg-transparent px-4 text-sm outline-none placeholder:text-ink-faint [&::-webkit-search-cancel-button]:hidden"
               />
@@ -222,7 +229,11 @@ export function CommandPalette({
               }}
               renderEmptyState={() => (
                 <p className="px-4 py-8 text-center text-ink-muted text-sm">
-                  {tasks.isFetching ? 'Searching…' : `Nothing matches “${query}”.`}
+                  {tasks.isFetching
+                    ? 'Searching…'
+                    : tasks.isError
+                      ? 'Search is not available right now. Try again in a moment.'
+                      : `Nothing matches “${query}”.`}
                 </p>
               )}
               className="max-h-[50vh] overflow-y-auto p-1.5 outline-none"

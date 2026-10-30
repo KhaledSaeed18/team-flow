@@ -47,6 +47,9 @@ async function taskSummary(tx: Scope, taskId: string) {
   return row ? { ...row, identifier: taskIdentifier(row.key, row.number) } : null;
 }
 
+/** Recipients per `notifications.created` event; 100 member ids stay far below the NOTIFY payload limit. */
+export const ANNOUNCE_BATCH = 100;
+
 /**
  * Insert notifications for `recipients` (never the actor) and announce them on each recipient's channel.
  * Call inside the transaction of the change that caused them.
@@ -70,7 +73,14 @@ export async function notify(
       data: input.data,
     })),
   );
-  await emit(tx, 'notifications.created', { recipientMemberIds: ids, kind, taskId: input.taskId });
+  // Announced in batches: a NOTIFY payload is capped at 8000 bytes, and a busy task can have hundreds of people.
+  for (let i = 0; i < ids.length; i += ANNOUNCE_BATCH) {
+    await emit(tx, 'notifications.created', {
+      recipientMemberIds: ids.slice(i, i + ANNOUNCE_BATCH),
+      kind,
+      taskId: input.taskId,
+    });
+  }
 }
 
 /** Notify a newly assigned member. Used by task create/update. */

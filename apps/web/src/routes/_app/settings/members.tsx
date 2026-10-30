@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { can, canAssignRole, isRole, type Role } from '@teamflow/auth/permissions';
-import { Avatar, Button, Notice, Select, SelectItem, TextField, toast } from '@teamflow/ui';
+import { Avatar, Button, Dialog, Notice, Select, SelectItem, TextField, toast } from '@teamflow/ui';
 import { useState } from 'react';
 import { Form } from 'react-aria-components';
 import { orpc } from '../../../lib/api.ts';
@@ -38,6 +38,23 @@ function Members() {
       queryClient.invalidateQueries({ queryKey: orpc.members.key() }),
       queryClient.invalidateQueries({ queryKey: ['invitations'] }),
     ]);
+
+  // An expired invitation stays "pending" in the database but can no longer be accepted: it is not pending.
+  const now = Date.now();
+  const pending = (invitations.data ?? []).filter(
+    (i) => i.status === 'pending' && new Date(i.expiresAt).getTime() > now,
+  );
+  const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
+  const [removingPending, setRemovingPending] = useState(false);
+  const remove = async (member: { id: string; name: string }) => {
+    setRemovingPending(true);
+    const { error } = await authClient.organization.removeMember({ memberIdOrEmail: member.id });
+    setRemovingPending(false);
+    setRemoving(null);
+    if (error) toast({ title: 'Not removed', description: error.message, tone: 'danger' });
+    else toast({ title: `${member.name} was removed` });
+    await refresh();
+  };
 
   const canInvite = can(role, { invitation: ['create'] });
   const canManage = can(role, { member: ['update'] });
@@ -100,19 +117,7 @@ function Members() {
                       variant="quiet"
                       size="sm"
                       aria-label={`Remove ${member.name}`}
-                      onPress={async () => {
-                        const { error } = await authClient.organization.removeMember({
-                          memberIdOrEmail: member.id,
-                        });
-                        if (error)
-                          toast({
-                            title: 'Not removed',
-                            description: error.message,
-                            tone: 'danger',
-                          });
-                        else toast({ title: `${member.name} was removed` });
-                        await refresh();
-                      }}
+                      onPress={() => setRemoving({ id: member.id, name: member.name })}
                     >
                       Remove
                     </Button>
@@ -126,39 +131,68 @@ function Members() {
         </ul>
       </section>
 
-      {(invitations.data ?? []).some((i) => i.status === 'pending') && (
+      {pending.length > 0 && (
         <section aria-labelledby="pending" className="mt-8">
           <h2 id="pending" className="mb-2 font-medium text-sm">
             Pending invitations
           </h2>
           <ul className="divide-y divide-line rounded-card border border-line bg-surface">
-            {invitations.data
-              ?.filter((i) => i.status === 'pending')
-              .map((invitation) => (
-                <li key={invitation.id} className="flex items-center gap-3 px-4 py-3 text-sm">
-                  <span className="flex-1 truncate">{invitation.email}</span>
-                  <span className="text-ink-muted">
-                    {ROLE_LABEL[(invitation.role ?? 'member') as Role] ?? invitation.role}
-                  </span>
-                  {can(role, { invitation: ['cancel'] }) && (
-                    <Button
-                      variant="quiet"
-                      size="sm"
-                      aria-label={`Cancel the invitation for ${invitation.email}`}
-                      onPress={async () => {
-                        await authClient.organization.cancelInvitation({
-                          invitationId: invitation.id,
+            {pending.map((invitation) => (
+              <li key={invitation.id} className="flex items-center gap-3 px-4 py-3 text-sm">
+                <span className="flex-1 truncate">{invitation.email}</span>
+                <span className="text-ink-muted">
+                  {ROLE_LABEL[(invitation.role ?? 'member') as Role] ?? invitation.role}
+                </span>
+                {can(role, { invitation: ['cancel'] }) && (
+                  <Button
+                    variant="quiet"
+                    size="sm"
+                    aria-label={`Cancel the invitation for ${invitation.email}`}
+                    onPress={async () => {
+                      const { error } = await authClient.organization.cancelInvitation({
+                        invitationId: invitation.id,
+                      });
+                      if (error)
+                        toast({
+                          title: 'Invitation not canceled',
+                          description: error.message,
+                          tone: 'danger',
                         });
-                        await refresh();
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                  )}
-                </li>
-              ))}
+                      await refresh();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                )}
+              </li>
+            ))}
           </ul>
         </section>
+      )}
+      {removing && (
+        <Dialog
+          isOpen
+          onOpenChange={(open) => !open && setRemoving(null)}
+          title={`Remove ${removing.name}?`}
+          width="sm"
+        >
+          <p className="text-ink-muted text-sm">
+            They lose access to every project in this workspace at once. Their tasks, comments and
+            history stay. You can invite them again later.
+          </p>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="quiet" onPress={() => setRemoving(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              isPending={removingPending}
+              onPress={() => void remove(removing)}
+            >
+              Remove
+            </Button>
+          </div>
+        </Dialog>
       )}
     </main>
   );

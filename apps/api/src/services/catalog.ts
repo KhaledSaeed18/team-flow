@@ -4,7 +4,6 @@ import {
   deleteLabel,
   deleteStatus,
   findLabel,
-  findProject,
   findStatus,
   listLabels,
   listMembers,
@@ -16,6 +15,7 @@ import {
 import type { StatusCategory } from '@teamflow/domain';
 import { AppError, notFound } from '../errors.ts';
 import { type Actor, authorize } from './actor.ts';
+import { visibleProject, writableProject } from './projects-access.ts';
 
 /** Members, labels and workflow statuses: the vocabulary tasks are described with. */
 
@@ -33,12 +33,6 @@ const toStatus = ({ id, name, category, color, rank }: StatusRow) => ({
   rank,
 });
 
-async function visibleProject(actor: Actor, projectId: string) {
-  const project = await findProject(actor.scope, projectId);
-  if (!project) throw notFound('Project not found.');
-  return project;
-}
-
 export const membersService = {
   list: (actor: Actor) => listMembers(actor.scope),
 };
@@ -50,14 +44,16 @@ export const labelsService = {
   },
 
   async create(actor: Actor, input: { projectId: string | null; name: string; color: string }) {
-    if (input.projectId) await visibleProject(actor, input.projectId);
     authorize(actor, { label: ['create'] });
+    if (input.projectId) await writableProject(actor, input.projectId);
     return createLabel(actor.scope, input).catch((error) => nameTaken(error, 'label'));
   },
 
   async update(actor: Actor, id: string, patch: { name?: string; color?: string }) {
-    if (!(await findLabel(actor.scope, id))) throw notFound('Label not found.');
+    const current = await findLabel(actor.scope, id);
+    if (!current) throw notFound('Label not found.');
     authorize(actor, { label: ['update'] });
+    if (current.projectId) await writableProject(actor, current.projectId);
     const label = await updateLabel(actor.scope, id, patch).catch((error) =>
       nameTaken(error, 'label'),
     );
@@ -66,8 +62,10 @@ export const labelsService = {
   },
 
   async delete(actor: Actor, id: string) {
-    if (!(await findLabel(actor.scope, id))) throw notFound('Label not found.');
+    const current = await findLabel(actor.scope, id);
+    if (!current) throw notFound('Label not found.');
     authorize(actor, { label: ['delete'] });
+    if (current.projectId) await writableProject(actor, current.projectId);
     if (!(await deleteLabel(actor.scope, id))) throw notFound('Label not found.');
     return { id };
   },
@@ -84,8 +82,8 @@ export const workflowService = {
       afterId?: string | null | undefined;
     },
   ) {
-    await visibleProject(actor, input.projectId);
     authorize(actor, { workflow: ['update'] });
+    await writableProject(actor, input.projectId);
     const status = await createStatus(actor.scope, input).catch((error) =>
       nameTaken(error, 'status'),
     );
@@ -103,8 +101,10 @@ export const workflowService = {
       afterId?: string | null | undefined;
     },
   ) {
-    if (!(await findStatus(actor.scope, id))) throw notFound('Status not found.');
+    const current = await findStatus(actor.scope, id);
+    if (!current) throw notFound('Status not found.');
     authorize(actor, { workflow: ['update'] });
+    await writableProject(actor, current.projectId);
     const status = await updateStatus(actor.scope, id, patch).catch((error) =>
       nameTaken(error, 'status'),
     );
@@ -113,8 +113,10 @@ export const workflowService = {
   },
 
   async deleteStatus(actor: Actor, id: string, moveTasksTo: string, now: Date) {
-    if (!(await findStatus(actor.scope, id))) throw notFound('Status not found.');
+    const current = await findStatus(actor.scope, id);
+    if (!current) throw notFound('Status not found.');
     authorize(actor, { workflow: ['update'] });
+    await writableProject(actor, current.projectId);
     if (!(await deleteStatus(actor.scope, id, moveTasksTo, now)))
       throw notFound('Status not found.');
     return { id };

@@ -26,3 +26,22 @@ export function checkViolation(error: unknown): string | null {
   const pg = cause as { code?: string; constraint_name?: string };
   return pg?.code === '23514' ? (pg.constraint_name ?? 'unknown') : null;
 }
+
+/** Postgres gave up on a transaction to break a deadlock (`40P01`) or a serialization conflict (`40001`). */
+export function concurrencyFailure(error: unknown): boolean {
+  const cause = (error as { cause?: unknown })?.cause ?? error;
+  const code = (cause as { code?: string })?.code;
+  return code === '40P01' || code === '40001';
+}
+
+/** A sprint is in the wrong state for the change (completed sprints are closed, …). */
+export class SprintStateError extends Error {
+  override name = 'SprintStateError';
+}
+
+/** Text Postgres cannot store or search, such as a NUL character (`22021`, `22P05`). */
+export function invalidText(error: unknown): boolean {
+  const cause = (error as { cause?: unknown })?.cause ?? error;
+  const code = (cause as { code?: string })?.code;
+  return code === '22021' || code === '22P05';
+}

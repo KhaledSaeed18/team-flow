@@ -113,6 +113,65 @@ describe('robustness', () => {
     expect(column.slice(-3)).toEqual([resident.id, first.id, second.id]);
   });
 
+  test('planning a task into a completed sprint is a declared SPRINT_STATE error', async () => {
+    const start = h.clock.now();
+    const sprint = await ada.client.sprints.create({
+      projectId,
+      name: 'Closed',
+      startsAt: start,
+      endsAt: new Date(start.getTime() + 7 * DAY),
+    });
+    const started = await ada.client.sprints.start({ id: sprint.id, version: sprint.version });
+    await ada.client.sprints.complete({
+      id: sprint.id,
+      version: started.version,
+      carryOverTo: null,
+    });
+    const task = await ada.client.tasks.create({ projectId, title: 'Late' });
+    await expect(
+      ada.client.tasks.update({ id: task.id, version: task.version, sprintId: sprint.id }),
+    ).rejects.toMatchObject({ code: 'SPRINT_STATE', defined: true });
+  });
+
+  test('text with a NUL character is a 400, not a server error', async () => {
+    await expect(ada.client.search.tasks({ q: 'a\u0000b' })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
+    await expect(ada.client.tasks.create({ projectId, title: 'a\u0000b' })).rejects.toMatchObject({
+      code: 'BAD_REQUEST',
+    });
+  });
+
+  test('a stored view with a sort that no longer exists still lists, with the default order', async () => {
+    const view = await ada.client.views.create({
+      projectId,
+      name: 'Old sort',
+      filter: {},
+      sort: 'priority',
+      direction: 'ascending',
+    });
+    await h.database.sql`update saved_views set sort = 'rank' where id = ${view.id}`;
+    const listed = (await ada.client.views.list({ projectId })).find((v) => v.id === view.id);
+    expect(listed).toMatchObject({ sort: null, direction: 'ascending' });
+  });
+
+  test('sprint history lines carry the time the sprint actually started and ended', async () => {
+    const start = h.clock.now();
+    const sprint = await ada.client.sprints.create({
+      projectId,
+      name: 'Timed',
+      startsAt: start,
+      endsAt: new Date(start.getTime() + 7 * DAY),
+    });
+    // The sprint started earlier in the day than the wall clock this test runs at.
+    const started = await ada.client.sprints.start({ id: sprint.id, version: sprint.version });
+    const [row] = await h.database.sql<{ at: string }[]>`
+      select to_json(created_at) #>> '{}' as at from activity
+      where kind = 'sprint.started' order by created_at desc limit 1`;
+    if (!row || !started.startedAt) throw new Error('nothing recorded');
+    expect(new Date(row.at).toISOString()).toBe(started.startedAt.toISOString());
+  });
+
   test('cancelling an invitation records it in that invitation’s workspace, not the active one', async () => {
     const other = await ada.authPost('/organization/create', { name: 'Side', slug: 'ada-side' });
     const invitation = await ada.authPost('/organization/invite-member', {

@@ -58,17 +58,19 @@ export function Sidebar({
       <div className="flex flex-col gap-0.5">
         <div className="flex items-center justify-between px-2 pb-1">
           <h2 className="font-medium text-ink-muted text-xs">Projects</h2>
-          <Tooltip content="New project">
-            <Button
-              variant="quiet"
-              size="sm"
-              aria-label="New project"
-              className="size-6 px-0"
-              onPress={onCreateProject}
-            >
-              <Plus />
-            </Button>
-          </Tooltip>
+          {can(role, { project: ['create'] }) && (
+            <Tooltip content="New project">
+              <Button
+                variant="quiet"
+                size="sm"
+                aria-label="New project"
+                className="size-6 px-0"
+                onPress={onCreateProject}
+              >
+                <Plus />
+              </Button>
+            </Tooltip>
+          )}
         </div>
         {projects.data?.map((project) => (
           <Link

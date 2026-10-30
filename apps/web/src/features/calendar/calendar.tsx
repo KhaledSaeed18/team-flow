@@ -11,6 +11,7 @@ import {
 import { Button } from '@teamflow/ui';
 import { type ReactNode, useRef } from 'react';
 import { Button as AriaButton, useDrag, useDrop } from 'react-aria-components';
+import { useProjectAccess } from '../../lib/access.ts';
 import { type Project, type Task, tasksQuery, useUpdateTask } from '../tasks.ts';
 
 const TASK_TYPE = 'application/x-teamflow-task';
@@ -233,7 +234,10 @@ function TaskChip({
   onOpen: () => void;
 }) {
   const color = project.statuses.find((s) => s.id === task.statusId)?.color ?? '#94a3b8';
+  // Guests and archived projects: the calendar is read-only.
+  const canReschedule = useProjectAccess(project).editTasks;
   const { dragProps, dragButtonProps, isDragging } = useDrag({
+    isDisabled: !canReschedule,
     hasDragButton: true,
     getItems: () => [{ [TASK_TYPE]: task.id, 'text/plain': `${task.identifier} ${task.title}` }],
   });
@@ -246,6 +250,7 @@ function TaskChip({
     >
       <AriaButton
         {...dragButtonProps}
+        isDisabled={!canReschedule}
         aria-label={`Reschedule ${task.identifier}`}
         className="shrink-0 cursor-grab rounded-[3px] text-ink-faint outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold"
       >

@@ -4,6 +4,7 @@ import {
   createScope,
   type Database,
   findMembership,
+  findProject,
   findTask,
   foreignKeyViolation,
   loadTaskDocument,
@@ -47,6 +48,8 @@ export interface CollabData {
   readOnly: boolean;
   /** The cookie the socket authenticated with, to re-check access while it stays open. */
   cookie: string;
+  /** Set when the socket closes, which can happen while its document is still loading. */
+  closed?: boolean;
 }
 
 type Socket = ServerWebSocket<CollabData>;
@@ -110,6 +113,8 @@ export function createCollab({
     for (let attempt = 0; attempt < 3; attempt++) {
       const task = await findTask(scope, room.taskId);
       if (!task || task.description === text) return;
+      // Archived projects are read-only; edits cannot arrive, but never write into one regardless.
+      if ((await findProject(scope, task.projectId))?.archivedAt) return;
       try {
         await updateTask(scope, room.taskId, task.version, { description: text }, clock.now());
         return;
@@ -249,17 +254,18 @@ export function createCollab({
       if (!organizationId) return new Response('Select an organization first.', { status: 412 });
       const membership = await findMembership(db, organizationId, session.user.id);
       if (!membership) return new Response('Not a member of this organization.', { status: 403 });
-      if (!(await findTask(createScope(db, organizationId, membership.id), taskId))) {
-        return new Response('Not found.', { status: 404 });
-      }
+      const scope = createScope(db, organizationId, membership.id);
+      const task = await findTask(scope, taskId);
+      if (!task) return new Response('Not found.', { status: 404 });
       const role = membership.role.split(',').find(isRole) ?? 'guest';
+      const archived = Boolean((await findProject(scope, task.projectId))?.archivedAt);
       const data: CollabData = {
         kind: 'collab',
         organizationId,
         memberId: membership.id,
         userId: session.user.id,
         taskId,
-        readOnly: !can(role, { task: ['update'] }),
+        readOnly: archived || !can(role, { task: ['update'] }),
         cookie: request.headers.get('cookie') ?? '',
       };
       return server.upgrade(request, { data })
@@ -278,6 +284,12 @@ export function createCollab({
           return;
         } finally {
           current.pending--;
+        }
+        // Closed while the document loaded: never join the room (it would never leave), and let the room go if
+        // this socket was the reason it stayed.
+        if (ws.data.closed) {
+          await close(ws);
+          return;
         }
         current.sockets.set(ws, new Set());
         ws.send(
@@ -332,6 +344,7 @@ export function createCollab({
       },
 
       close(ws: Socket) {
+        ws.data.closed = true;
         void close(ws);
       },
     },
@@ -380,7 +393,12 @@ export function createCollab({
               continue;
             }
             const role = membership.role.split(',').find(isRole) ?? 'guest';
-            ws.data.readOnly = !can(role, { task: ['update'] });
+            const scope = createScope(db, ws.data.organizationId, membership.id);
+            const task = await findTask(scope, ws.data.taskId);
+            const archived = task
+              ? Boolean((await findProject(scope, task.projectId))?.archivedAt)
+              : true;
+            ws.data.readOnly = archived || !can(role, { task: ['update'] });
           } catch (error) {
             failed('revalidation')(error);
           }

@@ -1,17 +1,22 @@
 import {
   createScope,
+  findInvitation,
   findMemberSummary,
   findMembership,
   listUserOrganizations,
+  pendingInvitations,
   recordAuthEvent,
 } from '@teamflow/db';
 import type { Deps } from './context.ts';
 
 type Body = Record<string, unknown>;
 type Change = { field: string; from: unknown; to: unknown };
-type Plan = (result: Body) => { kind: string; changes: Change[]; actor?: 'gone' } | null;
+type Entry = { kind: string; changes: Change[]; actor?: 'gone' };
+type Plan = (result: Body) => Entry | Entry[] | null;
 
 const text = (value: unknown) => (typeof value === 'string' ? value : null);
+/** A role as Better Auth accepts it: a string, or a list of one (anything longer is refused before this runs). */
+const roleOf = (value: unknown) => (Array.isArray(value) ? text(value[0]) : text(value));
 
 /**
  * Better Auth owns membership, invitations and the workspace record, so their audit lines are written here, around
@@ -51,10 +56,15 @@ export function auditedAuthHandler(deps: Deps) {
         text(result.organizationId);
       if (!organizationId) return response;
       const membership = await findMembership(deps.db, organizationId, session.user.id);
-      const entry = plan.describe(result);
-      if (!entry) return response;
-      const actor = entry.actor === 'gone' ? null : (membership?.id ?? null);
-      await recordAuthEvent(createScope(deps.db, organizationId, actor), entry.kind, entry.changes);
+      const described = plan.describe(result);
+      for (const entry of described ? [described].flat() : []) {
+        const actor = entry.actor === 'gone' ? null : (membership?.id ?? null);
+        await recordAuthEvent(
+          createScope(deps.db, organizationId, actor),
+          entry.kind,
+          entry.changes,
+        );
+      }
     } catch (error) {
       deps.logger.error({ err: error, path }, 'could not record audit entry');
     }
@@ -76,26 +86,46 @@ const target = async (deps: Deps, organizationId: string | null, memberIdOrEmail
 };
 
 const PLANNERS: Record<string, Planner> = {
-  '/organization/invite-member': async (_deps, body, _user, active) => ({
-    organizationId: text(body.organizationId) ?? active,
-    describe: () => ({
-      kind: 'member.invited',
-      changes: [
-        { field: 'email', from: null, to: text(body.email) },
-        { field: 'role', from: null, to: text(body.role) },
+  // Inviting an address again cancels its earlier pending invitations (Better Auth's
+  // `cancelPendingInvitationsOnReInvite`); those cancellations are recorded too.
+  '/organization/invite-member': async (deps, body, _user, active) => {
+    const organizationId = text(body.organizationId) ?? active;
+    const email = text(body.email);
+    const earlier =
+      organizationId && email ? await pendingInvitations(deps.db, organizationId, email) : [];
+    return {
+      organizationId,
+      describe: () => [
+        ...earlier.map(() => ({
+          kind: 'invitation.canceled',
+          changes: [{ field: 'email', from: email, to: null }],
+        })),
+        {
+          kind: 'member.invited',
+          changes: [
+            { field: 'email', from: null, to: email },
+            { field: 'role', from: null, to: roleOf(body.role) },
+          ],
+        },
       ],
-    }),
-  }),
+    };
+  },
 
   // The invitation may belong to a workspace other than the active one; its own organization comes back in the
   // response.
-  '/organization/cancel-invitation': async () => ({
-    organizationId: null,
-    describe: (result) => ({
-      kind: 'invitation.canceled',
-      changes: [{ field: 'email', from: text(result.email), to: null }],
-    }),
-  }),
+  // Only a pending invitation is really canceled; cancelling one already accepted changes nothing worth a line.
+  '/organization/cancel-invitation': async (deps, body) => {
+    const id = text(body.invitationId);
+    const before = id ? await findInvitation(deps.db, id) : null;
+    if (!before || before.status !== 'pending') return null;
+    return {
+      organizationId: before.organizationId,
+      describe: () => ({
+        kind: 'invitation.canceled',
+        changes: [{ field: 'email', from: before.email, to: null }],
+      }),
+    };
+  },
 
   // The organization comes from the accepted invitation in the response; the new member is the actor.
   '/organization/accept-invitation': async () => ({
@@ -116,7 +146,7 @@ const PLANNERS: Record<string, Planner> = {
         kind: 'member.role_changed',
         changes: [
           { field: 'member', from: before.name, to: before.name },
-          { field: 'role', from: before.role, to: text(body.role) },
+          { field: 'role', from: before.role, to: roleOf(body.role) },
         ],
       }),
     };

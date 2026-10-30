@@ -85,6 +85,28 @@ describe('outbox relay', () => {
     expect(received).toEqual(['']);
   });
 
+  test('an event too large to NOTIFY is skipped and reported, and the queue keeps moving', async () => {
+    // Earlier tests leave events pending; start from an empty queue.
+    while ((await relayOutbox(t.db, { channel: CHANNEL })) > 0) {}
+    const [before] = await write(1);
+    const [huge] = await t.db
+      .insert(outbox)
+      .values({ organizationId, topic: 'too.big', payload: { blob: 'x'.repeat(9000) } })
+      .returning({ id: outbox.id });
+    const [after] = await write(1);
+    const { received, listening, finished } = collect(t, CHANNEL, 2);
+    await listening;
+    const skipped: string[] = [];
+
+    expect(
+      await relayOutbox(t.db, { channel: CHANNEL, onOversized: (id) => skipped.push(id) }),
+    ).toBe(3);
+    await finished;
+    expect(received.map((r) => JSON.parse(r).id)).toEqual([before?.id, after?.id]);
+    expect(skipped).toEqual([huge?.id ?? '']);
+    expect(await t.db.select().from(outbox).where(isNull(outbox.publishedAt))).toHaveLength(0);
+  });
+
   test('prunes only published events older than the retention window', async () => {
     await t.db.update(outbox).set({ publishedAt: new Date(Date.now() - 10 * 86_400_000) });
     await write(1);

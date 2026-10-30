@@ -26,7 +26,14 @@ export async function runDigests({
     if (person.frequency === 'off' || !digestDue(person.frequency, person.lastSentAt, now))
       continue;
     const since = digestSince(person.lastSentAt, now);
-    const items = await digestItems(db, person.organizationId, person.memberId, since, SCANNED);
+    const items = await digestItems(
+      db,
+      person.organizationId,
+      person.memberId,
+      since,
+      now,
+      SCANNED,
+    );
     if (items.length === 0) continue;
 
     // Marked before enqueueing: a crash in between skips one digest instead of sending it twice.

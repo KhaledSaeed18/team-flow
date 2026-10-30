@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Link } from '@tanstack/react-router';
-import { Avatar, Button } from '@teamflow/ui';
+import { Avatar, Button, Notice } from '@teamflow/ui';
 import { inboxQuery, linkFor, summarize } from '../../features/inbox/inbox.ts';
 import { orpc } from '../../lib/api.ts';
 
@@ -34,7 +34,15 @@ function Inbox() {
           </Button>
         )}
       </div>
-      {items.length === 0 && !inbox.isPending && (
+      {inbox.isError && (
+        <Notice tone="danger" className="mt-8">
+          The inbox could not be loaded.{' '}
+          <Button variant="quiet" size="sm" onPress={() => void inbox.refetch()}>
+            Try again
+          </Button>
+        </Notice>
+      )}
+      {items.length === 0 && inbox.isSuccess && (
         <p className="mt-8 text-ink-muted text-sm">
           Nothing here yet. When someone assigns you a task, mentions you or comments on your work,
           it shows up here.

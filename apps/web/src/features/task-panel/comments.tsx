@@ -37,7 +37,7 @@ function Body({ comment, members }: { comment: Comment; members: Member[] }) {
   return <>{parts}</>;
 }
 
-export function Comments({ taskId }: { taskId: string }) {
+export function Comments({ taskId, canComment }: { taskId: string; canComment: boolean }) {
   const comments = useQuery(orpc.comments.list.queryOptions({ input: { taskId } }));
   const members = useQuery(orpc.members.list.queryOptions());
   const me = useQuery(meQuery());
@@ -65,12 +65,17 @@ export function Comments({ taskId }: { taskId: string }) {
               <p className="mt-0.5 whitespace-pre-wrap text-ink-muted text-sm leading-relaxed">
                 <Body comment={comment} members={members.data ?? []} />
               </p>
-              <Reactions comment={comment} taskId={taskId} myName={me.data?.user.name ?? ''} />
+              <Reactions
+                comment={comment}
+                taskId={taskId}
+                myName={me.data?.user.name ?? ''}
+                readOnly={!canComment}
+              />
             </div>
           </li>
         ))}
       </ol>
-      <Composer taskId={taskId} members={members.data ?? []} />
+      {canComment && <Composer taskId={taskId} members={members.data ?? []} />}
     </div>
   );
 }

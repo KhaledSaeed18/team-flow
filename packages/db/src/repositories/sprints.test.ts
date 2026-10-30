@@ -190,4 +190,89 @@ describe('sprints', () => {
       ),
     ).rejects.toMatchObject({ cause: { constraint_name: 'tasks_sprint_in_project_fk' } });
   });
+
+  test('a completed sprint is closed: no task joins or leaves it', async () => {
+    const { project, statuses: closedStatuses } = await createProject(scope, {
+      key: 'CL',
+      name: 'Closed',
+    });
+    // Finished work stays in a completed sprint; unfinished work goes back to the backlog.
+    const finishedStatus = closedStatuses.find((st) => st.category === 'completed')?.id;
+    const sprint = await createSprint(scope, {
+      projectId: project.id,
+      name: 'Closed 1',
+      startsAt: day(0),
+      endsAt: day(7),
+    });
+    const kept = await createTask(
+      scope,
+      { projectId: project.id, title: 'Kept', sprintId: sprint.id, statusId: finishedStatus },
+      day(0),
+    );
+    const outside = await createTask(
+      scope,
+      { projectId: project.id, title: 'Outside', estimate: 5 },
+      day(0),
+    );
+    const started = await startSprint(scope, sprint.id, sprint.version, day(0));
+    if (!kept || !outside || !started) throw new Error('setup failed');
+    await completeSprint(scope, sprint.id, started.version, null, day(7));
+    const after = await findTask(scope, kept.id);
+    if (!after) throw new Error('setup failed');
+
+    await expect(
+      updateTask(scope, outside.id, outside.version, { sprintId: sprint.id }, day(8)),
+    ).rejects.toBeInstanceOf(SprintStateError);
+    await expect(
+      createTask(scope, { projectId: project.id, title: 'Late', sprintId: sprint.id }, day(8)),
+    ).rejects.toBeInstanceOf(SprintStateError);
+    await expect(
+      updateTask(scope, kept.id, after.version, { sprintId: null }, day(8)),
+    ).rejects.toBeInstanceOf(SprintStateError);
+    // Other edits to a task in a closed sprint are fine.
+    await updateTask(scope, kept.id, after.version, { title: 'Kept, renamed' }, day(8));
+  });
+
+  test('a task leaving a sprint holds no row lock while the sprint is being completed', async () => {
+    const { project } = await createProject(scope, { key: 'LK', name: 'Locks' });
+    const sprint = await createSprint(scope, {
+      projectId: project.id,
+      name: 'Locked',
+      startsAt: day(0),
+      endsAt: day(7),
+    });
+    const task = await createTask(
+      scope,
+      { projectId: project.id, title: 'Leaving', sprintId: sprint.id },
+      day(0),
+    );
+    if (!task) throw new Error('setup failed');
+
+    let release = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let locked = () => {};
+    const holding = new Promise<void>((resolve) => {
+      locked = resolve;
+    });
+    let rowsLocked = false;
+    // Completing a sprint: the sprint first, then its tasks.
+    const completing = t.db.transaction(async (tx) => {
+      await tx.execute(sql`select id from sprints where id = ${sprint.id}::uuid for update`);
+      locked();
+      await held;
+      await tx.execute(sql`select id from tasks where id = ${task.id}::uuid for update nowait`);
+      rowsLocked = true;
+    });
+    await holding;
+    const leaving = updateTask(scope, task.id, task.version, { sprintId: null }, day(1));
+    for (;;) {
+      const [waiting] = await t.db.execute(sql`select 1 from pg_locks where not granted`);
+      if (waiting) break;
+    }
+    release();
+    await Promise.all([completing, leaving]);
+    expect(rowsLocked).toBe(true);
+  });
 });

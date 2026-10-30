@@ -6,8 +6,9 @@ import {
   type StatusCategory,
 } from '@teamflow/domain';
 import { and, asc, desc, eq, gt, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
-import { StaleWriteError } from '../errors.ts';
+import { SprintStateError, StaleWriteError } from '../errors.ts';
 import { labels, projects, workflowStatuses } from '../schema/projects.ts';
+import { sprints } from '../schema/sprints.ts';
 import { activity, type FieldChange, taskLabels, tasks } from '../schema/tasks.ts';
 import { inTransaction, type Scope } from '../scope.ts';
 import { notifyAssigned } from './collaboration.ts';
@@ -208,6 +209,25 @@ async function replaceLabels(scope: Scope, taskId: string, labelIds: string[]) {
   }
 }
 
+/**
+ * A completed sprint is closed: its report and velocity are frozen, so no task may join or leave it. Locked in
+ * share mode, so a sprint being completed at the same moment waits for this write or is seen as completed.
+ */
+async function assertOpenSprint(tx: Scope, sprintId: string | null) {
+  if (!sprintId) return;
+  const [sprint] = await tx.db
+    .select({ status: sprints.status })
+    .from(sprints)
+    .where(and(eq(sprints.organizationId, tx.organizationId), eq(sprints.id, sprintId)))
+    .for('share')
+    .limit(1);
+  if (sprint?.status === 'completed') {
+    throw new SprintStateError(
+      'That sprint is completed. Plan the task into an open sprint instead.',
+    );
+  }
+}
+
 /** Rank for a task placed between two neighbours (by id) in a column; `null` means the end of the column. */
 async function rankFor(
   scope: Scope,
@@ -298,6 +318,7 @@ export function createTask(scope: Scope, input: CreateTaskInput, now: Date) {
       )
       .returning({ number: projects.taskSequence });
     if (!allocated) return null;
+    await assertOpenSprint(tx, input.sprintId ?? null);
 
     const status = input.statusId
       ? await statusOf(tx, input.projectId, input.statusId)
@@ -483,6 +504,23 @@ export function updateTask(
   now: Date,
 ) {
   return inTransaction(scope, async (tx) => {
+    // A status change computes a rank in the target column: take that column's lock before the task's row lock,
+    // the same order a rebalance uses, so the two cannot deadlock.
+    if (patch.statusId) await lockColumn(tx, patch.statusId);
+    // Changing sprints: check (and share-lock) both sprints before the task's row, in id order. Completing a
+    // sprint locks its sprints first and the tasks after, so this order cannot deadlock with it. If the task
+    // changes between this read and the row lock, its version moves and the write is refused as stale anyway.
+    if (patch.sprintId !== undefined) {
+      const [before] = await tx.db
+        .select({ sprintId: tasks.sprintId })
+        .from(tasks)
+        .where(and(live(tx), eq(tasks.id, id)))
+        .limit(1);
+      if (before && before.sprintId !== patch.sprintId) {
+        const involved = [before.sprintId, patch.sprintId].filter((s): s is string => !!s).sort();
+        for (const sprintId of involved) await assertOpenSprint(tx, sprintId);
+      }
+    }
     const current = await lockTask(tx, id, expectedVersion);
     if (!current) return null;
     const { statusId, labelIds, ...fields } = patch;
@@ -522,6 +560,8 @@ export function moveTask(
   now: Date,
 ) {
   return inTransaction(scope, async (tx) => {
+    // Column lock before row lock, the same order a rebalance uses, so the two cannot deadlock.
+    await lockColumn(tx, input.statusId);
     const current = await lockTask(tx, id, expectedVersion);
     if (!current) return null;
     if (input.afterId === id || input.beforeId === id) {

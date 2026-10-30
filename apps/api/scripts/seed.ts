@@ -16,6 +16,7 @@ import {
   createScope,
   createSprint,
   createTask,
+  type Executor,
   findTask,
   moveTask,
   newId,
@@ -25,7 +26,7 @@ import {
 } from '@teamflow/db';
 import { accounts, labels, members, organizations, users } from '@teamflow/db/schema';
 import type { Priority } from '@teamflow/domain';
-import { eq } from 'drizzle-orm';
+import { eq, sql } from 'drizzle-orm';
 
 const DEMO_EMAIL = 'demo@teamflow.dev';
 const DEMO_PASSWORD = 'teamflow-demo';
@@ -265,13 +266,30 @@ async function main() {
   if (!url) throw new Error('DATABASE_URL is not set');
   const { db, close } = createDatabase({ url, max: 4, applicationName: 'teamflow-seed' });
 
-  const [existing] = await db.select().from(users).where(eq(users.email, DEMO_EMAIL)).limit(1);
-  if (existing) {
-    console.info('Demo workspace already exists. Sign in as', DEMO_EMAIL, '/', DEMO_PASSWORD);
+  // One transaction: a run that fails part-way leaves nothing behind, so the next run starts clean. The advisory
+  // lock makes two runs at once take turns instead of racing on the same slug and emails.
+  try {
+    const seeded = await db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtext('teamflow-seed'))`);
+      const [existing] = await tx.select().from(users).where(eq(users.email, DEMO_EMAIL)).limit(1);
+      if (existing) return false;
+      await seed(tx);
+      return true;
+    });
+    console.info(
+      seeded
+        ? 'Seeded Northwind Robotics. Sign in as'
+        : 'Demo workspace already exists. Sign in as',
+      DEMO_EMAIL,
+      '/',
+      DEMO_PASSWORD,
+    );
+  } finally {
     await close();
-    return;
   }
+}
 
+async function seed(db: Executor) {
   const today = new Date();
   today.setUTCHours(9, 0, 0, 0);
   // Sprint 4 started six days ago; the three before it ran back to back.
@@ -552,9 +570,6 @@ async function main() {
     const task = id ? await findTask(scope, id) : null;
     if (task) await updateTask(scope, task.id, task.version, { dueDate: iso(offset) }, at(47, 9));
   }
-
-  console.info('Seeded Northwind Robotics. Sign in as', DEMO_EMAIL, '/', DEMO_PASSWORD);
-  await close();
 }
 
 await main();

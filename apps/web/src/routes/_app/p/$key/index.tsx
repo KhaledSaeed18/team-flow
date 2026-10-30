@@ -31,7 +31,9 @@ function BoardView() {
   const sprints = useQuery(sprintsQuery(project.id));
   const open = (sprints.data ?? []).filter((s) => s.status !== 'completed');
   const active = open.find((s) => s.status === 'active');
-  const selected = sprint ?? active?.id ?? ALL;
+  // An old link to a completed sprint, or a made-up id, falls back to the default instead of an empty board.
+  const known = sprint === ALL || open.some((s) => s.id === sprint);
+  const selected = (known ? sprint : undefined) ?? active?.id ?? ALL;
 
   return (
     <div className="flex h-full flex-col">
