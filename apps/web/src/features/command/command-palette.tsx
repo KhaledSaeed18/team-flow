@@ -214,6 +214,7 @@ export function CommandPalette({
               className="border-line border-b"
             >
               <Input
+                maxLength={200}
                 placeholder="Search tasks, projects and actions…"
                 className="h-12 w-full bg-transparent px-4 text-sm outline-none placeholder:text-ink-faint [&::-webkit-search-cancel-button]:hidden"
               />
@@ -228,7 +229,11 @@ export function CommandPalette({
               }}
               renderEmptyState={() => (
                 <p className="px-4 py-8 text-center text-ink-muted text-sm">
-                  {tasks.isFetching ? 'Searching…' : `Nothing matches “${query}”.`}
+                  {tasks.isFetching
+                    ? 'Searching…'
+                    : tasks.isError
+                      ? 'Search is not available right now. Try again in a moment.'
+                      : `Nothing matches “${query}”.`}
                 </p>
               )}
               className="max-h-[50vh] overflow-y-auto p-1.5 outline-none"
