@@ -261,10 +261,12 @@ WebSockets with Yjs instead of server-sent events.
 
 ## Quality
 
-- **399 unit and integration tests** with `bun test`. API and repository tests run against real PostgreSQL: each
-  test file gets its own database, cloned from a migrated template in milliseconds.
-- **38 Playwright journeys** against a fresh, seeded stack, including two people on one board, editing a description
-  together, and layout guards that fail if any screen overflows at desktop, laptop or phone sizes.
+- **431 unit and integration tests** with `bun test`. API and repository tests run against real PostgreSQL: each
+  test file gets its own database, cloned from a migrated template in milliseconds. Concurrency is tested too:
+  lock-order tests reproduce the exact interleavings that once deadlocked.
+- **58 Playwright journeys** against a fresh, seeded stack, including two people on one board, editing a description
+  together, guests and archived projects, failure states, and layout guards that fail if any screen overflows at
+  desktop, laptop or phone sizes.
 - **CI on every pull request:** lint and format, typecheck, tests and build (Turborepo-cached), Conventional Commits,
   and the end-to-end suite.
 - **Strict TypeScript**, no `any`, input narrowed by Zod at every boundary; tests never sleep, time is injected.
