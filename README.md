@@ -1,7 +1,7 @@
 <p align="center">
   <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/teamflow-logo-dark.png" />
-    <img alt="TeamFlow" src="assets/brand/teamflow-logo.png" width="300" />
+    <source media="(prefers-color-scheme: dark)" srcset="https://raw.githubusercontent.com/KhaledSaeed18/team-flow/main/assets/brand/teamflow-logo-dark.png" />
+    <img alt="TeamFlow" src="https://raw.githubusercontent.com/KhaledSaeed18/team-flow/main/assets/brand/teamflow-logo.png" width="300" />
   </picture>
 </p>
 
