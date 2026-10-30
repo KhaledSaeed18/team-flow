@@ -6,11 +6,15 @@ import {
   Heading,
   Hr,
   Html,
+  Img,
   Preview,
   Section,
   Text,
 } from '@react-email/components';
 import type { ReactNode } from 'react';
+
+/** The content id of the inline logo every email carries (see `logoAttachment`). */
+export const LOGO_CID = 'teamflow-mark';
 
 /**
  * Plain, readable emails: one column, system fonts (custom fonts are unreliable in mail clients), the product's ink
@@ -56,9 +60,26 @@ function Layout({
             padding: '32px 32px 24px',
           }}
         >
-          <Text style={{ color: colors.ink, fontSize: 14, fontWeight: 600, margin: '0 0 24px' }}>
-            TeamFlow
-          </Text>
+          <Section style={{ margin: '0 0 24px' }}>
+            <Img
+              src={`cid:${LOGO_CID}`}
+              width="24"
+              height="24"
+              alt=""
+              style={{ display: 'inline-block', verticalAlign: 'middle', borderRadius: 6 }}
+            />
+            <span
+              style={{
+                color: colors.ink,
+                fontSize: 15,
+                fontWeight: 600,
+                marginLeft: 8,
+                verticalAlign: 'middle',
+              }}
+            >
+              TeamFlow
+            </span>
+          </Section>
           <Heading
             as="h1"
             style={{ color: colors.ink, fontSize: 20, fontWeight: 600, margin: '0 0 12px' }}
