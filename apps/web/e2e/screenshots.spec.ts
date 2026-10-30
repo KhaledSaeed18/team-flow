@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 import { expect, type Page, test } from '@playwright/test';
+import { E2E } from './env.ts';
 
 /**
  * Product screenshots for the site, taken from the seeded demo workspace. Skipped in normal runs; regenerate with
@@ -66,4 +67,84 @@ test('board in the dark', async ({ page }) => {
   await page.getByRole('grid').first().waitFor();
   await settle(page);
   await page.screenshot({ path: out('board-dark') });
+});
+
+test('inbox', async ({ page }) => {
+  await page.goto('/inbox');
+  await expect(page.getByRole('heading', { name: 'Inbox' })).toBeVisible();
+  await settle(page);
+  await page.screenshot({ path: out('inbox') });
+});
+
+test('audit log', async ({ page }) => {
+  await page.goto('/settings/audit');
+  await expect(page.getByRole('heading', { name: 'Audit log' })).toBeVisible();
+  await settle(page);
+  await page.screenshot({ path: out('audit') });
+});
+
+test('api reference', async ({ page }) => {
+  await page.goto(`http://localhost:${E2E.apiPort}/api/docs#tag/tasks/POST/tasks/{id}/move`);
+  await expect(page.getByRole('heading', { name: 'TeamFlow API' })).toBeAttached();
+  await page.waitForTimeout(2500);
+  await page.screenshot({ path: out('api-reference') });
+});
+
+test.describe('on a phone', () => {
+  test.use({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 3,
+    isMobile: true,
+    hasTouch: true,
+  });
+
+  test('board, drawer and task', async ({ page }) => {
+    await page.goto('/p/RF');
+    await page.getByRole('grid').first().waitFor();
+    // Start at the column with work in it, as a person would swipe to.
+    await page
+      .getByRole('region', { name: 'In Progress' })
+      .evaluate((lane: HTMLElement) =>
+        lane.parentElement?.scrollTo({ left: lane.offsetLeft - 16 }),
+      );
+    await settle(page);
+    await page.screenshot({ path: out('phone-board') });
+    await page.getByRole('button', { name: 'Open navigation' }).tap();
+    await expect(page.getByRole('dialog', { name: 'Navigation' })).toBeVisible();
+    await settle(page);
+    await page.screenshot({ path: out('phone-drawer') });
+    await page.goto('/p/RF?task=RF-13');
+    await expect(page.getByRole('complementary', { name: /RF-13/ })).toBeVisible();
+    await settle(page);
+    await page.screenshot({ path: out('phone-task') });
+  });
+});
+
+/** The landing page and docs come from the Astro dev server (`bun run --cwd apps/site dev`). */
+test.describe('site and docs', () => {
+  const site = process.env.SITE_URL ?? 'http://localhost:4321';
+  // The dev server's toolbar is not part of the site.
+  test.beforeEach(async ({ page }) => {
+    await page.addInitScript(() => {
+      addEventListener('DOMContentLoaded', () => {
+        const style = document.createElement('style');
+        style.textContent = 'astro-dev-toolbar { display: none !important; }';
+        document.head.append(style);
+      });
+    });
+  });
+
+  test('landing page', async ({ page }) => {
+    await page.goto(site);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await settle(page);
+    await page.screenshot({ path: out('site') });
+  });
+
+  test('docs', async ({ page }) => {
+    await page.goto(`${site}/docs/architecture/real-time/`);
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await settle(page);
+    await page.screenshot({ path: out('docs') });
+  });
 });
