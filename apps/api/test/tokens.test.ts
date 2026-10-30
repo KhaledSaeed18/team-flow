@@ -119,4 +119,15 @@ describe('personal access tokens', () => {
     expect(await keys('?includeArchived=true')).toContain('OLDF');
     expect((await rest(secret, '/projects?includeArchived=maybe')).status).toBe(400);
   });
+
+  test('/me through a token shows only the workspace the token is for', async () => {
+    const { secret } = await ada.client.tokens.create({ name: 'Me' });
+    await ada.authPost('/organization/create', { name: 'Elsewhere', slug: 'ada-elsewhere' });
+    await ada.authPost('/organization/set-active', { organizationId: ada.organizationId });
+    expect((await ada.client.me.get()).organizations).toHaveLength(2);
+    const viaToken = (await (await rest(secret, '/me')).json()) as {
+      organizations: { id: string }[];
+    };
+    expect(viaToken.organizations.map((o) => o.id)).toEqual([ada.organizationId]);
+  });
 });
