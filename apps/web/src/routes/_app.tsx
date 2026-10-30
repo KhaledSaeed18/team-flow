@@ -6,6 +6,7 @@ import { MobileBar } from '../components/shell/mobile-bar.tsx';
 import { Sidebar } from '../components/shell/sidebar.tsx';
 import { CommandPalette } from '../features/command/command-palette.tsx';
 import { ShortcutsDialog } from '../features/command/shortcuts-dialog.tsx';
+import { useLiveInbox } from '../features/inbox/inbox.ts';
 import { orpc } from '../lib/api.ts';
 import { authClient } from '../lib/auth.ts';
 import { requestCreateTask } from '../lib/events.ts';
@@ -43,6 +44,8 @@ function AppShell() {
   const [help, setHelp] = useState(false);
   const overlayOpen = creating || palette || help;
   const queryClient = useQueryClient();
+
+  useLiveInbox();
 
   // Workspace-wide changes: labels that belong to no project, and the project list itself.
   useChannel('org', (event) => {
