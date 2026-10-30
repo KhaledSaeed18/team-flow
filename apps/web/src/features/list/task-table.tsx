@@ -109,8 +109,15 @@ export function TaskTable({
     'sticky top-0 z-10 h-9 cursor-default border-line border-b bg-canvas px-3 text-left font-medium text-ink-muted text-xs outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold data-[focus-visible]:-outline-offset-2';
   const cell =
     'truncate px-3 text-sm leading-10 outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold data-[focus-visible]:-outline-offset-2';
-  const sortable = (id: SortColumn, label: string, width?: number) => (
-    <Column id={id} allowsSorting isRowHeader={id === 'title'} width={width} className={header}>
+  const sortable = (id: SortColumn, label: string, width?: number, minWidth?: number) => (
+    <Column
+      id={id}
+      allowsSorting
+      isRowHeader={id === 'title'}
+      width={width}
+      minWidth={minWidth}
+      className={header}
+    >
       {({ sortDirection }) => (
         <span className="flex items-center gap-1">
           {label}
@@ -133,7 +140,8 @@ export function TaskTable({
       >
         <TableHeader>
           {sortable('identifier', 'ID', 90)}
-          {sortable('title', 'Title')}
+          {/* The title takes the free space but never less than this; narrower windows scroll sideways. */}
+          {sortable('title', 'Title', undefined, 260)}
           {sortable('status', 'Status', 150)}
           {sortable('priority', 'Priority', 140)}
           {sortable('assignee', 'Assignee', 170)}
