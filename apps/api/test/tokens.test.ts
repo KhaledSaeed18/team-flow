@@ -105,6 +105,17 @@ describe('personal access tokens', () => {
     expect((await rest(secret, '/me')).status).toBe(401);
   });
 
+  test('a refused token answers in the same error shape as every other API error', async () => {
+    const response = await rest('tf_not-a-real-token', '/me');
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({
+      defined: true,
+      code: 'UNAUTHORIZED',
+      status: 401,
+      message: 'This token is invalid, expired or revoked.',
+    });
+  });
+
   test('query flags read "false" as false', async () => {
     const { secret } = await ada.client.tokens.create({ name: 'Flags' });
     const old = await ada.client.projects.create({ key: 'OLDF', name: 'Old flags' });

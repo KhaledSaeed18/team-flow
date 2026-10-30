@@ -39,6 +39,14 @@ const ACCESS_PATHS = new Set([
 
 type Env = { Variables: { requestId: string } };
 
+/** The same error shape oRPC sends, so every API error reads alike whichever layer refused the request. */
+const errorBody = (code: string, status: number, message: string, defined = true) => ({
+  defined,
+  code,
+  status,
+  message,
+});
+
 export function createApp(deps: Deps, options: AppOptions) {
   const app = new Hono<Env>();
   const { logger } = deps;
@@ -136,7 +144,7 @@ export function createApp(deps: Deps, options: AppOptions) {
     const auth = await authenticateToken(deps, c.req.raw.headers);
     if (auth.kind === 'invalid') {
       return c.json(
-        { code: 'UNAUTHORIZED', message: 'This token is invalid, expired or revoked.' },
+        errorBody('UNAUTHORIZED', 401, 'This token is invalid, expired or revoked.'),
         401,
       );
     }
@@ -145,7 +153,7 @@ export function createApp(deps: Deps, options: AppOptions) {
       auth.grant.access === 'read' &&
       !['GET', 'HEAD'].includes(c.req.method)
     ) {
-      return c.json({ code: 'FORBIDDEN', message: 'This token is read-only.' }, 403);
+      return c.json(errorBody('FORBIDDEN', 403, 'This token is read-only.'), 403);
     }
     const base = await context(c.req.raw.headers, c.get('requestId'));
     const { matched, response } = await rest.handle(c.req.raw, {
@@ -156,10 +164,10 @@ export function createApp(deps: Deps, options: AppOptions) {
     await next();
   });
 
-  app.notFound((c) => c.json({ code: 'NOT_FOUND', message: 'Not found.' }, 404));
+  app.notFound((c) => c.json(errorBody('NOT_FOUND', 404, 'Not found.'), 404));
   app.onError((error, c) => {
     logger.error({ err: error, requestId: c.get('requestId') }, 'unhandled error');
-    return c.json({ code: 'INTERNAL_SERVER_ERROR', message: 'Something went wrong.' }, 500);
+    return c.json(errorBody('INTERNAL_SERVER_ERROR', 500, 'Something went wrong.', false), 500);
   });
 
   return app;
