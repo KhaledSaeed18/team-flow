@@ -104,7 +104,9 @@ test.describe('on a phone', () => {
     // Start at the column with work in it, as a person would swipe to.
     await page
       .getByRole('region', { name: 'In Progress' })
-      .evaluate((lane) => lane.parentElement?.scrollTo({ left: lane.offsetLeft - 16 }));
+      .evaluate((lane: HTMLElement) =>
+        lane.parentElement?.scrollTo({ left: lane.offsetLeft - 16 }),
+      );
     await settle(page);
     await page.screenshot({ path: out('phone-board') });
     await page.getByRole('button', { name: 'Open navigation' }).tap();
