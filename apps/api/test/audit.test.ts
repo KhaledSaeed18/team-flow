@@ -112,4 +112,33 @@ describe('audit log', () => {
       'member.removed',
     );
   });
+
+  test('invitations: a re-invite records the one it replaced; cancelling an accepted one records nothing', async () => {
+    await ada.authPost('/organization/invite-member', {
+      email: 'twice@example.com',
+      role: 'member',
+    });
+    await ada.authPost('/organization/invite-member', {
+      email: 'twice@example.com',
+      role: 'admin',
+    });
+    const entries = (await ada.client.audit.list()).entries;
+    expect(entries.slice(0, 2).map((e) => e.kind)).toEqual([
+      'member.invited',
+      'invitation.canceled',
+    ]);
+
+    const joined = await h.join(ada, 'Gwen', 'member');
+    const invitation = (
+      (await (await ada.fetch('/api/auth/organization/list-invitations')).json()) as {
+        id: string;
+        email: string;
+        status: string;
+      }[]
+    ).find((i) => i.email === joined.email);
+    expect(invitation?.status).toBe('accepted');
+    const before = (await ada.client.audit.list()).entries.length;
+    await ada.authPost('/organization/cancel-invitation', { invitationId: invitation?.id });
+    expect((await ada.client.audit.list()).entries.length).toBe(before);
+  });
 });
