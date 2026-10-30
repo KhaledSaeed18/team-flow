@@ -198,13 +198,19 @@ export function completeSprint(
   now: Date,
 ) {
   return inTransaction(scope, async (tx) => {
+    // Both sprints are locked before any task, and in id order, the same order a task write takes them in.
+    const early =
+      carryOverTo && carryOverTo < id
+        ? await findSprint(tx, carryOverTo, { lock: true })
+        : undefined;
     const current = await lockSprint(tx, id, expectedVersion);
     if (!current) return null;
     if (current.status !== 'active')
       throw new SprintStateError('Only the active sprint can be completed.');
     if (carryOverTo) {
       // Locked, so it cannot be started or completed while unfinished work is moved into it.
-      const target = await findSprint(tx, carryOverTo, { lock: true });
+      const target =
+        early !== undefined ? early : await findSprint(tx, carryOverTo, { lock: true });
       if (!target || target.projectId !== current.projectId || target.status !== 'planned') {
         throw new InvalidReferenceError(
           'Unfinished work can only move to a planned sprint of this project.',

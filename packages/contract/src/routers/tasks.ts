@@ -49,6 +49,8 @@ const errors = {
     status: 422,
     message: 'Something this refers to does not fit here.',
   },
+  // Planning a task into, or out of, a completed sprint.
+  SPRINT_STATE: { status: 409, message: 'The sprint is not in a state that allows this.' },
 } as const;
 
 const tags = ['Tasks'];

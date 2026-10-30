@@ -507,13 +507,23 @@ export function updateTask(
     // A status change computes a rank in the target column: take that column's lock before the task's row lock,
     // the same order a rebalance uses, so the two cannot deadlock.
     if (patch.statusId) await lockColumn(tx, patch.statusId);
+    // Changing sprints: check (and share-lock) both sprints before the task's row, in id order. Completing a
+    // sprint locks its sprints first and the tasks after, so this order cannot deadlock with it. If the task
+    // changes between this read and the row lock, its version moves and the write is refused as stale anyway.
+    if (patch.sprintId !== undefined) {
+      const [before] = await tx.db
+        .select({ sprintId: tasks.sprintId })
+        .from(tasks)
+        .where(and(live(tx), eq(tasks.id, id)))
+        .limit(1);
+      if (before && before.sprintId !== patch.sprintId) {
+        const involved = [before.sprintId, patch.sprintId].filter((s): s is string => !!s).sort();
+        for (const sprintId of involved) await assertOpenSprint(tx, sprintId);
+      }
+    }
     const current = await lockTask(tx, id, expectedVersion);
     if (!current) return null;
     const { statusId, labelIds, ...fields } = patch;
-    if (fields.sprintId !== undefined && fields.sprintId !== current.sprintId) {
-      await assertOpenSprint(tx, current.sprintId);
-      await assertOpenSprint(tx, fields.sprintId);
-    }
     if (labelIds) await assertLabels(tx, current.projectId, labelIds);
     if (fields.parentTaskId)
       await assertParent(tx, current.projectId, fields.parentTaskId, current.id);
