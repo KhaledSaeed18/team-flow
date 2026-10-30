@@ -1,11 +1,29 @@
 <p align="center">
-  <img src="assets/images/teamflow-banner.png" alt="TeamFlow" width="100%" />
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="assets/brand/teamflow-logo-dark.png" />
+    <img alt="TeamFlow" src="assets/brand/teamflow-logo.png" width="300" />
+  </picture>
 </p>
 
-# TeamFlow
+<p align="center">A real-time, keyboard-first agile workspace.</p>
 
-A real-time, keyboard-first agile workspace. Boards update live for everyone on them, every card can be moved with
-the keyboard as well as the mouse, and the whole stack runs on one Postgres database.
+<p align="center">
+  <a href="https://github.com/KhaledSaeed18/team-flow/actions/workflows/ci.yml"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/ci/KhaledSaeed18/team-flow.svg?workflow=ci.yml&branch=main&mode=dark&variant=outline&size=sm" /><img alt="CI" src="https://shieldcn.dev/github/ci/KhaledSaeed18/team-flow.svg?workflow=ci.yml&branch=main&mode=light&variant=outline&size=sm" /></picture></a>
+  <a href="https://github.com/KhaledSaeed18/team-flow/blob/main/LICENSE"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/license/KhaledSaeed18/team-flow.svg?mode=dark&variant=outline&size=sm" /><img alt="License" src="https://shieldcn.dev/github/license/KhaledSaeed18/team-flow.svg?mode=light&variant=outline&size=sm" /></picture></a>
+  <a href="https://github.com/KhaledSaeed18/team-flow/commits/main"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/github/last-commit/KhaledSaeed18/team-flow.svg?mode=dark&variant=outline&size=sm" /><img alt="Last commit" src="https://shieldcn.dev/github/last-commit/KhaledSaeed18/team-flow.svg?mode=light&variant=outline&size=sm" /></picture></a>
+</p>
+
+<p align="center">
+  <a href="https://bun.sh"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/Bun-1.4-gray.svg?mode=dark&variant=outline&size=sm&logo=bun" /><img alt="Bun" src="https://shieldcn.dev/badge/Bun-1.4-gray.svg?mode=light&variant=outline&size=sm&logo=bun" /></picture></a>
+  <a href="https://www.typescriptlang.org"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/TypeScript-7-blue.svg?mode=dark&variant=outline&size=sm&logo=typescript" /><img alt="TypeScript" src="https://shieldcn.dev/badge/TypeScript-7-blue.svg?mode=light&variant=outline&size=sm&logo=typescript" /></picture></a>
+  <a href="https://hono.dev"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/Hono-oRPC-orange.svg?mode=dark&variant=outline&size=sm&logo=hono" /><img alt="Hono and oRPC" src="https://shieldcn.dev/badge/Hono-oRPC-orange.svg?mode=light&variant=outline&size=sm&logo=hono" /></picture></a>
+  <a href="https://react.dev"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/React-19-blue.svg?mode=dark&variant=outline&size=sm&logo=react" /><img alt="React" src="https://shieldcn.dev/badge/React-19-blue.svg?mode=light&variant=outline&size=sm&logo=react" /></picture></a>
+  <a href="https://www.postgresql.org"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/PostgreSQL-18-blue.svg?mode=dark&variant=outline&size=sm&logo=postgresql" /><img alt="PostgreSQL" src="https://shieldcn.dev/badge/PostgreSQL-18-blue.svg?mode=light&variant=outline&size=sm&logo=postgresql" /></picture></a>
+  <a href="https://orm.drizzle.team"><picture><source media="(prefers-color-scheme: dark)" srcset="https://shieldcn.dev/badge/Drizzle-ORM-green.svg?mode=dark&variant=outline&size=sm&logo=drizzle" /><img alt="Drizzle ORM" src="https://shieldcn.dev/badge/Drizzle-ORM-green.svg?mode=light&variant=outline&size=sm&logo=drizzle" /></picture></a>
+</p>
+
+Boards update live for everyone on them, every card can be moved with the keyboard as well as the mouse, and the
+whole stack runs on one Postgres database.
 
 > The original NestJS + Prisma REST API is preserved at tag
 > [`v1.0.0`](https://github.com/KhaledSaeed18/team-flow/tree/v1.0.0). v2 is a full rewrite.

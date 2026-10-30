@@ -1,16 +1,34 @@
+import { readFileSync } from 'node:fs';
 import { render } from '@react-email/render';
 import { createElement } from 'react';
 import type { EmailMessage } from './messages.ts';
-import { CodeEmail, DigestEmail, InvitationEmail } from './templates.tsx';
+import { CodeEmail, DigestEmail, InvitationEmail, LOGO_CID } from './templates.tsx';
 
 export * from './messages.ts';
+
+export interface EmailAttachment {
+  filename: string;
+  content: Buffer;
+  contentType: string;
+  /** Referenced from the HTML as `cid:<cid>`, so the image travels with the email (mail clients block remote ones). */
+  cid: string;
+}
 
 export interface RenderedEmail {
   to: string;
   subject: string;
   html: string;
   text: string;
+  attachments: EmailAttachment[];
 }
+
+/** The TeamFlow mark, shown at the top of every email. */
+export const logoAttachment: EmailAttachment = {
+  filename: 'teamflow.png',
+  content: readFileSync(new URL('./assets/teamflow-mark.png', import.meta.url)),
+  contentType: 'image/png',
+  cid: LOGO_CID,
+};
 
 export interface RenderOptions {
   /** Public URL of the web app, for links. */
@@ -87,5 +105,6 @@ export async function renderEmail(
     subject,
     html: await render(element),
     text: await render(element, { plainText: true }),
+    attachments: [logoAttachment],
   };
 }
