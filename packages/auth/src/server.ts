@@ -3,6 +3,7 @@ import { newId } from '@teamflow/db';
 import * as schema from '@teamflow/db/schema';
 import { betterAuth } from 'better-auth';
 import { drizzleAdapter } from 'better-auth/adapters/drizzle';
+import { APIError, createAuthMiddleware } from 'better-auth/api';
 import { emailOTP, organization } from 'better-auth/plugins';
 import { ac, roles } from './permissions.ts';
 
@@ -35,6 +36,33 @@ export interface AuthOptions {
   rateLimit?: boolean;
 }
 
+/**
+ * The only header the rate limiter reads a client address from. The API server sets it from the socket's peer
+ * address on every request and overwrites anything a client sent, so `X-Forwarded-For` cannot be forged to get a
+ * fresh rate-limit bucket per attempt. (Behind a reverse proxy, the server would set it from the proxy's header.)
+ */
+export const CLIENT_IP_HEADER = 'x-teamflow-client-ip';
+
+/** Endpoints that set a member's role. TeamFlow gives each member exactly one. */
+const ROLE_PATHS = new Set([
+  '/organization/invite-member',
+  '/organization/update-member-role',
+  '/organization/add-member',
+]);
+
+/**
+ * Better Auth accepts a list of roles and stores it comma-separated, but TeamFlow's permissions (and the API's role
+ * check) assume one: "guest,admin" would be an admin to Better Auth and a guest everywhere else. Refuse it.
+ */
+const singleRole = createAuthMiddleware(async (ctx) => {
+  if (!ROLE_PATHS.has(ctx.path)) return;
+  const role = (ctx.body as { role?: unknown } | undefined)?.role;
+  const many = Array.isArray(role)
+    ? role.length !== 1
+    : typeof role === 'string' && role.includes(',');
+  if (many) throw new APIError('BAD_REQUEST', { message: 'A member has exactly one role.' });
+});
+
 export function createAuth(options: AuthOptions) {
   return betterAuth({
     appName: 'TeamFlow',
@@ -47,8 +75,10 @@ export function createAuth(options: AuthOptions) {
     advanced: {
       database: { generateId: () => newId() },
       cookiePrefix: 'teamflow',
+      ipAddress: { ipAddressHeaders: [CLIENT_IP_HEADER] },
     },
     rateLimit: { enabled: options.rateLimit ?? true, storage: 'database' },
+    hooks: { before: singleRole },
     session: {
       expiresIn: 60 * 60 * 24 * 30,
       updateAge: 60 * 60 * 24,
@@ -61,6 +91,8 @@ export function createAuth(options: AuthOptions) {
       requireEmailVerification: true,
       minPasswordLength: 10,
       maxPasswordLength: 128,
+      // A reset is what someone does when they fear their account is taken: end every session it had.
+      revokeSessionsOnPasswordReset: true,
     },
     emailVerification: {
       autoSignInAfterVerification: true,
