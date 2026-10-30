@@ -1,7 +1,7 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute } from '@tanstack/react-router';
 import { can, canAssignRole, isRole, type Role } from '@teamflow/auth/permissions';
-import { Avatar, Button, Notice, Select, SelectItem, TextField, toast } from '@teamflow/ui';
+import { Avatar, Button, Dialog, Notice, Select, SelectItem, TextField, toast } from '@teamflow/ui';
 import { useState } from 'react';
 import { Form } from 'react-aria-components';
 import { orpc } from '../../../lib/api.ts';
@@ -38,6 +38,18 @@ function Members() {
       queryClient.invalidateQueries({ queryKey: orpc.members.key() }),
       queryClient.invalidateQueries({ queryKey: ['invitations'] }),
     ]);
+
+  const [removing, setRemoving] = useState<{ id: string; name: string } | null>(null);
+  const [removingPending, setRemovingPending] = useState(false);
+  const remove = async (member: { id: string; name: string }) => {
+    setRemovingPending(true);
+    const { error } = await authClient.organization.removeMember({ memberIdOrEmail: member.id });
+    setRemovingPending(false);
+    setRemoving(null);
+    if (error) toast({ title: 'Not removed', description: error.message, tone: 'danger' });
+    else toast({ title: `${member.name} was removed` });
+    await refresh();
+  };
 
   const canInvite = can(role, { invitation: ['create'] });
   const canManage = can(role, { member: ['update'] });
@@ -100,19 +112,7 @@ function Members() {
                       variant="quiet"
                       size="sm"
                       aria-label={`Remove ${member.name}`}
-                      onPress={async () => {
-                        const { error } = await authClient.organization.removeMember({
-                          memberIdOrEmail: member.id,
-                        });
-                        if (error)
-                          toast({
-                            title: 'Not removed',
-                            description: error.message,
-                            tone: 'danger',
-                          });
-                        else toast({ title: `${member.name} was removed` });
-                        await refresh();
-                      }}
+                      onPress={() => setRemoving({ id: member.id, name: member.name })}
                     >
                       Remove
                     </Button>
@@ -159,6 +159,31 @@ function Members() {
               ))}
           </ul>
         </section>
+      )}
+      {removing && (
+        <Dialog
+          isOpen
+          onOpenChange={(open) => !open && setRemoving(null)}
+          title={`Remove ${removing.name}?`}
+          width="sm"
+        >
+          <p className="text-ink-muted text-sm">
+            They lose access to every project in this workspace at once. Their tasks, comments and
+            history stay. You can invite them again later.
+          </p>
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="quiet" onPress={() => setRemoving(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              isPending={removingPending}
+              onPress={() => void remove(removing)}
+            >
+              Remove
+            </Button>
+          </div>
+        </Dialog>
       )}
     </main>
   );
