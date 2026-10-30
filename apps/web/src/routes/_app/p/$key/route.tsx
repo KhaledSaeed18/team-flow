@@ -104,7 +104,7 @@ function ProjectLayout() {
         <ConnectionStatus />
       </header>
       <div className="flex min-h-0 flex-1">
-        <main className="min-w-0 flex-1 overflow-auto">
+        <main className="relative min-w-0 flex-1 overflow-auto">
           <Outlet />
         </main>
         {openIdentifier && (
