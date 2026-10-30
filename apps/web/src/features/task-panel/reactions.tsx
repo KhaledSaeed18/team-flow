@@ -32,10 +32,13 @@ export function Reactions({
   comment,
   taskId,
   myName,
+  readOnly = false,
 }: {
   comment: Comment;
   taskId: string;
   myName: string;
+  /** Show who reacted, but offer no toggling (an archived project). */
+  readOnly?: boolean;
 }) {
   const queryClient = useQueryClient();
   const key = orpc.comments.list.queryKey({ input: { taskId } });
@@ -69,6 +72,7 @@ export function Reactions({
         <ToggleButton
           key={r.reaction}
           isSelected={r.mine}
+          isDisabled={readOnly}
           onChange={(on) => set(r.reaction, on)}
           aria-label={`${EMOJI[r.reaction].label}: ${people(r.names)}`}
           className="flex h-6 items-center gap-1 rounded-full border border-line bg-surface px-2 text-xs outline-none data-[hovered]:border-line-strong data-[selected]:border-ink/40 data-[selected]:bg-raised data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold"
@@ -77,37 +81,39 @@ export function Reactions({
           <span className="tabular-nums">{r.count}</span>
         </ToggleButton>
       ))}
-      <DialogTrigger>
-        <AriaButton
-          aria-label="Add reaction"
-          className="flex size-6 items-center justify-center rounded-full text-ink-faint outline-none data-[hovered]:bg-lane data-[hovered]:text-ink data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold"
-        >
-          <Smiley />
-        </AriaButton>
-        <Popover placement="top start" className={popover}>
-          <Dialog aria-label="Reactions" className="flex gap-0.5 outline-none">
-            {({ close }) =>
-              REACTIONS.map((reaction) => {
-                const mine = comment.reactions.some((r) => r.reaction === reaction && r.mine);
-                return (
-                  <AriaButton
-                    key={reaction}
-                    aria-label={EMOJI[reaction].label}
-                    aria-pressed={mine}
-                    onPress={() => {
-                      set(reaction, !mine);
-                      close();
-                    }}
-                    className="flex size-8 items-center justify-center rounded-control text-base outline-none data-[hovered]:bg-lane data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold aria-pressed:bg-raised"
-                  >
-                    {EMOJI[reaction].emoji}
-                  </AriaButton>
-                );
-              })
-            }
-          </Dialog>
-        </Popover>
-      </DialogTrigger>
+      {!readOnly && (
+        <DialogTrigger>
+          <AriaButton
+            aria-label="Add reaction"
+            className="flex size-6 items-center justify-center rounded-full text-ink-faint outline-none data-[hovered]:bg-lane data-[hovered]:text-ink data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold"
+          >
+            <Smiley />
+          </AriaButton>
+          <Popover placement="top start" className={popover}>
+            <Dialog aria-label="Reactions" className="flex gap-0.5 outline-none">
+              {({ close }) =>
+                REACTIONS.map((reaction) => {
+                  const mine = comment.reactions.some((r) => r.reaction === reaction && r.mine);
+                  return (
+                    <AriaButton
+                      key={reaction}
+                      aria-label={EMOJI[reaction].label}
+                      aria-pressed={mine}
+                      onPress={() => {
+                        set(reaction, !mine);
+                        close();
+                      }}
+                      className="flex size-8 items-center justify-center rounded-control text-base outline-none data-[hovered]:bg-lane data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold aria-pressed:bg-raised"
+                    >
+                      {EMOJI[reaction].emoji}
+                    </AriaButton>
+                  );
+                })
+              }
+            </Dialog>
+          </Popover>
+        </DialogTrigger>
+      )}
     </div>
   );
 }

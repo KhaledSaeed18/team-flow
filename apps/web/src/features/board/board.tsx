@@ -5,6 +5,7 @@ import type { PresenceMember } from '@teamflow/realtime';
 import { Button } from '@teamflow/ui';
 import { useEffect, useMemo, useState } from 'react';
 import { DropIndicator, GridList, Input, TextField, useDragAndDrop } from 'react-aria-components';
+import { useProjectAccess } from '../../lib/access.ts';
 import { orpc } from '../../lib/api.ts';
 import { CREATE_TASK_EVENT, takeCreateRequest } from '../../lib/events.ts';
 import {
@@ -114,6 +115,7 @@ function Column({
   const isFirstUnstarted =
     project.statuses.find((s) => s.category === 'unstarted')?.id === status.id;
   const byId = (id: unknown) => tasks.find((t) => t.id === id);
+  const access = useProjectAccess(project);
 
   const place = (id: string, target: { key: unknown; dropPosition: 'before' | 'after' | 'on' }) => {
     const targetId = String(target.key);
@@ -127,6 +129,8 @@ function Column({
   };
 
   const { dragAndDropHooks } = useDragAndDrop<Task>({
+    // Guests and archived projects: the board is read-only.
+    isDisabled: !access.editTasks,
     getItems: (keys) =>
       [...keys].flatMap((key) => {
         const task = byId(key);
@@ -195,12 +199,14 @@ function Column({
           <TaskCard task={task} lookups={lookups} viewers={viewersByTask.get(task.id) ?? []} />
         )}
       </GridList>
-      <QuickAdd
-        project={project}
-        statusId={status.id}
-        sprintId={sprintId}
-        listen={status.category === 'unstarted' && isFirstUnstarted}
-      />
+      {access.createTasks && (
+        <QuickAdd
+          project={project}
+          statusId={status.id}
+          sprintId={sprintId}
+          listen={status.category === 'unstarted' && isFirstUnstarted}
+        />
+      )}
     </section>
   );
 }

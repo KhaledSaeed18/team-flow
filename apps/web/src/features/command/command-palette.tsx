@@ -12,6 +12,7 @@ import {
 } from '@phosphor-icons/react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
+import { can } from '@teamflow/auth/permissions';
 import { Kbd } from '@teamflow/ui';
 import { type ReactNode, useDeferredValue, useMemo, useState } from 'react';
 import {
@@ -27,6 +28,7 @@ import {
   ModalOverlay,
   SearchField,
 } from 'react-aria-components';
+import { useRole } from '../../lib/access.ts';
 import { orpc } from '../../lib/api.ts';
 import { authClient } from '../../lib/auth.ts';
 import { resetSession } from '../../lib/session.ts';
@@ -71,6 +73,7 @@ export function CommandPalette({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const theme = useTheme();
+  const mayCreateProject = can(useRole(), { project: ['create'] });
   const [query, setQuery] = useState('');
   const deferred = useDeferredValue(query.trim());
   const projects = useQuery(orpc.projects.list.queryOptions({ input: {} }));
@@ -87,7 +90,9 @@ export function CommandPalette({
 
   const groups = useMemo<Group[]>(() => {
     const actions: Item[] = [
-      { id: 'new-project', label: 'New project', icon: <Plus />, run: onCreateProject },
+      ...(mayCreateProject
+        ? [{ id: 'new-project', label: 'New project', icon: <Plus />, run: onCreateProject }]
+        : []),
       {
         id: 'inbox',
         label: 'Go to inbox',
@@ -179,6 +184,7 @@ export function CommandPalette({
       },
     ].filter((g) => g.items.length > 0);
   }, [
+    mayCreateProject,
     projects.data,
     tasks.data,
     deferred,
