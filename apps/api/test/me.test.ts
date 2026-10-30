@@ -76,6 +76,21 @@ describe('platform routes', () => {
     }
   });
 
+  test('a project key is located among your own workspaces only', async () => {
+    const kim = await h.owner('Kim', 'kim-locate');
+    await kim.client.projects.create({ key: 'LOC', name: 'Located' });
+    const lee = await h.join(kim, 'Lee', 'member');
+    // Lee also has a workspace of their own, which is active now.
+    await lee.authPost('/organization/create', { name: 'Lee home', slug: 'lee-home' });
+
+    expect(await lee.client.me.locateProject({ key: 'LOC' })).toEqual({
+      organizations: [{ id: kim.organizationId, name: "Kim's org" }],
+    });
+    // Someone outside Kim's workspace learns nothing, even about a key that exists there.
+    const stranger = await h.owner('Sam', 'sam-locate');
+    expect(await stranger.client.me.locateProject({ key: 'LOC' })).toEqual({ organizations: [] });
+  });
+
   test('unknown routes are JSON 404s', async () => {
     const response = await h.app.request('/nope');
     expect(response.status).toBe(404);

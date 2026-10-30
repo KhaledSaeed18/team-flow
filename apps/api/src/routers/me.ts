@@ -1,4 +1,4 @@
-import { listUserOrganizations } from '@teamflow/db';
+import { listUserOrganizations, workspacesWithProject } from '@teamflow/db';
 import { authed, os } from '../orpc.ts';
 
 export const me = {
@@ -14,5 +14,14 @@ export const me = {
       activeOrganizationId: session.activeOrganizationId ?? null,
       organizations: visible,
     };
+  }),
+
+  locateProject: os.me.locateProject.use(authed).handler(async ({ context, input }) => {
+    const found = await workspacesWithProject(context.db, context.session.user.id, input.key);
+    // A token is pinned to one workspace and learns nothing about the others.
+    const visible = context.token
+      ? found.filter((o) => o.id === context.session.session.activeOrganizationId)
+      : found;
+    return { organizations: visible };
   }),
 };
