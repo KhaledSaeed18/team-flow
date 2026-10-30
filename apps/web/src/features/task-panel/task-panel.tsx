@@ -1,7 +1,6 @@
 import { Tag as TagIcon, X } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from '@tanstack/react-router';
-import { can } from '@teamflow/auth/permissions';
 import { PRIORITIES, type Priority } from '@teamflow/domain';
 import { Avatar, Button, popover, Select, SelectItem } from '@teamflow/ui';
 import { type ReactNode, useEffect, useRef, useState } from 'react';
@@ -18,6 +17,7 @@ import {
   TextArea,
   TextField,
 } from 'react-aria-components';
+import { useProjectAccess } from '../../lib/access.ts';
 import { orpc } from '../../lib/api.ts';
 import { meQuery } from '../../lib/session.ts';
 import { isTyping } from '../../lib/shortcuts.ts';
@@ -92,9 +92,8 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
   const members = useQuery(orpc.members.list.queryOptions());
   const labels = useQuery(orpc.labels.list.queryOptions({ input: { projectId: project.id } }));
   const me = useQuery(meQuery());
-  const role =
-    me.data?.organizations.find((o) => o.id === me.data?.activeOrganizationId)?.role ?? 'guest';
-  const canEdit = can(role, { task: ['update'] });
+  const access = useProjectAccess(project);
+  const canEdit = access.editTasks;
   const navigate = useNavigate();
   const openTask = (identifier: string) => {
     const key = identifier.split('-')[0] ?? project.key;
@@ -109,6 +108,7 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
         <CommitField
           label="Title"
           value={task.title}
+          readOnly={!canEdit}
           required
           onCommit={(title) => save({ title: title.trim() })}
           className="font-semibold text-lg leading-snug"
@@ -125,6 +125,7 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
         <Property label="Status">
           <Select
             aria-label="Status"
+            isDisabled={!canEdit}
             selectedKey={task.statusId}
             onSelectionChange={(key) => save({ statusId: String(key) })}
             items={project.statuses}
@@ -144,6 +145,7 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
         <Property label="Priority">
           <Select
             aria-label="Priority"
+            isDisabled={!canEdit}
             selectedKey={task.priority}
             onSelectionChange={(key) => save({ priority: key as Priority })}
           >
@@ -160,6 +162,7 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
         <Property label="Assignee">
           <Select
             aria-label="Assignee"
+            isDisabled={!canEdit}
             selectedKey={task.assigneeMemberId ?? NONE}
             onSelectionChange={(key) =>
               save({ assigneeMemberId: key === NONE ? null : String(key) })
@@ -180,12 +183,14 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
           <LabelPicker
             options={labels.data ?? []}
             selected={task.labelIds}
+            isDisabled={!canEdit}
             onChange={(labelIds) => save({ labelIds })}
           />
         </Property>
         <Property label="Estimate">
           <NumberField
             aria-label="Estimate"
+            isDisabled={!canEdit}
             minValue={0}
             maxValue={100}
             value={task.estimate ?? Number.NaN}
@@ -198,7 +203,11 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
           </NumberField>
         </Property>
         <Property label="Due date">
-          <DueDate value={task.dueDate} onChange={(dueDate) => save({ dueDate })} />
+          <DueDate
+            value={task.dueDate}
+            disabled={!canEdit}
+            onChange={(dueDate) => save({ dueDate })}
+          />
         </Property>
       </dl>
 
@@ -219,7 +228,7 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
 
       <section aria-label="Comments" className="border-line border-t px-5 py-4">
         <h2 className="mb-3 font-medium text-ink-muted text-xs">Comments</h2>
-        <Comments taskId={task.id} />
+        <Comments taskId={task.id} canComment={access.comment} />
       </section>
 
       <section aria-label="History" className="border-line border-t px-5 py-4">
@@ -236,9 +245,11 @@ function TaskDetails({ task, project }: { task: Task; project: Project }) {
  */
 function DueDate({
   value,
+  disabled = false,
   onChange,
 }: {
   value: string | null;
+  disabled?: boolean;
   onChange: (value: string | null) => void;
 }) {
   const [draft, setDraft] = useState(value ?? '');
@@ -252,6 +263,7 @@ function DueDate({
     <input
       type="date"
       aria-label="Due date"
+      disabled={disabled}
       value={draft}
       onChange={(event) => {
         setDraft(event.target.value);
@@ -284,9 +296,11 @@ function CommitField({
   required = false,
   placeholder,
   className = '',
+  readOnly = false,
 }: {
   label: string;
   value: string;
+  readOnly?: boolean;
   onCommit: (value: string) => void;
   multiline?: boolean;
   /** An empty value is not saved, and the field shows the saved value again. */
@@ -319,6 +333,7 @@ function CommitField({
   return (
     <TextField
       aria-label={label}
+      isReadOnly={readOnly}
       value={draft}
       onChange={setDraft}
       onFocus={() => {
@@ -352,16 +367,19 @@ type LabelOption = { id: string; name: string; color: string };
 function LabelPicker({
   options,
   selected,
+  isDisabled = false,
   onChange,
 }: {
   options: LabelOption[];
   selected: string[];
+  isDisabled?: boolean;
   onChange: (ids: string[]) => void;
 }) {
   const chosen = options.filter((o) => selected.includes(o.id));
   return (
     <DialogTrigger>
       <AriaButton
+        isDisabled={isDisabled}
         aria-label={`Labels: ${chosen.map((l) => l.name).join(', ') || 'none'}`}
         className="focus-ring flex min-h-9 w-full flex-wrap items-center gap-1.5 rounded-control border border-line bg-surface px-2.5 py-1 text-left text-sm data-[hovered]:border-line-strong"
       >

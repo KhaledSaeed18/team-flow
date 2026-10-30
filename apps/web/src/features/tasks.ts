@@ -85,10 +85,15 @@ function revert(task: Task, before: Task | undefined, fields: readonly (keyof Ta
   return { ...task, ...restored };
 }
 
-const explain = (error: unknown) =>
-  (error as { code?: string }).code === 'CONFLICT'
-    ? 'Someone changed this task at the same time. The board has been refreshed.'
-    : 'The change was not saved. Check your connection and try again.';
+const explain = (error: unknown) => {
+  const { code, message } = error as { code?: string; message?: string };
+  if (code === 'CONFLICT')
+    return 'Someone changed this task at the same time. The board has been refreshed.';
+  // The server says why (an archived project, a role without edit rights); a connection is not the problem.
+  if (code === 'FORBIDDEN' || code === 'SPRINT_STATE' || code === 'INVALID_REFERENCE')
+    return message ?? 'That change is not allowed.';
+  return 'The change was not saved. Check your connection and try again.';
+};
 
 /**
  * Move a task on the board, optimistically. Moves of the same task run one after another (mutation scope), and
