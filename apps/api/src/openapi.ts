@@ -29,6 +29,15 @@ export function generateOpenApi(serverUrl: string) {
 }
 
 /** A self-contained API reference page (Scalar, loaded from its CDN). */
+/** Scalar's hosted-product toolbar and assistant point at its cloud; a local reference has no use for them. */
+const REFERENCE_CONFIG = {
+  showToolbar: 'never',
+  showDeveloperTools: 'never',
+  agent: { disabled: true },
+  hideClientButton: false,
+  favicon: '/favicon.svg',
+};
+
 export const referencePage = (specUrl: string) => `<!doctype html>
 <html lang="en">
   <head>
@@ -37,7 +46,11 @@ export const referencePage = (specUrl: string) => `<!doctype html>
     <title>TeamFlow API reference</title>
   </head>
   <body>
-    <script id="api-reference" data-url="${specUrl}"></script>
+    <script
+      id="api-reference"
+      data-url="${specUrl}"
+      data-configuration='${JSON.stringify(REFERENCE_CONFIG)}'
+    ></script>
     <script src="https://cdn.jsdelivr.net/npm/@scalar/api-reference"></script>
   </body>
 </html>`;
