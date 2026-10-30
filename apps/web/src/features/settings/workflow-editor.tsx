@@ -2,7 +2,7 @@ import { DotsSixVertical, Trash } from '@phosphor-icons/react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { STATUS_CATEGORIES, type StatusCategory } from '@teamflow/domain';
 import { Button, Dialog, Select, SelectItem, TextField, toast } from '@teamflow/ui';
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Button as AriaButton,
   Form,
@@ -102,16 +102,12 @@ export function WorkflowEditor({ project, canEdit }: { project: Project; canEdit
               disabled={!canEdit}
               onChange={(color) => update.mutate({ id: status.id, color })}
             />
-            <Input
-              aria-label={`Name of ${status.name}`}
-              defaultValue={status.name}
+            <StatusName
+              name={status.name}
               readOnly={!canEdit}
-              onBlur={(event) => {
-                const value = event.target.value.trim();
-                if (value && value !== status.name) update.mutate({ id: status.id, name: value });
-              }}
-              onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
-              className="min-w-0 flex-1 rounded-control border border-transparent bg-transparent px-2 py-1 text-sm outline-none hover:border-line focus:border-line focus-visible:outline-2 focus-visible:outline-marigold"
+              onRename={(name, onFailed) =>
+                update.mutate({ id: status.id, name }, { onError: onFailed })
+              }
             />
             <div className="w-32 shrink-0 sm:w-36">
               <Select
@@ -300,5 +296,53 @@ export function ColorDot({
         </div>
       </Dialog>
     </>
+  );
+}
+
+/**
+ * A status name edited in place. It follows renames made elsewhere (unless it is being edited), and a rename the
+ * server refuses (a taken name) puts the saved name back instead of leaving the rejected text in the field.
+ */
+function StatusName({
+  name,
+  readOnly,
+  onRename,
+}: {
+  name: string;
+  readOnly: boolean;
+  onRename: (name: string, onFailed: () => void) => void;
+}) {
+  const [draft, setDraft] = useState(name);
+  const editing = useRef(false);
+  useEffect(() => {
+    if (!editing.current) setDraft(name);
+  }, [name]);
+  return (
+    <Input
+      aria-label={`Name of ${name}`}
+      value={draft}
+      readOnly={readOnly}
+      onChange={(event) => setDraft(event.target.value)}
+      onFocus={() => {
+        editing.current = true;
+      }}
+      onBlur={() => {
+        editing.current = false;
+        const value = draft.trim();
+        if (!value || value === name) {
+          setDraft(name);
+          return;
+        }
+        onRename(value, () => setDraft(name));
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter') event.currentTarget.blur();
+        if (event.key === 'Escape') {
+          setDraft(name);
+          editing.current = false;
+        }
+      }}
+      className="min-w-0 flex-1 rounded-control border border-transparent bg-transparent px-2 py-1 text-sm outline-none hover:border-line focus:border-line focus-visible:outline-2 focus-visible:outline-marigold"
+    />
   );
 }
