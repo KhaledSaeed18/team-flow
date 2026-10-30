@@ -9,6 +9,7 @@ import {
 } from '@teamflow/db';
 import { AppError, notFound } from '../errors.ts';
 import { type Actor, authorize } from './actor.ts';
+import { writableProject } from './projects-access.ts';
 
 export const projectsService = {
   list(actor: Actor, includeArchived: boolean) {
@@ -53,6 +54,7 @@ export const projectsService = {
     // Visibility first (404), then permission (403).
     await this.get(actor, id);
     authorize(actor, { project: ['update'] });
+    await writableProject(actor, id);
     const updated = await updateProject(actor.scope, id, version, patch);
     if (!updated) throw notFound('Project not found.');
     return updated;

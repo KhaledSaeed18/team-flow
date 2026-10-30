@@ -70,7 +70,9 @@ function Settings() {
     }),
   );
 
-  const canEditProject = can(role, { project: ['update'] });
+  // Archived projects are read-only for everyone; only restoring them is offered.
+  const writable = !project.archivedAt;
+  const canEditProject = writable && can(role, { project: ['update'] });
   return (
     <main className="w-full px-4 pb-16">
       <h1 className="pt-4 pb-4 font-semibold text-xl">Project settings</h1>
@@ -139,7 +141,10 @@ function Settings() {
         title="Workflow"
         description="The statuses tasks move through, in board order. Each has a type that drives the board, sprint reports and cycle time."
       >
-        <WorkflowEditor project={project} canEdit={can(role, { workflow: ['update'] })} />
+        <WorkflowEditor
+          project={project}
+          canEdit={writable && can(role, { workflow: ['update'] })}
+        />
       </Section>
 
       <Section
@@ -148,8 +153,8 @@ function Settings() {
       >
         <LabelsEditor
           project={project}
-          canCreate={can(role, { label: ['create'] })}
-          canDelete={can(role, { label: ['delete'] })}
+          canCreate={writable && can(role, { label: ['create'] })}
+          canDelete={writable && can(role, { label: ['delete'] })}
         />
       </Section>
 

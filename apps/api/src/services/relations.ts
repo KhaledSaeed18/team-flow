@@ -31,6 +31,7 @@ export const relationsService = {
     if (!relation) throw notFound('Relation not found.');
     authorize(actor, { task: ['update'] });
     await writableTask(actor, relation.sourceTaskId);
+    await writableTask(actor, relation.targetTaskId);
     await removeRelation(actor.scope, id, now);
     return { id };
   },

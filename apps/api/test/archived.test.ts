@@ -101,6 +101,13 @@ describe('archived projects are read-only', () => {
     );
   });
 
+  test("the project's own details", async () => {
+    const project = await ada.client.projects.get({ id: ids.project });
+    await refused(
+      ada.client.projects.update({ id: ids.project, version: project.version, name: 'Renamed' }),
+    );
+  });
+
   test('attachments', async () => {
     const response = await ada.fetch(`/api/tasks/${ids.task}/attachments?name=a.txt`, {
       method: 'POST',

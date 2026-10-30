@@ -3,6 +3,7 @@ import {
   createAttachment,
   deleteAttachment,
   findAttachment,
+  findProject,
   findTask,
   listAttachments,
   newId,
@@ -28,13 +29,16 @@ const mayRemoveOwn = (actor: Actor, uploaderMemberId: string | null) =>
 export function attachmentsService(storage: Storage) {
   return {
     async list(actor: Actor, taskId: string) {
-      if (!(await findTask(actor.scope, taskId))) throw notFound('Task not found.');
+      const task = await findTask(actor.scope, taskId);
+      if (!task) throw notFound('Task not found.');
       const rows = await listAttachments(actor.scope, taskId);
-      const deleteAny = can(actor.member.role, { task: ['delete'] });
+      // Nothing in an archived project can be removed, so nobody is offered the button.
+      const archived = Boolean((await findProject(actor.scope, task.projectId))?.archivedAt);
+      const deleteAny = !archived && can(actor.member.role, { task: ['delete'] });
       return rows.map(({ storageKey, uploaderMemberId, ...row }) => ({
         ...row,
         url: storage.url(storageKey, row.fileName),
-        canDelete: deleteAny || mayRemoveOwn(actor, uploaderMemberId),
+        canDelete: deleteAny || (!archived && mayRemoveOwn(actor, uploaderMemberId)),
       }));
     },
 
