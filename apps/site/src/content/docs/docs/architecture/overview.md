@@ -10,7 +10,7 @@ sidebar:
 ```
 apps/
   api/        Hono on Bun: oRPC procedures, REST + OpenAPI, auth, WebSockets
-  worker/     pg-boss: outbox relay, email delivery, hourly digests
+  worker/     pg-boss: outbox relay, email delivery, hourly digests, rank rebalancing
   web/        Vite + React SPA: TanStack Router and Query, React Aria, Tailwind
   site/       this site: Astro and Starlight
 packages/

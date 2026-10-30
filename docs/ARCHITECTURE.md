@@ -5,7 +5,7 @@
 ```
 apps/
   api/        Hono on Bun — oRPC procedures, OpenAPI, auth routes, WebSocket gateway
-  worker/     pg-boss consumers — outbox relay, email delivery, hourly digests, outbox pruning
+  worker/     pg-boss consumers — outbox relay, email delivery, hourly digests, outbox pruning, rank rebalancing
   web/        Vite + React 19 SPA — TanStack Router, TanStack Query, Tailwind v4
   site/       Astro — the landing page and Starlight docs
 packages/
@@ -89,8 +89,11 @@ invented. The relay is idempotent on the outbox id.
 
 Board columns and the backlog are ordered by a fractional index string (`rank`). Moving a card writes one row and
 never renumbers neighbours. Two clients inserting in the same gap get distinct keys because a short random suffix is
-appended. Keys grow only when people keep inserting into the same gap; `needsRebalance` detects that, but no job
-acts on it yet, because realistic use stays far below the threshold.
+appended. Keys grow only when people keep inserting into the same gap. A nightly worker job finds columns with a
+key longer than `REBALANCE_THRESHOLD` (32 characters) and gives their tasks fresh, short keys in the same order,
+bumping each version and emitting one `tasks.reordered` event so open boards reload the column. Rank writes hold
+the column's advisory lock in shared mode and the rebalance holds it exclusively, so a move never computes its key
+from ranks being replaced.
 
 ## Tenancy
 
