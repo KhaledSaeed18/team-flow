@@ -103,4 +103,3 @@ Kept out of scope while TeamFlow runs fully locally, and recorded here so the ga
 - Container images and a hosted deployment.
 - The GitHub App and outgoing webhooks (M9).
 - Teams: the tables exist through Better Auth, but nothing in the product uses them yet.
-- A rank rebalancing job (`needsRebalance` detects the case; ADR-0008).

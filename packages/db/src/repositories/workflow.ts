@@ -10,6 +10,7 @@ import { projects, workflowStatuses } from '../schema/projects.ts';
 import { activity, tasks } from '../schema/tasks.ts';
 import { inTransaction, type Scope } from '../scope.ts';
 import { emit, recordActivity } from './events.ts';
+import { lockColumn } from './ranks.ts';
 import { InvalidReferenceError } from './tasks.ts';
 
 export type StatusRow = typeof workflowStatuses.$inferSelect;
@@ -212,6 +213,7 @@ export function deleteStatus(scope: Scope, id: string, moveTasksTo: string, now:
     );
     // The moved tasks keep their order but go below the target column's cards, with fresh ranks: their old ranks
     // were only meaningful in the old column and could collide with the new one's.
+    await lockColumn(tx, target.id);
     const [last] = await tx.db
       .select({ rank: tasks.rank })
       .from(tasks)

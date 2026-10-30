@@ -60,6 +60,9 @@ export function useLiveProject(project: Project) {
         });
         void queryClient.invalidateQueries({ queryKey: tasksKey });
         return;
+      case 'tasks.reordered':
+        void queryClient.invalidateQueries({ queryKey: tasksKey });
+        return;
       case 'task.relations.changed':
         if (taskId)
           void queryClient.invalidateQueries({

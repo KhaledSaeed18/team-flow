@@ -29,7 +29,9 @@ whole stack runs on one Postgres database.
 > [`v1.0.0`](https://github.com/KhaledSaeed18/team-flow/tree/v1.0.0). v2 is a full rewrite.
 
 <p align="center">
-  <img src="apps/site/public/screenshots/board.png" alt="The Rover Firmware board for the active sprint, with a task open beside it" width="100%" />
+  <img src="assets/images/teamflow-demo.gif" alt="Two people on the same board: one drags a card to In Review and it moves on the other's screen; both write the same task description at once, each seeing the other's named caret; then a search for 'telemetry' from the command palette" width="100%" />
+  <br />
+  <sub>Two people on one board, recorded live: Demo User on top, Maya Chen below.</sub>
 </p>
 
 ## What it does
@@ -62,6 +64,7 @@ whole stack runs on one Postgres database.
   read-write, with an optional expiry.
 - Account settings for profile, password, sessions (sign out other devices) and tokens.
 - An audit log for admins: people, invitations, projects, workflows, labels, sprints and tokens.
+- Works on a phone too: the sidebar folds into a drawer, tasks open full screen, and wide views scroll sideways.
 
 ## A closer look
 

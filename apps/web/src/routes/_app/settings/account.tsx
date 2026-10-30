@@ -125,7 +125,7 @@ function Profile() {
     <Section id="profile" title="Profile">
       <Form
         onSubmit={onSubmit}
-        className="flex items-end gap-4 rounded-card border border-line bg-surface p-4"
+        className="flex flex-wrap items-end gap-4 rounded-card border border-line bg-surface p-4 sm:flex-nowrap"
       >
         <Avatar name={me.user.name} src={me.user.image} size="lg" />
         <TextField
@@ -134,9 +134,9 @@ function Profile() {
           defaultValue={me.user.name}
           maxLength={80}
           isRequired
-          className="flex-1"
+          className="min-w-48 flex-1"
         />
-        <TextField label="Email" value={me.user.email} isReadOnly className="flex-1" />
+        <TextField label="Email" value={me.user.email} isReadOnly className="min-w-48 flex-1" />
         <Button type="submit" isPending={pending}>
           Save
         </Button>
@@ -175,7 +175,7 @@ function Password() {
         className="flex flex-col gap-4 rounded-card border border-line bg-surface p-4"
       >
         {error && <Notice tone="danger">{error}</Notice>}
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid gap-4 sm:grid-cols-2">
           <TextField
             name="current"
             type="password"
@@ -193,7 +193,7 @@ function Password() {
             isRequired
           />
         </div>
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <Switch isSelected={signOutOthers} onChange={setSignOutOthers}>
             Sign out of other devices
           </Switch>

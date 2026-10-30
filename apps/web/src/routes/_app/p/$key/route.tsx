@@ -70,15 +70,19 @@ function ProjectLayout() {
 
   return (
     <ProjectContext value={view}>
-      <header className="flex h-12 shrink-0 items-center gap-3 border-line border-b px-4">
+      {/* One row on wide screens; on a phone the view tabs drop to a second, sideways-scrolling row. */}
+      <header className="flex shrink-0 flex-wrap items-center gap-x-3 border-line border-b px-4 md:h-12 md:flex-nowrap">
         <span
           aria-hidden
           className="size-2.5 rounded-full"
           style={{ backgroundColor: project.color }}
         />
-        <h1 className="font-semibold text-sm">{project.name}</h1>
+        <h1 className="truncate py-3 font-semibold text-sm md:py-0">{project.name}</h1>
         <span className="text-ink-faint text-xs">{project.key}</span>
-        <nav aria-label="Views" className="ml-4 flex gap-1">
+        <nav
+          aria-label="Views"
+          className="-mx-4 order-last flex w-[calc(100%+2rem)] gap-1 overflow-x-auto px-4 pb-2 md:order-none md:mx-0 md:ml-4 md:w-auto md:overflow-visible md:p-0"
+        >
           {(
             [
               ['/p/$key', 'Board'],
@@ -93,7 +97,7 @@ function ProjectLayout() {
               to={to}
               params={{ key: project.key }}
               activeOptions={{ exact: true }}
-              className="rounded-control px-2.5 py-1 text-ink-muted text-sm outline-none hover:bg-lane hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold data-[status=active]:bg-surface data-[status=active]:text-ink data-[status=active]:shadow-[inset_0_0_0_1px_var(--color-line)]"
+              className="shrink-0 rounded-control px-2.5 py-1 text-ink-muted text-sm outline-none hover:bg-lane hover:text-ink focus-visible:outline-2 focus-visible:outline-marigold data-[status=active]:bg-surface data-[status=active]:text-ink data-[status=active]:shadow-[inset_0_0_0_1px_var(--color-line)]"
             >
               {label}
             </Link>

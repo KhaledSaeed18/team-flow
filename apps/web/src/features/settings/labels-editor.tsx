@@ -84,7 +84,7 @@ export function LabelsEditor({
       {labels.data?.length === 0 && <p className="text-ink-muted text-sm">No labels yet.</p>}
       {canCreate && (
         <Form
-          className="flex items-end gap-2"
+          className="flex flex-wrap items-end gap-2 sm:flex-nowrap"
           onSubmit={(event) => {
             event.preventDefault();
             if (!name.trim()) return;
@@ -94,7 +94,12 @@ export function LabelsEditor({
             );
           }}
         >
-          <TextField label="New label" value={name} onChange={setName} className="flex-1" />
+          <TextField
+            label="New label"
+            value={name}
+            onChange={setName}
+            className="min-w-0 basis-full sm:flex-1 sm:basis-auto"
+          />
           <label className="flex h-9 items-center gap-2 text-ink-muted text-sm">
             <input
               type="checkbox"
