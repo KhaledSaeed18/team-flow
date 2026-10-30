@@ -55,3 +55,37 @@ test('a task opens full screen and closes back to the board', async ({ page }) =
   await panel.getByRole('button', { name: 'Close task' }).tap();
   await expect(panel).toBeHidden();
 });
+
+// Playwright cannot perform a real long-press drag with a finger. On a phone the board shows one column at a time, so
+// the touch-friendly way to move a card is the status picker; the calendar is checked with the pointer at phone size,
+// so the layout cannot get in the way of a drop.
+test('on a phone, the status picker moves a task without dragging', async ({ page }) => {
+  await page.goto('/p/RF?task=RF-21');
+  const panel = page.getByRole('complementary', { name: /RF-21/ });
+  await panel.getByRole('button', { name: /Status/ }).tap();
+  await page.getByRole('option', { name: 'In Review' }).tap();
+  await panel.getByRole('button', { name: 'Close task' }).tap();
+  await expect(page.getByRole('grid', { name: 'In Review tasks' })).toContainText('RF-21');
+});
+
+test('on a phone, a task drags from the tray onto a day', async ({ page }) => {
+  await page.goto('/p/RF/calendar');
+  const tray = page.getByRole('region', { name: 'Unscheduled' });
+  const handle = tray.getByRole('button', { name: /^Reschedule / }).first();
+  const identifier = ((await handle.getAttribute('aria-label')) ?? '').replace('Reschedule ', '');
+  const now = new Date();
+  const day = page.getByRole('region', {
+    name: new Intl.DateTimeFormat('en-US', {
+      weekday: 'long',
+      month: 'long',
+      day: 'numeric',
+      timeZone: 'UTC',
+    }).format(Date.UTC(now.getFullYear(), now.getMonth(), 10)),
+    exact: true,
+  });
+  await handle.dragTo(day);
+  await expect(day.getByRole('button', { name: new RegExp(`^${identifier} `) })).toBeVisible();
+  // Put it back for the specs that run after this one.
+  await day.getByRole('button', { name: `Reschedule ${identifier}` }).dragTo(tray);
+  await expect(tray.getByRole('button', { name: `Reschedule ${identifier}` })).toBeVisible();
+});
