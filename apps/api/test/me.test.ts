@@ -67,9 +67,10 @@ describe('platform routes', () => {
       paths: Record<string, Record<string, { responses: Record<string, { description: string }> }>>;
     };
     const move = spec.paths['/tasks/{id}/move']?.post;
-    expect(move?.responses['409']?.description).toBe(
+    expect(move?.responses['409']?.description).toContain(
       '`CONFLICT`: This was changed by someone else. Reload and try again.',
     );
+    expect(move?.responses['409']?.description).toContain('`SPRINT_STATE`');
     for (const [status, response] of Object.entries(move?.responses ?? {})) {
       if (status !== '200') expect(response.description).not.toBe(status);
     }
