@@ -1,10 +1,16 @@
-import { ChartLine, Plus } from '@phosphor-icons/react';
+import { ChartLine, DotsSixVertical, Plus } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { Link } from '@tanstack/react-router';
 import { isClosed } from '@teamflow/domain';
 import { Avatar, Button, Dialog, Select, SelectItem, TextField } from '@teamflow/ui';
 import { useMemo, useState } from 'react';
-import { Form, GridList, GridListItem, useDragAndDrop } from 'react-aria-components';
+import {
+  Button as AriaButton,
+  Form,
+  GridList,
+  GridListItem,
+  useDragAndDrop,
+} from 'react-aria-components';
 import { orpc } from '../../lib/api.ts';
 import { PriorityIcon } from '../board/priority-icon.tsx';
 import { type Project, type Task, tasksQuery, useUpdateTask } from '../tasks.ts';
@@ -248,6 +254,14 @@ function Section({
                 } ${isDragging ? 'opacity-40' : ''}`
               }
             >
+              {/* The handle is what keyboard and screen reader users pick the row up with. */}
+              <AriaButton
+                slot="drag"
+                aria-label={`Move ${task.identifier}`}
+                className="-mx-1 rounded-[4px] p-0.5 text-ink-faint outline-none data-[focus-visible]:outline-2 data-[focus-visible]:outline-marigold"
+              >
+                <DotsSixVertical />
+              </AriaButton>
               <span className="w-4">
                 <PriorityIcon priority={task.priority} />
               </span>
