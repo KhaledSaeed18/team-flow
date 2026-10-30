@@ -43,7 +43,7 @@ function Onboarding() {
   return (
     <AuthLayout
       title="Name your workspace"
-      subtitle="A workspace holds your team’s projects. You can invite people next."
+      subtitle="A workspace holds your team’s projects. Invite people from Members once it exists."
     >
       <Form onSubmit={onSubmit} className="flex flex-col gap-4">
         {error && <Notice tone="danger">{error}</Notice>}

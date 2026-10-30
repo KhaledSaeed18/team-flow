@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { can, isRole } from '@teamflow/auth/permissions';
-import { Button, Notice, TextField, toast } from '@teamflow/ui';
+import { Button, TextField, toast } from '@teamflow/ui';
 import { type ReactNode, useState } from 'react';
 import { Form } from 'react-aria-components';
 import { PROJECT_COLORS } from '../../../../components/create-project-dialog.tsx';
@@ -74,13 +74,8 @@ function Settings() {
   const writable = !project.archivedAt;
   const canEditProject = writable && can(role, { project: ['update'] });
   return (
-    <main className="w-full px-4 pb-16">
+    <div className="w-full px-4 pb-16">
       <h1 className="pt-4 pb-4 font-semibold text-xl">Project settings</h1>
-      {project.archivedAt && (
-        <Notice className="mb-6">
-          This project is archived: it is read-only and hidden from the sidebar.
-        </Notice>
-      )}
 
       <Section
         title="Details"
@@ -181,6 +176,6 @@ function Settings() {
           )}
         </Section>
       )}
-    </main>
+    </div>
   );
 }

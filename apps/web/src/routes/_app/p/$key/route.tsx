@@ -107,6 +107,14 @@ function ProjectLayout() {
         <PresenceStack members={present} selfMemberId={selfMemberId} />
         <ConnectionStatus />
       </header>
+      {project.archivedAt && (
+        <p
+          role="status"
+          className="shrink-0 border-line border-b bg-lane px-4 py-2 text-ink-muted text-xs"
+        >
+          This project is archived, so it is read-only. An admin can restore it in its settings.
+        </p>
+      )}
       <div className="flex min-h-0 flex-1">
         <main className="relative min-w-0 flex-1 overflow-auto">
           <Outlet />
