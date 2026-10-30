@@ -6,8 +6,9 @@ import {
   type StatusCategory,
 } from '@teamflow/domain';
 import { and, asc, desc, eq, gt, inArray, isNull, lt, ne, or, sql } from 'drizzle-orm';
-import { StaleWriteError } from '../errors.ts';
+import { SprintStateError, StaleWriteError } from '../errors.ts';
 import { labels, projects, workflowStatuses } from '../schema/projects.ts';
+import { sprints } from '../schema/sprints.ts';
 import { activity, type FieldChange, taskLabels, tasks } from '../schema/tasks.ts';
 import { inTransaction, type Scope } from '../scope.ts';
 import { notifyAssigned } from './collaboration.ts';
@@ -208,6 +209,25 @@ async function replaceLabels(scope: Scope, taskId: string, labelIds: string[]) {
   }
 }
 
+/**
+ * A completed sprint is closed: its report and velocity are frozen, so no task may join or leave it. Locked in
+ * share mode, so a sprint being completed at the same moment waits for this write or is seen as completed.
+ */
+async function assertOpenSprint(tx: Scope, sprintId: string | null) {
+  if (!sprintId) return;
+  const [sprint] = await tx.db
+    .select({ status: sprints.status })
+    .from(sprints)
+    .where(and(eq(sprints.organizationId, tx.organizationId), eq(sprints.id, sprintId)))
+    .for('share')
+    .limit(1);
+  if (sprint?.status === 'completed') {
+    throw new SprintStateError(
+      'That sprint is completed. Plan the task into an open sprint instead.',
+    );
+  }
+}
+
 /** Rank for a task placed between two neighbours (by id) in a column; `null` means the end of the column. */
 async function rankFor(
   scope: Scope,
@@ -298,6 +318,7 @@ export function createTask(scope: Scope, input: CreateTaskInput, now: Date) {
       )
       .returning({ number: projects.taskSequence });
     if (!allocated) return null;
+    await assertOpenSprint(tx, input.sprintId ?? null);
 
     const status = input.statusId
       ? await statusOf(tx, input.projectId, input.statusId)
@@ -489,6 +510,10 @@ export function updateTask(
     const current = await lockTask(tx, id, expectedVersion);
     if (!current) return null;
     const { statusId, labelIds, ...fields } = patch;
+    if (fields.sprintId !== undefined && fields.sprintId !== current.sprintId) {
+      await assertOpenSprint(tx, current.sprintId);
+      await assertOpenSprint(tx, fields.sprintId);
+    }
     if (labelIds) await assertLabels(tx, current.projectId, labelIds);
     if (fields.parentTaskId)
       await assertParent(tx, current.projectId, fields.parentTaskId, current.id);
