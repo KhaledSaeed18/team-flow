@@ -10,6 +10,7 @@ import {
 import { AppError, notFound } from '../errors.ts';
 import type { Storage } from '../storage.ts';
 import { type Actor, authorize } from './actor.ts';
+import { writableProject } from './projects-access.ts';
 
 /** A safe display name: no path, no control characters, bounded length. */
 export const cleanFileName = (name: string) =>
@@ -45,6 +46,7 @@ export function attachmentsService(storage: Storage) {
       const task = await findTask(actor.scope, input.taskId);
       if (!task) throw notFound('Task not found.');
       authorize(actor, { task: ['update'] });
+      await writableProject(actor, task.projectId);
       if (input.body.byteLength === 0) throw new AppError('BAD_REQUEST', 'The file is empty.');
 
       const fileName = cleanFileName(input.fileName);
@@ -77,6 +79,7 @@ export function attachmentsService(storage: Storage) {
       const task = await findTask(actor.scope, attachment.taskId);
       if (!task) throw notFound('Attachment not found.');
       if (!mayRemoveOwn(actor, attachment.uploaderMemberId)) authorize(actor, { task: ['delete'] });
+      await writableProject(actor, task.projectId);
       await deleteAttachment(actor.scope, id, task.projectId, now);
       await storage.remove(attachment.storageKey).catch(() => {});
       return { id };

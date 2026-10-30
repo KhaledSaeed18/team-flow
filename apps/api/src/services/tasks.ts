@@ -18,6 +18,7 @@ import {
 import { parseTaskIdentifier, taskIdentifier } from '@teamflow/domain';
 import { AppError, notFound } from '../errors.ts';
 import { type Actor, authorize } from './actor.ts';
+import { writableProject } from './projects-access.ts';
 
 const toWire = (task: TaskWithLabels, projectKey: string) => {
   const { organizationId: _org, deletedAt: _deleted, ...rest } = task;
@@ -34,13 +35,6 @@ async function load(actor: Actor, id: string) {
   const task = await findTask(actor.scope, id);
   if (!task) throw notFound('Task not found.');
   return task;
-}
-
-/** Writes need the project to be open; archived projects are read-only. */
-async function writableProject(actor: Actor, projectId: string) {
-  const project = await projectKeyOf(actor, projectId);
-  if (project.archivedAt) throw new AppError('FORBIDDEN', 'This project is archived.');
-  return project;
 }
 
 export const tasksService = {

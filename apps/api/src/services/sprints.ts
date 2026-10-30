@@ -2,7 +2,6 @@ import {
   completedSprints,
   completeSprint,
   createSprint,
-  findProject,
   findSprint,
   listSprints,
   listTasks,
@@ -15,15 +14,10 @@ import {
 import { burndown, cumulativeFlow, cycleTimes, median, velocity } from '@teamflow/domain';
 import { AppError, notFound } from '../errors.ts';
 import { type Actor, authorize } from './actor.ts';
+import { visibleProject, writableProject } from './projects-access.ts';
 
 const toWire = ({ organizationId: _org, createdAt: _c, updatedAt: _u, ...sprint }: SprintRow) =>
   sprint;
-
-async function visibleProject(actor: Actor, projectId: string) {
-  const project = await findProject(actor.scope, projectId);
-  if (!project) throw notFound('Project not found.');
-  return project;
-}
 
 async function load(actor: Actor, id: string) {
   const sprint = await findSprint(actor.scope, id);
@@ -52,8 +46,8 @@ export const sprintsService = {
       endsAt: Date;
     },
   ) {
-    await visibleProject(actor, input.projectId);
     authorize(actor, { sprint: ['create'] });
+    await writableProject(actor, input.projectId);
     const { goal, ...rest } = input;
     return toWire(
       await createSprint(actor.scope, { ...rest, ...(goal !== undefined ? { goal } : {}) }),
@@ -66,14 +60,16 @@ export const sprintsService = {
     version: number,
     patch: { name?: string; goal?: string; startsAt?: Date; endsAt?: Date },
   ) {
-    await load(actor, id);
+    const sprint = await load(actor, id);
     authorize(actor, { sprint: ['update'] });
+    await writableProject(actor, sprint.projectId);
     return toWire(required(await updateSprint(actor.scope, id, version, patch)));
   },
 
   async start(actor: Actor, id: string, version: number, now: Date) {
-    await load(actor, id);
+    const sprint = await load(actor, id);
     authorize(actor, { sprint: ['update'] });
+    await writableProject(actor, sprint.projectId);
     try {
       return toWire(required(await startSprint(actor.scope, id, version, now)));
     } catch (error) {
@@ -88,8 +84,9 @@ export const sprintsService = {
   },
 
   async complete(actor: Actor, id: string, version: number, carryOverTo: string | null, now: Date) {
-    await load(actor, id);
+    const sprint = await load(actor, id);
     authorize(actor, { sprint: ['update'] });
+    await writableProject(actor, sprint.projectId);
     return toWire(required(await completeSprint(actor.scope, id, version, carryOverTo, now)));
   },
 
