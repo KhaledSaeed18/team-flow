@@ -62,6 +62,7 @@ whole stack runs on one Postgres database.
   read-write, with an optional expiry.
 - Account settings for profile, password, sessions (sign out other devices) and tokens.
 - An audit log for admins: people, invitations, projects, workflows, labels, sprints and tokens.
+- Works on a phone too: the sidebar folds into a drawer, tasks open full screen, and wide views scroll sideways.
 
 ## A closer look
 

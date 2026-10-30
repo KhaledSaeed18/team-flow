@@ -36,7 +36,7 @@ The interesting engineering in a planning tool is not CRUD. It is:
 
 ## Explicitly out of scope
 
-- Mobile apps, time tracking and invoicing, Gantt charts with dependencies scheduling.
+- Native mobile apps (the web app is responsive instead), time tracking and invoicing, Gantt charts with dependencies scheduling.
 - A plugin marketplace.
 - Per-tenant databases or Postgres row-level security (see ADR-0004 for why tenancy is enforced in the
   application layer here).
