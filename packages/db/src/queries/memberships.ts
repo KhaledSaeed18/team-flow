@@ -1,6 +1,7 @@
 import { and, asc, eq, sql } from 'drizzle-orm';
 import type { Executor } from '../client.ts';
 import { invitations, members, organizations, users } from '../schema/auth.ts';
+import { projects } from '../schema/projects.ts';
 import type { Scope } from '../scope.ts';
 
 /**
@@ -76,4 +77,21 @@ export function pendingInvitations(db: Executor, organizationId: string, email: 
         eq(invitations.status, 'pending'),
       ),
     );
+}
+
+/**
+ * The user's workspaces that have a project with this key: a link like `/p/QP` carries no workspace, so the app
+ * asks which of yours it belongs to before saying it does not exist. Only the user's own memberships are searched.
+ */
+export function workspacesWithProject(db: Executor, userId: string, key: string) {
+  return db
+    .select({ id: organizations.id, name: organizations.name })
+    .from(members)
+    .innerJoin(organizations, eq(organizations.id, members.organizationId))
+    .innerJoin(
+      projects,
+      and(eq(projects.organizationId, members.organizationId), eq(projects.key, key)),
+    )
+    .where(eq(members.userId, userId))
+    .orderBy(asc(organizations.name));
 }

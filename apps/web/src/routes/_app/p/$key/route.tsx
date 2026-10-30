@@ -9,13 +9,15 @@ import { ProjectContext } from '../../../../features/project-context.tsx';
 import { TaskPanel } from '../../../../features/task-panel/task-panel.tsx';
 import { tasksQuery } from '../../../../features/tasks.ts';
 import { orpc } from '../../../../lib/api.ts';
+import { authClient } from '../../../../lib/auth.ts';
 import { usePresence, useRealtimeStatus } from '../../../../lib/realtime.ts';
 import { lenient } from '../../../../lib/search.ts';
+import { resetSession } from '../../../../lib/session.ts';
 
 /** A project, addressed by its key (`/p/TF`). Loads the project with its workflow for every view below. */
 export const Route = createFileRoute('/_app/p/$key')({
   validateSearch: lenient(z.object({ task: z.string().max(40).optional() })),
-  loader: async ({ context, params }) => {
+  loader: async ({ context, params, location }) => {
     const projects = await context.queryClient.ensureQueryData(
       orpc.projects.list.queryOptions({ input: {} }),
     );
@@ -27,7 +29,22 @@ export const Route = createFileRoute('/_app/p/$key')({
           orpc.projects.list.queryOptions({ input: { includeArchived: true } }),
         )
       ).find((p) => p.key === params.key);
-    if (!summary) throw notFound();
+    if (!summary) {
+      // A link names a project, not a workspace. If it is in another workspace of yours, go there.
+      const elsewhere = (
+        await context.queryClient.fetchQuery(
+          orpc.me.locateProject.queryOptions({ input: { key: params.key } }),
+        )
+      ).organizations.find((o) => o.id !== context.me.activeOrganizationId);
+      if (elsewhere) {
+        await authClient.organization.setActive({ organizationId: elsewhere.id });
+        resetSession(context.queryClient);
+        window.location.replace(location.href);
+        // The page is being replaced; render nothing meanwhile.
+        return new Promise<never>(() => {});
+      }
+      throw notFound();
+    }
     return context.queryClient.ensureQueryData(
       orpc.projects.get.queryOptions({ input: { id: summary.id } }),
     );
