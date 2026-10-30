@@ -30,7 +30,11 @@ const database = createDatabase({
 
 const relay = createRelayLoop(
   async () => {
-    const published = await relayOutbox(database.db, { channel: PG_EVENTS_CHANNEL });
+    const published = await relayOutbox(database.db, {
+      channel: PG_EVENTS_CHANNEL,
+      onOversized: (id, topic, bytes) =>
+        logger.error({ id, topic, bytes }, 'outbox event too large to publish, skipped'),
+    });
     if (published > 0) logger.debug({ published }, 'outbox relayed');
     return published;
   },
