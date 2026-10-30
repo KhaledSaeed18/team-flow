@@ -59,6 +59,22 @@ describe('platform routes', () => {
     expect(Object.keys(spec.paths)).toContain('/me');
   });
 
+  test('the OpenAPI document reads cleanly: no safe-integer bounds, described errors', async () => {
+    const text = await (await h.app.request('/api/openapi.json')).text();
+    expect(text).not.toContain(String(Number.MIN_SAFE_INTEGER));
+    expect(text).not.toContain(String(Number.MAX_SAFE_INTEGER));
+    const spec = JSON.parse(text) as {
+      paths: Record<string, Record<string, { responses: Record<string, { description: string }> }>>;
+    };
+    const move = spec.paths['/tasks/{id}/move']?.post;
+    expect(move?.responses['409']?.description).toBe(
+      '`CONFLICT`: This was changed by someone else. Reload and try again.',
+    );
+    for (const [status, response] of Object.entries(move?.responses ?? {})) {
+      if (status !== '200') expect(response.description).not.toBe(status);
+    }
+  });
+
   test('unknown routes are JSON 404s', async () => {
     const response = await h.app.request('/nope');
     expect(response.status).toBe(404);
