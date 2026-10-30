@@ -1,4 +1,4 @@
-import { EmailMessage, renderEmail } from '@teamflow/email';
+import { type EmailAttachment, EmailMessage, renderEmail } from '@teamflow/email';
 
 export interface Mailer {
   sendMail(mail: {
@@ -7,6 +7,7 @@ export interface Mailer {
     subject: string;
     html: string;
     text: string;
+    attachments: EmailAttachment[];
   }): Promise<unknown>;
 }
 

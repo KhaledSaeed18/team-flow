@@ -65,6 +65,7 @@ const stack = [
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>TeamFlow — a real-time, keyboard-first agile workspace</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta
       name="description"
       content="TeamFlow is an agile workspace where boards update live, descriptions are written together, and everything works from the keyboard."
@@ -73,7 +74,11 @@ const stack = [
   <body>
     <a class="skip" href="#main">Skip to content</a>
     <header class="top">
-      <a href="/" class="brand">TeamFlow</a>
+      <a href="/" class="brand">
+        <svg aria-hidden="true" class="mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="8" fill="#1b2430"/><rect x="7" y="8" width="5" height="16" rx="1.5" fill="#eef1f4"/><rect x="13.5" y="8" width="5" height="11" rx="1.5" fill="#eef1f4"/><rect x="20" y="8" width="5" height="7" rx="1.5" fill="#e8a317"/></svg>
+
+        TeamFlow
+      </a>
       <nav aria-label="Site">
         <a href="/docs/">Docs</a>
         <a href="/docs/guides/api/">API</a>
@@ -366,9 +371,17 @@ bun run dev</code></pre>
         padding-block: 1.25rem;
       }
       .brand {
-        font-weight: 700;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
         font-size: 1.125rem;
+        letter-spacing: -0.01em;
         text-decoration: none;
+      }
+      .brand .mark {
+        width: 1.75rem;
+        height: 1.75rem;
       }
       .top nav {
         display: flex;

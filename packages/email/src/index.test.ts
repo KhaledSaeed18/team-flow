@@ -63,4 +63,16 @@ describe('renderEmail', () => {
     expect(email.text).toContain('And 3 more.');
     expect(email.text).toContain('https://app.teamflow.test/settings/account');
   });
+
+  test('every email carries the logo inline, referenced from the html', async () => {
+    const email = await renderEmail(
+      { kind: 'verify-email', to: 'ada@example.com', code: '482913' },
+      options,
+    );
+    expect(email.html).toContain('src="cid:teamflow-mark"');
+    expect(email.attachments).toEqual([
+      expect.objectContaining({ cid: 'teamflow-mark', contentType: 'image/png' }),
+    ]);
+    expect(email.attachments[0]?.content.byteLength).toBeGreaterThan(100);
+  });
 });
