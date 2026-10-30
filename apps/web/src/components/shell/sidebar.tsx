@@ -8,7 +8,15 @@ import { orpc } from '../../lib/api.ts';
 import type { Me } from '../../lib/session.ts';
 import { WorkspaceMenu } from './workspace-menu.tsx';
 
-export function Sidebar({ me, onCreateProject }: { me: Me; onCreateProject: () => void }) {
+export function Sidebar({
+  me,
+  onCreateProject,
+  className = 'flex w-60',
+}: {
+  me: Me;
+  onCreateProject: () => void;
+  className?: string;
+}) {
   const projects = useQuery(orpc.projects.list.queryOptions({ input: {} }));
   const unread = useInbox().data?.unread ?? 0;
   const role = me.organizations.find((o) => o.id === me.activeOrganizationId)?.role ?? 'guest';
@@ -16,7 +24,7 @@ export function Sidebar({ me, onCreateProject }: { me: Me; onCreateProject: () =
   return (
     <nav
       aria-label="Workspace"
-      className="flex h-full w-60 shrink-0 flex-col gap-4 border-line border-r bg-canvas p-2"
+      className={`h-full shrink-0 flex-col gap-4 overflow-y-auto border-line border-r bg-canvas p-2 ${className}`}
     >
       <WorkspaceMenu me={me} />
 

@@ -2,6 +2,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { createFileRoute, Outlet, redirect, useNavigate, useParams } from '@tanstack/react-router';
 import { useState } from 'react';
 import { CreateProjectDialog } from '../components/create-project-dialog.tsx';
+import { MobileBar } from '../components/shell/mobile-bar.tsx';
 import { Sidebar } from '../components/shell/sidebar.tsx';
 import { CommandPalette } from '../features/command/command-palette.tsx';
 import { ShortcutsDialog } from '../features/command/shortcuts-dialog.tsx';
@@ -69,8 +70,9 @@ function AppShell() {
     !overlayOpen,
   );
   return (
-    <div className="flex h-dvh overflow-hidden">
-      <Sidebar me={me} onCreateProject={() => setCreating(true)} />
+    <div className="flex h-dvh flex-col overflow-hidden md:flex-row">
+      <MobileBar me={me} onCreateProject={() => setCreating(true)} />
+      <Sidebar me={me} onCreateProject={() => setCreating(true)} className="hidden w-60 md:flex" />
       {/* Workspace pages (inbox, members, audit log, account) scroll here; project views fill it exactly and
           scroll inside their own panes. */}
       <div className="relative flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto">
