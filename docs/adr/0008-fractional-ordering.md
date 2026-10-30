@@ -22,3 +22,10 @@ distinct. A job rebalances a column when any key exceeds 32 characters.
 
 `needsRebalance` implements the 32-character check, but no job runs it yet: realistic use stays far below the
 threshold. The job is listed under Deferred in the roadmap.
+
+## Update (2026-10-30)
+
+The job exists: `rank.rebalance` runs nightly in the worker. It re-keys every task in an affected column (deleted
+ones too, so a restore lands where it was), bumps their versions and emits `tasks.reordered`. A Postgres advisory
+lock per column, shared for moves and exclusive for the rebalance, keeps a move from computing its key against
+ranks that are being replaced.

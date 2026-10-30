@@ -12,6 +12,7 @@ import { activity, type FieldChange, taskLabels, tasks } from '../schema/tasks.t
 import { inTransaction, type Scope } from '../scope.ts';
 import { notifyAssigned } from './collaboration.ts';
 import { diff, emit, recordActivity } from './events.ts';
+import { lockColumn } from './ranks.ts';
 
 export type TaskRow = typeof tasks.$inferSelect;
 export type TaskWithLabels = TaskRow & { labelIds: string[] };
@@ -215,6 +216,7 @@ async function rankFor(
   /** The task being moved, which must not count as its own neighbour. */
   movingId?: string,
 ): Promise<Rank> {
+  await lockColumn(scope, statusId);
   const neighbour = async (id: string) => {
     const [row] = await scope.db
       .select({ rank: tasks.rank, statusId: tasks.statusId })
