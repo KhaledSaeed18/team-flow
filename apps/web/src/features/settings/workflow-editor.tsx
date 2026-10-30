@@ -113,7 +113,7 @@ export function WorkflowEditor({ project, canEdit }: { project: Project; canEdit
               onKeyDown={(event) => event.key === 'Enter' && event.currentTarget.blur()}
               className="min-w-0 flex-1 rounded-control border border-transparent bg-transparent px-2 py-1 text-sm outline-none hover:border-line focus:border-line focus-visible:outline-2 focus-visible:outline-marigold"
             />
-            <div className="w-36">
+            <div className="w-32 shrink-0 sm:w-36">
               <Select
                 aria-label={`Type of ${status.name}`}
                 selectedKey={status.category}
@@ -145,7 +145,7 @@ export function WorkflowEditor({ project, canEdit }: { project: Project; canEdit
 
       {canEdit && (
         <Form
-          className="flex items-end gap-2"
+          className="flex flex-wrap items-end gap-2 sm:flex-nowrap"
           onSubmit={(event) => {
             event.preventDefault();
             if (!name.trim()) return;
@@ -155,8 +155,13 @@ export function WorkflowEditor({ project, canEdit }: { project: Project; canEdit
             );
           }}
         >
-          <TextField label="New status" value={name} onChange={setName} className="flex-1" />
-          <div className="w-36">
+          <TextField
+            label="New status"
+            value={name}
+            onChange={setName}
+            className="min-w-0 basis-full sm:flex-1 sm:basis-auto"
+          />
+          <div className="w-32 shrink-0 sm:w-36">
             <Select
               label="Type"
               selectedKey={category}

@@ -66,7 +66,7 @@ export function TaskPanel({
   return (
     <aside
       aria-label={task ? `${task.identifier} ${task.title}` : 'Task'}
-      className="flex w-[440px] shrink-0 animate-slide-in flex-col border-line border-l bg-surface"
+      className="fixed inset-0 z-40 flex animate-slide-in flex-col bg-surface md:static md:z-auto md:w-[440px] md:shrink-0 md:border-line md:border-l"
     >
       <header className="flex h-12 shrink-0 items-center justify-between border-line border-b px-4">
         <span className="text-ink-muted text-xs">{task?.identifier ?? identifier}</span>

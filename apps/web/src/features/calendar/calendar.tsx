@@ -71,8 +71,9 @@ export function Calendar({
   };
 
   return (
-    <div className="flex h-full min-h-0">
-      <div className="flex min-w-0 flex-1 flex-col">
+    // On a phone the month scrolls sideways and the unscheduled tray sits below it.
+    <div className="flex h-full min-h-0 flex-col overflow-y-auto md:flex-row md:overflow-visible">
+      <div className="flex min-w-0 flex-col md:flex-1">
         <div className="flex items-center gap-2 px-4 py-3">
           <h2 className="min-w-40 font-semibold text-base" aria-live="polite">
             {monthTitle.format(utc(`${month}-01`))}
@@ -97,36 +98,38 @@ export function Calendar({
             Today
           </Button>
         </div>
-        <div className="grid grid-cols-7 border-line border-t text-ink-faint text-xs">
-          {weeks[0]?.map((day) => (
-            <div key={day} className="px-2 py-1.5">
-              {weekdayShort.format(utc(day))}
-            </div>
-          ))}
-        </div>
-        <div
-          className="grid min-h-0 flex-1 grid-cols-7 border-line border-t"
-          style={{ gridTemplateRows: `repeat(${weeks.length}, minmax(6.5rem, 1fr))` }}
-        >
-          {weeks.flat().map((day) => (
-            <DayCell
-              key={day}
-              day={day}
-              outside={monthOf(day) !== month}
-              isToday={day === now}
-              onDrop={(id) => reschedule(id, day)}
-            >
-              {(byDay.get(day) ?? []).map((task) => (
-                <TaskChip
-                  key={task.id}
-                  task={task}
-                  project={project}
-                  done={closed(task)}
-                  onOpen={() => onOpenTask(task)}
-                />
-              ))}
-            </DayCell>
-          ))}
+        <div className="flex min-h-0 flex-1 flex-col overflow-x-auto">
+          <div className="grid min-w-[40rem] grid-cols-7 border-line border-t text-ink-faint text-xs">
+            {weeks[0]?.map((day) => (
+              <div key={day} className="px-2 py-1.5">
+                {weekdayShort.format(utc(day))}
+              </div>
+            ))}
+          </div>
+          <div
+            className="grid min-h-0 min-w-[40rem] flex-1 grid-cols-7 border-line border-t"
+            style={{ gridTemplateRows: `repeat(${weeks.length}, minmax(6.5rem, 1fr))` }}
+          >
+            {weeks.flat().map((day) => (
+              <DayCell
+                key={day}
+                day={day}
+                outside={monthOf(day) !== month}
+                isToday={day === now}
+                onDrop={(id) => reschedule(id, day)}
+              >
+                {(byDay.get(day) ?? []).map((task) => (
+                  <TaskChip
+                    key={task.id}
+                    task={task}
+                    project={project}
+                    done={closed(task)}
+                    onOpen={() => onOpenTask(task)}
+                  />
+                ))}
+              </DayCell>
+            ))}
+          </div>
         </div>
       </div>
       <Tray onDrop={(id) => reschedule(id, null)}>
@@ -205,7 +208,7 @@ function Tray({ onDrop, children }: { onDrop: (id: string) => void; children: Re
       ref={ref}
       {...dropProps}
       aria-label="Unscheduled"
-      className={`flex w-60 shrink-0 flex-col gap-1 overflow-y-auto border-line border-l p-3 ${
+      className={`flex shrink-0 flex-col gap-1 border-line border-t p-3 md:w-60 md:overflow-y-auto md:border-t-0 md:border-l ${
         isDropTarget ? 'bg-raised ring-2 ring-marigold ring-inset' : 'bg-canvas'
       }`}
     >
