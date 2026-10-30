@@ -1,6 +1,7 @@
 import { ORPCError } from '@orpc/server';
 import {
   checkViolation,
+  concurrencyFailure,
   foreignKeyViolation,
   InvalidReferenceError,
   InvalidWorkflowError,
@@ -64,6 +65,12 @@ export function toTransportError(error: unknown): unknown {
   }
   if (error instanceof InvalidWorkflowError) {
     return new ORPCError('INVALID_WORKFLOW', { status: 422, message: error.message });
+  }
+  // A transaction Postgres aborted to resolve a deadlock is a conflict to retry, not a server fault.
+  if (concurrencyFailure(error)) {
+    return new ORPCError('CONFLICT', {
+      message: 'This was changed by someone else at the same moment. Try again.',
+    });
   }
   if (foreignKeyViolation(error)) {
     return new ORPCError('INVALID_REFERENCE', {

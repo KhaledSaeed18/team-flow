@@ -483,6 +483,9 @@ export function updateTask(
   now: Date,
 ) {
   return inTransaction(scope, async (tx) => {
+    // A status change computes a rank in the target column: take that column's lock before the task's row lock,
+    // the same order a rebalance uses, so the two cannot deadlock.
+    if (patch.statusId) await lockColumn(tx, patch.statusId);
     const current = await lockTask(tx, id, expectedVersion);
     if (!current) return null;
     const { statusId, labelIds, ...fields } = patch;
@@ -522,6 +525,8 @@ export function moveTask(
   now: Date,
 ) {
   return inTransaction(scope, async (tx) => {
+    // Column lock before row lock, the same order a rebalance uses, so the two cannot deadlock.
+    await lockColumn(tx, input.statusId);
     const current = await lockTask(tx, id, expectedVersion);
     if (!current) return null;
     if (input.afterId === id || input.beforeId === id) {

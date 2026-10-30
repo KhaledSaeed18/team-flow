@@ -26,3 +26,10 @@ export function checkViolation(error: unknown): string | null {
   const pg = cause as { code?: string; constraint_name?: string };
   return pg?.code === '23514' ? (pg.constraint_name ?? 'unknown') : null;
 }
+
+/** Postgres gave up on a transaction to break a deadlock (`40P01`) or a serialization conflict (`40001`). */
+export function concurrencyFailure(error: unknown): boolean {
+  const cause = (error as { cause?: unknown })?.cause ?? error;
+  const code = (cause as { code?: string })?.code;
+  return code === '40P01' || code === '40001';
+}

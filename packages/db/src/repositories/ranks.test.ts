@@ -159,4 +159,38 @@ describe('rank rebalancing', () => {
     await Promise.all([rebalancing, move]);
     expect(order).toEqual(['rebalance', 'move']);
   });
+
+  test('a move waiting on a rebalance holds no row lock, so the rebalance can lock every row', async () => {
+    const live = (await column(todo)).filter((r) => r.deletedAt === null);
+    const [first, second] = live;
+    if (!first || !second) throw new Error('no tasks');
+    let release = () => {};
+    const held = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    let rowsLocked = false;
+    // The rebalance's order: the column lock, then every row in the column.
+    const rebalancing = t.db.transaction(async (tx) => {
+      await tx.execute(sql`select pg_advisory_xact_lock(hashtextextended(${todo}::text, 0))`);
+      await held;
+      await tx.execute(sql`select id from tasks where status_id = ${todo}::uuid for update nowait`);
+      rowsLocked = true;
+    });
+    const move = moveTask(
+      scope,
+      second.id,
+      second.version,
+      { statusId: todo, afterId: null, beforeId: first.id },
+      now,
+    );
+    for (;;) {
+      const [waiting] = await t.db.execute(
+        sql`select 1 from pg_locks where locktype = 'advisory' and not granted`,
+      );
+      if (waiting) break;
+    }
+    release();
+    await Promise.all([rebalancing, move]);
+    expect(rowsLocked).toBe(true);
+  });
 });

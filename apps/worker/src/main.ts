@@ -88,7 +88,9 @@ await boss.work(DIGEST_QUEUE, async () => {
 await boss.createQueue(REBALANCE_QUEUE);
 await boss.schedule(REBALANCE_QUEUE, '30 3 * * *');
 await boss.work(REBALANCE_QUEUE, async () => {
-  const moved = await runRebalance(database.db);
+  const moved = await runRebalance(database.db, (statusId, error) =>
+    logger.error({ err: error, statusId }, 'rank rebalance failed for a column'),
+  );
   if (moved > 0) logger.info({ moved }, 'ranks rebalanced');
 });
 logger.info('worker started');
