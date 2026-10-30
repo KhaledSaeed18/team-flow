@@ -40,3 +40,47 @@ test('an inbox that fails to load says so, instead of looking empty', async ({ p
   await expect(page.getByRole('alert')).toContainText('The inbox could not be loaded');
   await expect(page.getByText('Nothing here yet')).toBeHidden();
 });
+
+test('a search that fails says so, instead of "nothing matches"', async ({ page }) => {
+  await page.route('**/rpc/search/tasks', (route) => route.fulfill({ status: 500 }));
+  await page.goto('/p/RF');
+  await page.getByRole('grid').first().waitFor();
+  await page.keyboard.press('/');
+  await page.getByRole('searchbox', { name: 'Search tasks, projects and actions' }).fill('zzz');
+  await expect(page.getByText('Search is not available right now')).toBeVisible({
+    timeout: 15_000,
+  });
+});
+
+test('saved views that fail to load say so', async ({ page }) => {
+  await page.route('**/rpc/views/list', (route) => route.fulfill({ status: 500 }));
+  await page.goto('/p/RF/list');
+  await expect(page.getByText('Saved views could not be loaded')).toBeVisible({ timeout: 15_000 });
+});
+
+test('an expired invitation is not listed as pending', async ({ page }) => {
+  const day = 86_400_000;
+  await page.route('**/api/auth/organization/list-invitations*', (route) =>
+    route.fulfill({
+      json: [
+        {
+          id: '01900000-0000-7000-8000-000000000001',
+          email: 'expired@example.com',
+          role: 'member',
+          status: 'pending',
+          expiresAt: new Date(Date.now() - day).toISOString(),
+        },
+        {
+          id: '01900000-0000-7000-8000-000000000002',
+          email: 'waiting@example.com',
+          role: 'member',
+          status: 'pending',
+          expiresAt: new Date(Date.now() + day).toISOString(),
+        },
+      ],
+    }),
+  );
+  await page.goto('/settings/members');
+  await expect(page.getByText('waiting@example.com')).toBeVisible();
+  await expect(page.getByText('expired@example.com')).toBeHidden();
+});

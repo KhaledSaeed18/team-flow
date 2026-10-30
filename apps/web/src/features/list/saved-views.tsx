@@ -13,7 +13,7 @@ import {
   TextField,
   toast,
 } from '@teamflow/ui';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Form, Header, MenuSection } from 'react-aria-components';
 import type { z } from 'zod';
 import { orpc } from '../../lib/api.ts';
@@ -75,6 +75,9 @@ export function SavedViews({
   const [saving, setSaving] = useState(false);
 
   const all = views.data ?? [];
+  useEffect(() => {
+    if (views.isError) toast({ title: 'Saved views could not be loaded', tone: 'danger' });
+  }, [views.isError]);
   const current = all.find((v) => v.id === state.view);
   const dirty = current ? differs(current, state) : false;
   const hasState = Object.keys(normalizeFilter(filterOf(state))).length > 0 || !!state.sort;
