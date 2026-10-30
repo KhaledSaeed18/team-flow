@@ -12,6 +12,12 @@ export default defineConfig({
   integrations: [
     starlight({
       title: 'TeamFlow',
+      // The app's own mark: ink on light pages, light on dark ones, as in the app.
+      logo: {
+        light: './src/assets/teamflow-mark.svg',
+        dark: './src/assets/teamflow-mark-dark.svg',
+      },
+      favicon: '/favicon.svg',
       description: 'A real-time, keyboard-first agile workspace.',
       social: [{ icon: 'github', label: 'GitHub', href: repo }],
       editLink: { baseUrl: `${repo}/edit/main/apps/site/` },
