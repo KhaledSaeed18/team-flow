@@ -8,7 +8,12 @@ export interface RelayOptions {
   /** NOTIFY channel to publish events on. */
   channel: string;
   batchSize?: number;
+  /** Called for an event too large to NOTIFY; it is marked published without being sent. */
+  onOversized?: (id: string, topic: string, bytes: number) => void;
 }
+
+/** Postgres refuses NOTIFY payloads of 8000 bytes or more. */
+export const MAX_NOTIFY_BYTES = 7999;
 
 interface PendingRow extends Record<string, unknown> {
   id: string;
@@ -28,7 +33,7 @@ interface PendingRow extends Record<string, unknown> {
  */
 export function relayOutbox(
   db: Database,
-  { channel, batchSize = 200 }: RelayOptions,
+  { channel, batchSize = 200, onOversized }: RelayOptions,
 ): Promise<number> {
   return db.transaction(async (tx) => {
     const rows = await tx.execute<PendingRow>(sql`
@@ -49,6 +54,13 @@ export function relayOutbox(
         payload: row.payload,
         at: new Date(row.created_at).toISOString(),
       });
+      // One oversized event must not fail the batch forever (it would head every later batch); it is skipped and
+      // reported instead. Producers keep payloads to ids, so this is a safety net, not a path.
+      const bytes = Buffer.byteLength(message);
+      if (bytes > MAX_NOTIFY_BYTES) {
+        onOversized?.(row.id, row.topic, bytes);
+        continue;
+      }
       await tx.execute(sql`select pg_notify(${channel}, ${message})`);
     }
     await tx.execute(sql`
