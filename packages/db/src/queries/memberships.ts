@@ -1,6 +1,6 @@
-import { and, asc, eq } from 'drizzle-orm';
+import { and, asc, eq, sql } from 'drizzle-orm';
 import type { Executor } from '../client.ts';
-import { members, organizations, users } from '../schema/auth.ts';
+import { invitations, members, organizations, users } from '../schema/auth.ts';
 import type { Scope } from '../scope.ts';
 
 /**
@@ -48,4 +48,32 @@ export function listMembers(scope: Scope) {
     .innerJoin(users, eq(users.id, members.userId))
     .where(eq(members.organizationId, scope.organizationId))
     .orderBy(asc(users.name));
+}
+
+/** An invitation's workspace, email and status, for auditing what a cancel actually changed. */
+export async function findInvitation(db: Executor, id: string) {
+  const [row] = await db
+    .select({
+      organizationId: invitations.organizationId,
+      email: invitations.email,
+      status: invitations.status,
+    })
+    .from(invitations)
+    .where(eq(invitations.id, id))
+    .limit(1);
+  return row ?? null;
+}
+
+/** Invitations still pending for `email` in a workspace: a new invitation to the same address cancels them. */
+export function pendingInvitations(db: Executor, organizationId: string, email: string) {
+  return db
+    .select({ id: invitations.id })
+    .from(invitations)
+    .where(
+      and(
+        eq(invitations.organizationId, organizationId),
+        eq(sql`lower(${invitations.email})`, email.toLowerCase()),
+        eq(invitations.status, 'pending'),
+      ),
+    );
 }

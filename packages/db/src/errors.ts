@@ -38,3 +38,10 @@ export function concurrencyFailure(error: unknown): boolean {
 export class SprintStateError extends Error {
   override name = 'SprintStateError';
 }
+
+/** Text Postgres cannot store or search, such as a NUL character (`22021`, `22P05`). */
+export function invalidText(error: unknown): boolean {
+  const cause = (error as { cause?: unknown })?.cause ?? error;
+  const code = (cause as { code?: string })?.code;
+  return code === '22021' || code === '22P05';
+}

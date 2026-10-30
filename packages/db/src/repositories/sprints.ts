@@ -69,14 +69,21 @@ async function lockSprint(tx: Scope, id: string, expectedVersion: number) {
   return current;
 }
 
-async function save(tx: Scope, current: SprintRow, patch: Partial<SprintRow>, kind: string) {
+/** `at`: when it happened, from the caller's clock, so the history line matches the sprint's own dates. */
+async function save(
+  tx: Scope,
+  current: SprintRow,
+  patch: Partial<SprintRow>,
+  kind: string,
+  at?: Date,
+) {
   const [sprint] = await tx.db
     .update(sprints)
     .set({ ...patch, version: sql`${sprints.version} + 1` })
     .where(and(inOrg(tx), eq(sprints.id, current.id)))
     .returning();
   if (!sprint) throw new Error('update returned no row');
-  await recordActivity(tx, { kind, projectId: sprint.projectId });
+  await recordActivity(tx, { kind, projectId: sprint.projectId, ...(at ? { at } : {}) });
   await emit(tx, 'sprint.changed', {
     sprintId: sprint.id,
     projectId: sprint.projectId,
@@ -111,7 +118,7 @@ export function startSprint(scope: Scope, id: string, expectedVersion: number, n
     if (!current) return null;
     if (current.status !== 'planned')
       throw new SprintStateError('Only a planned sprint can be started.');
-    return save(tx, current, { status: 'active', startedAt: now }, 'sprint.started');
+    return save(tx, current, { status: 'active', startedAt: now }, 'sprint.started', now);
   });
 }
 
@@ -281,6 +288,7 @@ export function completeSprint(
       current,
       { status: 'completed', completedAt: now, committedPoints, completedPoints },
       'sprint.completed',
+      now,
     );
   });
 }

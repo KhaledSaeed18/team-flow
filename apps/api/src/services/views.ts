@@ -1,5 +1,5 @@
 import { can } from '@teamflow/auth';
-import type { SavedView } from '@teamflow/contract';
+import { SavedView } from '@teamflow/contract';
 import {
   createSavedView,
   deleteSavedView,
@@ -39,8 +39,10 @@ function toView(actor: Actor, row: SavedViewRow, ownerName: string): SavedView {
     name: row.name,
     shared: row.shared,
     filter: filter.success ? filter.data : {},
-    sort: row.sort as SavedView['sort'],
-    direction: row.direction as SavedView['direction'],
+    // Same for the sort: a column that no longer exists falls back to the default order instead of failing the
+    // whole list for everyone who can see this view.
+    sort: SavedView.shape.sort.safeParse(row.sort).data ?? null,
+    direction: SavedView.shape.direction.safeParse(row.direction).data ?? null,
     version: row.version,
     ownerName,
     mine,

@@ -5,6 +5,7 @@ import {
   foreignKeyViolation,
   InvalidReferenceError,
   InvalidWorkflowError,
+  invalidText,
   SprintStateError,
   StaleWriteError,
 } from '@teamflow/db';
@@ -70,6 +71,12 @@ export function toTransportError(error: unknown): unknown {
   if (concurrencyFailure(error)) {
     return new ORPCError('CONFLICT', {
       message: 'This was changed by someone else at the same moment. Try again.',
+    });
+  }
+  if (invalidText(error)) {
+    return new ORPCError('BAD_REQUEST', {
+      status: 400,
+      message: 'That text contains a character that cannot be stored.',
     });
   }
   if (foreignKeyViolation(error)) {
