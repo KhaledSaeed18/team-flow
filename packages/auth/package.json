@@ -18,7 +18,7 @@
     "typescript": "catalog:"
   },
   "dependencies": {
-    "better-auth": "^1.7.14",
+    "better-auth": "^1.7.18",
     "zod": "catalog:",
     "@teamflow/db": "workspace:*",
     "@teamflow/domain": "workspace:*"
