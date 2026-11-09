@@ -34,7 +34,7 @@
     "lib0": "^0.2.119",
     "pg-boss": "^12.38.1",
     "pino": "^10.4.0",
-    "postgres": "^3.4.9",
+    "postgres": "^4.1.0",
     "y-protocols": "^1.0.7",
     "yjs": "^13.6.33",
     "zod": "catalog:"

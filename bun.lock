@@ -33,7 +33,7 @@
         "lib0": "^0.2.119",
         "pg-boss": "^12.38.1",
         "pino": "^10.4.0",
-        "postgres": "^3.4.9",
+        "postgres": "^4.1.0",
         "y-protocols": "^1.0.7",
         "yjs": "^13.6.33",
         "zod": "catalog:",
@@ -99,7 +99,7 @@
         "@types/react": "^19.3.0",
         "@types/react-dom": "^19.3.0",
         "@vitejs/plugin-react": "^6.2.1",
-        "postgres": "^3.4.9",
+        "postgres": "^4.1.0",
         "tailwindcss": "^4.3.3",
         "typescript": "catalog:",
         "vite": "^8.3.6",
@@ -160,7 +160,7 @@
       "dependencies": {
         "@teamflow/domain": "workspace:*",
         "drizzle-orm": "^0.45.4",
-        "postgres": "^3.4.9",
+        "postgres": "^4.1.0",
         "uuid": "^14.0.3",
       },
       "devDependencies": {
@@ -1562,7 +1562,7 @@
 
     "postcss-selector-parser": ["postcss-selector-parser@7.1.7", "", { "dependencies": { "cssesc": "^3.0.0", "util-deprecate": "^1.0.2" } }, "sha512-wWBro/7hJ40ye6TPiXkUQoXKCw23xSsjriUvqd7Uls9Sso3oLiON1flc18cCdnjgCRXw4fBVqUJJeOdDTh3P3g=="],
 
-    "postgres": ["postgres@3.4.9", "", {}, "sha512-GD3qdB0x1z9xgFI6cdRD6xu2Sp2WCOEoe3mtnyB5Ee0XrrL5Pe+e4CCnJrRMnL1zYtRDZmQQVbvOttLnKDLnaw=="],
+    "postgres": ["postgres@4.1.0", "", {}, "sha512-s+0WH67YAyLdBQUb6XczbziBhY+C9uiQsg9S8R5RHdZhk6sdyK6202E+T2tXpiInSEEjDLRSJ3OpYBe3PN6MsQ=="],
 
     "postgres-array": ["postgres-array@2.0.0", "", {}, "sha512-VpZrUqU5A69eQyW2c5CA1jtLecCsN2U/bD6VilrFDWq5+5UIEVO7nazS3TEcHf1zuPYO/sqGvUvW62g86RXZuA=="],
 
