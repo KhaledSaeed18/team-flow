@@ -15,7 +15,7 @@
     "typescript": "catalog:"
   },
   "dependencies": {
-    "@orpc/contract": "^1.16.2",
+    "@orpc/contract": "^1.16.4",
     "@teamflow/domain": "workspace:*",
     "zod": "catalog:"
   }

@@ -17,7 +17,7 @@
   "devDependencies": {
     "@teamflow/tsconfig": "workspace:*",
     "@types/bun": "catalog:",
-    "fast-check": "^4.10.2",
+    "fast-check": "^4.10.3",
     "typescript": "catalog:"
   }
 }
